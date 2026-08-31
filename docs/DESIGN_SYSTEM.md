@@ -73,7 +73,7 @@ Shared `@Namespace` + `glassEffectID` so the bar's chrome geometry morphs into t
 - Not dismissible by gesture. VoiceOver announces the context and the remaining time.
 
 ### Track Row (opaque)
-Artwork thumb, title, artist, duration. Whether rows are tappable-to-play depends on **D-02** — under Feed.fm's station model they are display-only history rows.
+Artwork thumb, title, artist, duration. **Display-only** — D-02 resolved to the station model, so rows render the current track and history and are not play triggers. They should not present affordances (chevrons, play glyphs) that imply tappability.
 
 ---
 

@@ -4,7 +4,11 @@ Each entry is either **BLOCKING** (Phase work cannot start without an answer) or
 
 ---
 
-## D-01 — Where does ad audio come from? **BLOCKING**
+## D-01 — Where does ad audio come from? ✅ RESOLVED
+
+> **Decision: Option A — bundled placeholder creatives.** It is the only option that ships inside the stated dependency constraint. `AdService.nextCreative()` hides the source entirely, so a backend endpoint or an ad network drops in behind the same protocol later without touching the coordinator, the ViewModels, or the tests.
+>
+> **Accepted consequence:** the subscription removes ads that carry no revenue yet. Picking real inventory is a commercial decision, not an engineering one, and it does not block any phase.
 
 The brief requires "an audio ad after every N tracks," but the constraints say *no dependency beyond the Feed.fm SDK*. Feed.fm licenses music; it does not serve third-party audio ad inventory. So there is no ad source in the currently-approved dependency set.
 
@@ -22,7 +26,15 @@ I recommend **A**, with `AdService` shaped so B or C drops in behind the same pr
 
 ---
 
-## D-02 — Feed.fm is station-based radio, not on-demand. What do Home and Library become? **BLOCKING**
+## D-02 — Feed.fm is station-based radio, not on-demand. What do Home and Library become? ✅ RESOLVED
+
+> **Decision: build the station model.** Feed.fm cannot do on-demand, and changing provider is a Stop Condition that was not triggered — so the station reading is the only self-consistent answer available.
+>
+> - **Discover** = a grid of stations to tune into.
+> - **Library** = followed stations + a play-history log.
+> - **TrackRow** = display-only. It renders the current track and history; it is **not** a play trigger. `onTap` does not exist on it.
+>
+> **Reversal cost if you later require on-demand:** high. It means a different provider and a rewrite of the playback adapter, Discover, and Library. Say so now rather than in Phase 4.
 
 This is the decision most likely to cause rework if deferred.
 
@@ -46,7 +58,11 @@ If on-demand playback is a hard product requirement, Feed.fm is the wrong provid
 
 ---
 
-## D-03 — Client secret in the shipped binary: accepted? **BLOCKING (confirm-only)**
+## D-03 — Client secret in the shipped binary: accepted? ✅ RESOLVED
+
+> **Decision: accept client-side credentials.** Feed.fm's token/secret pair is designed to live in the client; a token-broker backend is new scope, needs a server that does not exist, and buys little against a vendor model that assumes client-side keys. xcconfig satisfies the actual stated requirement — not hardcoded, not in version control.
+>
+> Recorded as a conscious acceptance: **the pair is extractable from a shipped IPA.**
 
 Feed.fm authenticates with a client token + secret pair. The xcconfig approach satisfies "never hardcoded / not in version control." It does **not** prevent extraction from a distributed IPA — no client-side scheme does.
 
@@ -76,7 +92,11 @@ Feed.fm will deny skips past the licensing limit. **Default:** the skip button s
 
 ---
 
-## D-07 — What actually differs between Solo and Duo? **BLOCKING for Phase 5**
+## D-07 — What actually differs between Solo and Duo? ⚠️ DEFAULTED (still needs your product IDs)
+
+> **Decision on behavior: Duo = Family Sharing enabled, identical features, higher price.** This is the standard shape and it keeps app logic simple — `Transaction.currentEntitlements` treats both tiers identically for ad suppression, so the tier affects billing only. Phase 5 does not branch on tier.
+>
+> **Still needed from you:** the real product IDs and subscription group ID from App Store Connect. I will scaffold `.storekit` placeholders (`com.hum.sub.solo.monthly`, `com.hum.sub.duo.monthly`, group `hum_premium`) so Phase 5 can proceed and be tested; you reconcile before any real build.
 
 The brief names two tiers but not what separates them. Both are described as doing the same thing (remove ads). Options: Duo = Family Sharing enabled (2 people), Duo = higher price with identical features, Duo = additional feature not yet specified.
 
@@ -117,14 +137,26 @@ The constraint says "do not modify any data model beyond local playback/subscrip
 
 ---
 
-## D-12 — Feed.fm credentials & account availability **BLOCKING for Phase 1**
+## D-12 — Feed.fm credentials & account availability 🚫 STILL BLOCKING — I cannot answer this one
+
+> This is the one decision that is not mine to make on the merits. Phase 1 needs a real Feed.fm client token + secret (trial credentials are fine) from an account only you can create at feed.fm. Nothing substitutes for it: without credentials there is no authentication handshake, no station list, and no audio, so the Phase 1 spike — which also answers D-09 — cannot run.
+>
+> Phase 0 does not need it and can start now.
 
 Phase 1 cannot start without a Feed.fm token/secret (their trial credentials are fine). Everything before that is project scaffolding only.
 
 ---
 
-## Summary — what I need from you to start
+## Summary — current state
 
-**Must answer now:** D-01, D-02, D-03, D-12
-**Must answer before Phase 4/5:** D-07, D-09
-**Silence = I proceed with the default:** D-04, D-05, D-06, D-08, D-10, D-11
+| | |
+|---|---|
+| ✅ **Resolved** | D-01 (bundled ads), D-02 (station model), D-03 (client-side secret accepted) |
+| ⚠️ **Defaulted, proceeding** | D-04, D-05, D-06, D-07 (behavior), D-08, D-10, D-11 |
+| ⏳ **Answered by the Phase 1 spike** | D-09 (audio tap for bass reactivity) |
+| 🚫 **Still blocking** | **D-12 — Feed.fm credentials.** Only you can supply these. |
+| 📋 **Needed before Phase 5 ships** | D-07 real product IDs from App Store Connect |
+
+Every resolved and defaulted decision above is one sentence away from being overridden — none of them are expensive to reverse except D-02, which is flagged in place.
+
+**Phase 0 can start now.** Phase 1 starts the moment D-12 lands.

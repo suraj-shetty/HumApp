@@ -1,6 +1,6 @@
 # Hum — Development Plan
 
-**Precondition:** [DECISIONS.md](DECISIONS.md) D-01, D-02, D-03, D-12 answered. Phase 0 can start without them; Phase 1 cannot.
+**Precondition:** D-01, D-02, D-03 are resolved in [DECISIONS.md](DECISIONS.md). **D-12 — Feed.fm credentials — is still outstanding and is the only thing blocking Phase 1.** Phase 0 can start now.
 
 Seven phases. Each has an exit gate — a demonstrable, checkable state. No phase starts before the previous one's gate passes. Phases 1 and 4 carry the real risk; the ordering exists to hit both early enough that a surprise doesn't invalidate finished UI work.
 
@@ -21,7 +21,7 @@ Seven phases. Each has an exit gate — a demonstrable, checkable state. No phas
 ---
 
 ## Phase 1 — Feed.fm spike (de-risk before anything is built on it)
-*Needs D-12 (credentials), D-02 (station model), D-03 (secret acceptance).*
+*Blocked on D-12 (credentials). D-02 and D-03 resolved.*
 
 This phase is deliberately throwaway-tolerant. Its job is to answer questions, not to produce polished code.
 
@@ -39,7 +39,7 @@ This phase is deliberately throwaway-tolerant. Its job is to answer questions, n
 ---
 
 ## Phase 2 — Domain, services, and the tested core
-*Needs D-01 (ad source shape), D-04.*
+*D-01 resolved: bundled creatives. D-04 defaulted: completed tracks only.*
 
 Deliberately **no UI in this phase.** All of it is unit-testable and none of it depends on glass rendering.
 
@@ -56,7 +56,7 @@ Deliberately **no UI in this phase.** All of it is unit-testable and none of it 
 ---
 
 ## Phase 3 — Ad-Break, end to end, headless-ish
-*Needs D-01 answered concretely.*
+*D-01 resolved: bundled creatives in `Resources/Ads/`.*
 
 1. `AdService` conformance per D-01 (bundled creatives by default).
 2. Audio session choreography: suspend music → ad owns session → ad ends → resume music. Handle interruptions (call, Siri) *during* an ad.
@@ -96,7 +96,7 @@ The largest phase. Build chrome first, content second — the glass boundary is 
 ---
 
 ## Phase 5 — StoreKit 2 subscription
-*Needs D-07 (tiers + product IDs).*
+*D-07 behavior resolved (Duo = Family Sharing, identical features). Real product IDs still needed before shipping; `.storekit` placeholders unblock the work.*
 
 1. `.storekit` configuration file with the Solo/Duo products and subscription group.
 2. `StoreKit2EntitlementService` — `Product.products(for:)`, `product.purchase()`, `VerificationResult` unwrapped **properly** (a `.unverified` result is not an entitlement), `Transaction.currentEntitlements` on launch, and a `Transaction.updates` listener task started at app launch and never cancelled — miss that and externally-completed purchases (Ask to Buy, interrupted flows) never land.
@@ -134,8 +134,8 @@ The largest phase. Build chrome first, content second — the glass boundary is 
 |---|---|---|---|
 | Feed.fm SDK fights Swift 6 strict concurrency | **High** | Medium | Phase 1 spike; `@preconcurrency`; adapter containment |
 | No audio tap → bass reactivity impossible (D-09) | **High** | Low (cosmetic) | Phase 1 spike; documented fallback |
-| Station-only model contradicts the Home/Library brief (D-02) | **High** | **High** | Answer before Phase 2 — this is why it's blocking |
-| No ad inventory source (D-01) | **Certain** | High commercially, low technically | Bundled placeholder; protocol keeps swap cheap |
+| Station-only model contradicts the Home/Library brief (D-02) | Resolved | **High** if reversed | Station model chosen; reversal means a provider change |
+| No ad inventory source (D-01) | Resolved | High commercially, low technically | Bundled placeholders; `AdService` keeps the swap cheap |
 | Pause/resume around ad insertion misbehaves in Feed.fm | Medium | **High** | Proven in Phase 1, before UI exists |
 | MeshGradient + glass + blur costs frames on older devices | Medium | Medium | Phase 6 profiling; drift is already 0.5× |
 | iOS 26 glass APIs shift in a point release | Low | Medium | All glass funnels through one file |

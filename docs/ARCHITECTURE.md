@@ -1,6 +1,6 @@
 # Hum — Architecture
 
-**Status:** Proposed. Nothing implemented. Requires sign-off on [DECISIONS.md](DECISIONS.md) before code is written.
+**Status:** Proposed. Nothing implemented. D-01/D-02/D-03 resolved in [DECISIONS.md](DECISIONS.md); D-12 (Feed.fm credentials) still blocks Phase 1.
 **Target:** iOS 26+, Swift 6 (strict concurrency), SwiftUI, MVVM.
 
 ---
@@ -281,10 +281,10 @@ iOS 26's `glassEffect` is a *navigation-chrome* material. Apple's guidance is ex
 
 | Screen | ViewModel | Owns | Notes |
 |---|---|---|---|
-| **Home / Discover** | `HomeViewModel` | station list, featured | Content shape depends on **D-02** — Feed.fm is station-based, not on-demand |
+| **Discover** | `HomeViewModel` | station list, featured | Grid of **stations** to tune into (D-02 resolved: station model) |
 | **Now Playing** | `PlayerViewModel` | current track, progress, transport | Reads coordinator; sends intents only |
 | **Ad-Break** | `AdBreakViewModel` | countdown, ripple amplitude | Presented as `fullScreenCover` bound to `.adBreak` state. Not dismissible by gesture |
-| **Library** | `LibraryViewModel` | favorites / followed stations | Scope depends on **D-02** and **D-07** |
+| **Library** | `LibraryViewModel` | followed stations, play history | History is display-only — not replayable (D-02) |
 | **Paywall** | `PaywallViewModel` | products, purchase state | Consider StoreKit 2's `SubscriptionStoreView` — see D-06 |
 
 ---
