@@ -95,8 +95,65 @@ The plan listed *"adapters promoted from the Phase 1 spike"* under this phase. *
 
 ---
 
+## Phase 4 — Design system, glass chrome, content screens · **COMPLETE**
+
+**4a — Foundations**
+
+✅ Palette, type ramp, spacing, motion and icons, every value transcribed from `designs/Hum Prototype.html` rather than invented — `Hum/DesignSystem/{Palette,Typography,Spacing,Motion,HumIcons}.swift`
+
+✅ `GlassSurface.swift` — the single permitted `.glassEffect()` call site. A repo-wide grep confirms exactly **one** real call (line 40); every other occurrence of the word is prose — `Hum/DesignSystem/GlassSurface.swift`
+
+✅ Reduce Motion handled where SwiftUI will not: the level meter freezes flat, `humRise` degrades to a crossfade, press feedback stops scaling — `Hum/DesignSystem/Motion.swift`
+
+**4b — Chrome (glass)**
+
+✅ `RootTabView` — native `TabView`; Search is `Tab(role: .search)`, so iOS renders it as its own circular element with correct semantics, hand-built by nobody — `Hum/Features/Root/RootTabView.swift`
+
+✅ Player bar in `tabViewBottomAccessory`, iOS 26's own mini-player slot — `Hum/Features/Components/PlayerBar.swift`
+
+**4c — Content (opaque)**
+
+✅ Home, with the empty states the prototype does not draw — `Hum/Features/Home/{HomeView,HomeViewModel}.swift`
+✅ Detail — album, playlist, and artist through one screen — `Hum/Features/Detail/{DetailView,DetailViewModel}.swift`
+✅ Now Playing, **portrait and landscape** (both drawn in the prototype) — `Hum/Features/NowPlaying/NowPlayingView.swift`
+✅ Queue, including the drawn empty state, with swipe-to-remove and drag-to-reorder — `Hum/Features/Queue/QueueView.swift`
+✅ Search, Library, Settings — the four inferred screens (M-06), built to the prototype's idioms and **labelled as inference, not design-matched** — `Hum/Features/{Search,Library,Settings}/`
+✅ Shared components — `Hum/Features/Components/{ArtworkView,TrackRow,HumButtons,EmptyStateView,PlayerBar,TimeFormatting}.swift`
+✅ Preview services so the whole UI runs without MusicKit, using the prototype's own fixture data — `Hum/Services/Preview/PreviewServices.swift`, `Hum/AppEnvironment.swift`
+
+### Gate — passed, with evidence
+
+| Criterion | Result |
+|---|---|
+| Both containment greps pass | ✅ verified in-build; exactly one real `.glassEffect(` call site |
+| Clean build, zero warnings | ✅ Swift 6 strict concurrency, warnings-as-errors |
+| Tests still green | ✅ 50 tests, 3 suites |
+| Every screen exists and is reachable | ✅ 9 of 9 |
+| ≥44×44 targets | ✅ structural — every icon control routes through `IconButton`, which enforces the floor. Accessibility Inspector pass is Phase 6. |
+| Rendered and verified on simulator | ✅ Home, Now Playing, Queue, Library, player bar |
+
+### Four defects found by looking at the screen, not the code
+
+Each was caught by screenshotting the running app, and each would have shipped otherwise:
+
+1. **Player bar rendered as a solid amber slab covering the tab bar.** A full-opacity `honeyAmber` tint overwhelmed the glass, and `safeAreaInset` stacked the bar *on* the tab bar instead of above it. Fixed by moving to `tabViewBottomAccessory` — the system's own mini-player slot, which also means the two adjacent glass surfaces share the system's container rather than a hand-rolled one.
+2. **An empty glass pill floated above the tab bar with nothing playing.** The accessory slot draws its own capsule, so returning an empty body from inside is not enough — the *modifier* has to be conditional, not its content.
+3. **Now Playing's elapsed timestamp rendered doubled digits.** The progress animation was attached to the whole stack, so it cross-faded the numeric labels too. The animation now applies to the progress fill alone.
+4. **Queue rows and section header sat flush to the screen edge**, losing the 24pt gutter and clipping the source label. `List` row insets do not inherit the app's gutter and had to be set explicitly.
+
+### Two deviations from the written plan
+
+1. **The player-bar → Now Playing morph is system-owned.** The plan specified a shared `@Namespace` plus `glassEffectID`. `tabViewBottomAccessory` animates its own expansion, so that plumbing was dead code and was removed — including `GlassSurface.ID` and `chromeGlassID`. The outcome the plan wanted holds: chrome morphs, content crossfades, and no opaque content is dragged through a glass transition.
+2. **The subscription offer sheet is not attached.** `.musicSubscriptionOffer` is a MusicKit symbol, and `RootTabView` may not import MusicKit — it will be bridged from `Services/Adapters` in Phase 3, which is also where it can be verified. `PlayerViewModel.isPresentingSubscriptionOffer` is already driven by the tested gate and is waiting for it.
+
+### One bug in the containment check itself
+
+The Phase 0 script matched `import MusicKit` **inside comments**, so a doc comment explaining the rule failed the build it was explaining. Rewritten to strip `//` comments before matching, anchor imports to real statements (including `@preconcurrency import`), and match `.glassEffect(` as a call. Re-verified against four probes: a plain violation, a `@preconcurrency` violation, a multi-line `.glassEffect()` call, and a comment mentioning both — the first three fail, the comment does not, and adapters stay exempt.
+
+---
+
 ## Phase 1 — MusicKit spike · **BLOCKED**
 
 Blocked on [M-10](DECISIONS.md#m-10) (bundle ID, team, MusicKit-enabled App ID) **and** a physical device with an active Apple Music subscription ([M-09](DECISIONS.md#m-09)). Neither is available yet.
 
-**Phase 2 (domain, reducers, the three test suites) is not blocked** and builds entirely against fakes — it is the correct next step while M-10 is outstanding.
+Phases 0, 2 and 4 are complete and built entirely against preview services. **Phase 3 (authorization flow) and Phase 5 (real playback) are the remaining work, and both need the device.**

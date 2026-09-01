@@ -2,11 +2,14 @@ import Foundation
 
 /// An album, playlist, or artist — one shape for all three.
 ///
+/// `Hashable` rather than merely `Equatable` so it can drive
+/// `navigationDestination(item:)` as a navigation value.
+///
 /// The three detail screens differ in their header copy and their track-list
 /// semantics, not in their data. One type keeps `DetailView` single, which is
 /// the whole reason the brief's three detail screens are one phase item.
-struct HumCollection: Sendable, Identifiable, Equatable {
-    enum Kind: Sendable, Equatable, CaseIterable {
+struct HumCollection: Sendable, Identifiable, Hashable {
+    enum Kind: Sendable, Hashable, CaseIterable {
         case album
         case playlist
         case artist

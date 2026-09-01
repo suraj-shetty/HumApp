@@ -1,0 +1,113 @@
+import SwiftUI
+
+/// The Amber Glow type ramp, transcribed from the prototype.
+///
+/// Two families: **SF Pro Rounded Semibold** for the `hum,` wordmark alone, and
+/// **SF Pro Display** for everything else. Weights run light — the heaviest
+/// non-wordmark weight in the entire prototype is 400.
+enum HumFont {
+
+    /// The wordmark. The only rounded type in the app.
+    static func wordmark(size: CGFloat = 32) -> Font {
+        .system(size: size, weight: .semibold, design: .rounded)
+    }
+
+    // MARK: - Display & titles
+    //
+    // `relativeTo:` keeps Dynamic Type working. Weight steps *up* as size
+    // grows (see `weight(for:)`) because Ultra Light does not survive the
+    // accessibility sizes — it thins out to near-invisibility.
+
+    static func display(_ size: CGFloat = 36) -> Font {
+        .system(size: size, weight: .ultraLight)
+    }
+
+    static func titleL(_ size: CGFloat = 30) -> Font {
+        .system(size: size, weight: .light)
+    }
+
+    static func titleM(_ size: CGFloat = 27) -> Font {
+        .system(size: size, weight: .light)
+    }
+
+    static func titleS(_ size: CGFloat = 23) -> Font {
+        .system(size: size, weight: .regular)
+    }
+
+    // MARK: - Body & rows
+
+    static let bodyL = Font.system(size: 16, weight: .light)
+    static let button = Font.system(size: 16, weight: .regular)
+    static let rowTitle = Font.system(size: 15.5, weight: .regular)
+    static let rowSubtitle = Font.system(size: 13.5, weight: .regular)
+    static let caption = Font.system(size: 12.5, weight: .regular)
+    static let tabLabel = Font.system(size: 10.5, weight: .regular)
+
+    /// The uppercase wide-tracked overline — "RECENTLY PLAYED", "UP NEXT",
+    /// "PLAYING NOW". The system's most distinctive typographic move, and the
+    /// reason `.overline()` exists as a modifier rather than being respecified
+    /// at each of its ~10 call sites.
+    static func overline(_ size: CGFloat = 13) -> Font {
+        .system(size: size, weight: .regular)
+    }
+
+    /// Ultra Light and Light fail at accessibility sizes. Rather than letting
+    /// them stretch, step the weight up as the text scales.
+    static func weight(
+        for base: Font.Weight,
+        at size: DynamicTypeSize
+    ) -> Font.Weight {
+        guard size >= .accessibility1 else { return base }
+        return switch base {
+        case .ultraLight, .thin: .light
+        case .light: .regular
+        default: base
+        }
+    }
+}
+
+// MARK: - Modifiers
+
+private struct OverlineModifier: ViewModifier {
+    let size: CGFloat
+    let tracking: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .font(HumFont.overline(size))
+            .tracking(tracking)
+            .textCase(.uppercase)
+    }
+}
+
+/// Steps weight up at accessibility sizes so light display type stays legible.
+private struct ScalingWeightModifier: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let size: CGFloat
+    let base: Font.Weight
+    let tracking: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: size, weight: HumFont.weight(for: base, at: dynamicTypeSize)))
+            .tracking(tracking)
+    }
+}
+
+extension View {
+    /// Section headers and metadata lines. Tracking runs +1.4 to +1.8 in the
+    /// prototype depending on size.
+    func overline(size: CGFloat = 13, tracking: CGFloat = 1.4) -> some View {
+        modifier(OverlineModifier(size: size, tracking: tracking))
+    }
+
+    /// Display and title type that survives Dynamic Type by gaining weight
+    /// rather than stretching thin.
+    func humTitle(
+        size: CGFloat,
+        weight: Font.Weight = .light,
+        tracking: CGFloat = 0
+    ) -> some View {
+        modifier(ScalingWeightModifier(size: size, base: weight, tracking: tracking))
+    }
+}

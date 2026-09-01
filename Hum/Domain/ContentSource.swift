@@ -6,7 +6,7 @@
 /// uploaded) plays without one. Collapsing the two would either block a
 /// subscriber-less user from music they own, or send a user toward the
 /// subscription offer for content the offer is irrelevant to.
-enum ContentSource: Sendable, Equatable, CaseIterable {
+enum ContentSource: Sendable, Hashable, CaseIterable {
     case catalog
     case library
 }

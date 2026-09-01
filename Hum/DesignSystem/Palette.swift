@@ -1,0 +1,120 @@
+import SwiftUI
+
+/// "Amber Glow", transcribed from `designs/Hum Prototype.html`.
+///
+/// Every value here is extracted from the prototype rather than invented — see
+/// docs/v1-musickit/DESIGN_SYSTEM.md §1 for the mapping.
+enum Palette {
+
+    // MARK: - Base
+
+    /// `#0A0A0A` — the content base. Every opaque surface starts here.
+    static let deepOnyx = Color(hex: 0x0A0A0A)
+    /// `#E8A33D` — accent, artist names, active tint, progress fill, wordmark.
+    static let honeyAmber = Color(hex: 0xE8A33D)
+    /// `#F2B75C` — pressed/hover lift.
+    static let honeyAmberLift = Color(hex: 0xF2B75C)
+    /// `#1C1A18` — raised chips (the Home avatar).
+    static let surfaceRaised = Color(hex: 0x1C1A18)
+
+    // MARK: - Text ramp
+    //
+    // One scale, used consistently. White at four opacities.
+
+    static let textPrimary = Color.white
+    static let textSecondary = Color.white.opacity(0.66)
+    static let textTertiary = Color.white.opacity(0.52)
+    /// Durations and timestamps only. At ~3.4:1 this does not meet AA for body
+    /// text; it is acceptable on non-essential numerics and is flagged for the
+    /// Phase 6 contrast pass.
+    static let textQuaternary = Color.white.opacity(0.40)
+    static let iconInactive = Color.white.opacity(0.60)
+
+    // MARK: - Hairlines
+
+    static let hairline = Color.white.opacity(0.07)
+    static let hairlineStrong = Color.white.opacity(0.09)
+
+    // MARK: - Artwork placeholders
+    //
+    // Shown while artwork loads and when a track has none. Warm-toned so a
+    // missing image reads as intentional rather than broken.
+
+    static let artworkFill = Color(hex: 0x15141A)
+    static let artworkGradient = LinearGradient(
+        colors: [Color(hex: 0x26241F), Color(hex: 0x16151A)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    static let artworkGradientWarm = LinearGradient(
+        colors: [Color(hex: 0x332E26), Color(hex: 0x17161B)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    // MARK: - Amber fills
+    //
+    // The accent is used at four strengths, deliberately. Chrome gets it as a
+    // *tint* (the system desaturates and modulates it); content gets it as a
+    // solid or a gradient at full strength. They will not look identical, and
+    // that is correct.
+
+    /// Primary action — Connect, album Play.
+    static let amberButton = LinearGradient(
+        colors: [Color(hex: 0xE8A33D, alpha: 0.26), Color(hex: 0xE8A33D, alpha: 0.12)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    /// The 76pt transport play button — a touch stronger than `amberButton`.
+    static let amberTransport = LinearGradient(
+        colors: [Color(hex: 0xE8A33D, alpha: 0.30), Color(hex: 0xE8A33D, alpha: 0.13)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    static let amberOutlineFill = Color(hex: 0xE8A33D, alpha: 0.16)
+    static let amberOutlineStroke = Color(hex: 0xE8A33D, alpha: 0.40)
+
+    /// Secondary action — album Shuffle.
+    static let neutralButtonFill = Color.white.opacity(0.07)
+    static let neutralButtonStroke = Color.white.opacity(0.12)
+    /// The inner top highlight that gives the capsules their lit edge.
+    static let buttonInnerHighlight = Color.white.opacity(0.24)
+    static let buttonStroke = Color.white.opacity(0.20)
+
+    /// Row press feedback.
+    static let rowHighlight = Color.white.opacity(0.03)
+
+    // MARK: - Ambient washes
+    //
+    // Content-layer radial gradients, NOT glass. These are what give Connect
+    // and Now Playing their glow without stacking a material on content.
+
+    static func ambientWash(
+        center: UnitPoint,
+        radiusScale: CGFloat = 0.78,
+        opacity: Double = 0.16
+    ) -> RadialGradient {
+        RadialGradient(
+            colors: [Color(hex: 0xE8A33D, alpha: opacity), .clear],
+            center: center,
+            startRadius: 0,
+            endRadius: 420 * radiusScale
+        )
+    }
+}
+
+// MARK: - Hex convenience
+
+extension Color {
+    /// `Color(hex: 0xE8A33D)`. Kept fileprivate-ish in spirit — the palette is
+    /// the only place raw hex should appear.
+    init(hex: UInt32, alpha: Double = 1.0) {
+        self.init(
+            .sRGB,
+            red: Double((hex >> 16) & 0xFF) / 255.0,
+            green: Double((hex >> 8) & 0xFF) / 255.0,
+            blue: Double(hex & 0xFF) / 255.0,
+            opacity: alpha
+        )
+    }
+}
