@@ -63,3 +63,6 @@ fastlane/test_output
 
 # Local signing override (Config/Signing.xcconfig is committed with an empty team)
 Config/Signing.local.xcconfig
+
+# Local derived data (device builds pass -derivedDataPath build/)
+build/

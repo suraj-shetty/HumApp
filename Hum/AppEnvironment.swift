@@ -13,19 +13,19 @@ struct AppEnvironment: Sendable {
     let library: MusicLibraryService
     let playback: PlaybackService
 
-    /// The shipping wiring.
+    /// The shipping wiring: MusicKit end to end.
     ///
-    /// Authorization and subscription are live MusicKit; catalog, library, and
-    /// playback are still in-memory until their adapters land in Phase 5. The
-    /// mix is deliberate and visible rather than hidden behind a flag — it is
-    /// exactly what has been built.
+    /// `@MainActor` because two of the adapters are — `MusicAuthorization`
+    /// presents system UI and `ApplicationMusicPlayer.shared` is main-actor
+    /// bound. The app's composition root already runs there.
+    @MainActor
     static func live() -> AppEnvironment {
         AppEnvironment(
             authorization: MusicKitAuthorizationAdapter(),
             subscription: MusicKitSubscriptionAdapter(),
-            catalog: PreviewCatalogService(),
-            library: PreviewLibraryService(),
-            playback: PreviewPlaybackService()
+            catalog: MusicKitCatalogAdapter(),
+            library: MusicKitLibraryAdapter(),
+            playback: ApplicationMusicPlayerAdapter()
         )
     }
 

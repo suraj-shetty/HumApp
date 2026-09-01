@@ -277,6 +277,58 @@ That closes the phase gate and, with it, the brief's acceptance criterion — *"
 
 ---
 
-## Phase 5 — Playback · **PARTIALLY BLOCKED**
+## Phase 5 — Playback, queue, transport · **BUILT — AUDIBLE VERIFICATION BLOCKED**
 
-The gap path is built and covered by tests (Phase 3 above). **Successful catalog playback cannot be exercised at all** until an Apple Music subscription — or a sandbox account with one — is available on the test device.
+The last three preview services are gone. `AppEnvironment.live()` is now MusicKit end to end.
+
+### Adapters written
+
+✅ `MusicKitMapping` — the whole MusicKit → Domain boundary in one file. Every mapping takes an explicit `ContentSource` rather than inferring one, because the subscription gate is only correct if that answer is — `Hum/Services/Adapters/MusicKitMapping.swift`
+✅ `MusicKitCatalogAdapter` — search, recently played, recommendations, and collection tracks. `tracks(in:)` branches on `collection.source`, because the detail screens read library collections through this service too — `Hum/Services/Adapters/MusicKitCatalogAdapter.swift`
+✅ `MusicKitLibraryAdapter` — albums, playlists, `MusicLibrary.shared.add(_:)` — `Hum/Services/Adapters/MusicKitLibraryAdapter.swift`
+✅ `ApplicationMusicPlayerAdapter` — the sole playback surface. `ObservableObject` → `AsyncStream<PlaybackSnapshot>` bridging, progress polled at 4 Hz, queue mirrored in place — `Hum/Services/Adapters/ApplicationMusicPlayerAdapter.swift`
+✅ Live wiring — `Hum/AppEnvironment.swift`
+
+### Five things the player adapter had to decide
+
+1. **`QueueReducer` decides, the adapter mirrors — including at the edges.** End-of-queue is resolved by reducing `.next` and checking for a `nil` cursor, *not* by letting `skipToNextEntry()` throw. MusicKit's error there would surface to the listener as "playback failed" when nothing failed.
+2. **Reorder and removal mutate `player.queue.entries` in place**, reusing the live `Entry` object for the track currently sounding. Rebuilding the queue would restart the audio — the exact desync the phase gate tests for.
+3. **Shuffle and repeat are the player's own modes.** `QueueReducer` deliberately moves only the flags, so the adapter sets `state.shuffleMode` / `state.repeatMode` and never reorders entries itself. Doing both would double-shuffle.
+4. **`playbackTime` has no change notification**, as ARCHITECTURE §3.2 predicted, so progress is polled at 4 Hz — and only while `playbackStatus == .playing`, so a paused app spins no timer.
+5. **`syncCursor()` follows the player rather than driving it**, which is what keeps the lock screen and Dynamic Island correct: they command the same shared player, and Hum's mirror follows the entry it lands on.
+
+### Two frictions worth recording
+
+**MusicKit's async transport methods are `nonisolated async`.** Calling `player.play()` on a stored reference from the main actor is *sending a non-Sendable value* under Swift 6 complete checking, and fails to compile. Reaching for `ApplicationMusicPlayer.shared` inside the nonisolated call keeps the reference in one region. That is the whole reason for the four-line `Transport` enum in the adapter — same player, no boundary crossed.
+
+**`player.queue.entries` is `Queue.Entries`, not an Array.** Assign through its initializer; assigning a plain array does not compile.
+
+### One heuristic, disclosed
+
+`MusicLibraryService.contains(_:)` for a **catalog** track matches on title and artist. MusicKit exposes no catalog-to-library lookup — the library copy is a different item with a different identifier. A library-sourced track returns `true` by definition. Documented at the call site; a wrong answer is at least one the listener can see for themselves.
+
+### Tests — 70 in 6 suites, all passing
+
+New suite `PlaybackSessionTests` (8 tests) covers the session wiring the adapter cannot be tested through: transport intents map one-to-one, a seek is clamped at both ends, queue intents reduce-then-mirror exactly once, a reduction that changes nothing never reaches the player, shuffle/repeat leave entries alone, and a cleared queue refills around the current track.
+
+The adapter itself is not unit-testable — it needs a device, an account, and audio hardware. That is precisely why the decisions were kept out of it.
+
+### Gate — **not passed; blocked on M-09**
+
+| Criterion | Result |
+|---|---|
+| Adapters built, live wiring in place | ✅ |
+| Simulator build, zero warnings | ✅ |
+| Device build, installs and launches | ✅ iPhone 16 Pro |
+| 70 tests in 6 suites | ✅ |
+| Containment check | ✅ |
+| Play from Home / detail / queue, audibly | ❌ **blocked** — no Apple Music subscription on this account ([M-09](DECISIONS.md#m-09)) |
+| Skip, seek, reorder, remove mid-playback | ❌ blocked by the same |
+| Lock screen and Dynamic Island stay correct | ❌ blocked by the same |
+| Non-subscriber play attempts land on the offer sheet | ✅ confirmed on device in Phase 3 |
+
+**Library content is the one audible path that needs no subscription** — and the Phase 1 spike recorded `hasCloudLibraryEnabled = false` on this device, so how much library content exists there is still unknown. That is the next thing to establish, not assume.
+
+### Carried into Phase 6
+
+One build warning remains, pre-existing and untouched by this phase: *"All interface orientations must be supported unless the app requires full screen."* It belongs to Phase 6's zero-warning item.
