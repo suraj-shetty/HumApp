@@ -1,0 +1,84 @@
+# Xcode project definition for Hum. Generate with: xcodegen generate
+#
+# The generated HumApp.xcodeproj IS committed, so nothing here is required to
+# open, build, or run the app. This file exists so build settings stay
+# reviewable in a diff instead of buried in project.pbxproj. If you edit
+# settings in Xcode's UI, mirror them here or the next `xcodegen generate`
+# will revert them.
+
+name: HumApp
+options:
+  bundleIdPrefix: com.hum
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"                    # Swift 6 language mode
+    SWIFT_STRICT_CONCURRENCY: complete      # strict from day one, not retrofitted
+    SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES     # acceptance criterion is "no warnings"
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+    # OFF deliberately. The "Architectural containment checks" phase greps the
+    # whole source tree; the script sandbox denies reads outside declared
+    # inputs, and the set of files to check is not knowable in advance. Same
+    # tradeoff any SwiftLint/codegen phase makes. Scoped to this project only —
+    # no global Xcode setting is touched.
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+  Hum:
+    type: application
+    platform: iOS
+    sources:
+      - path: Hum
+        excludes: ["**/.gitkeep"]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hum.app   # placeholder — see DECISIONS M-10
+        PRODUCT_NAME: Hum
+        INFOPLIST_FILE: Hum/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Hum/Hum.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_ALLOWED: NO                 # flip on once M-10 supplies a team
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ENABLE_PREVIEWS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    preBuildScripts:
+      - script: '"$SRCROOT/Scripts/check-containment.sh"'
+        name: "Architectural containment checks"
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/containment-check-never-exists
+
+  HumTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: HumTests
+        excludes: ["**/.gitkeep"]
+    dependencies:
+      - target: Hum
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hum.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+
+schemes:
+  Hum:
+    build:
+      targets:
+        Hum: all
+        HumTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - HumTests
