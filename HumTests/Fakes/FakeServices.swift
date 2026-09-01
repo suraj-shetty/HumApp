@@ -23,6 +23,10 @@ actor FakeAuthorizationService: MusicAuthorizationService {
 
     var current: AuthState { status }
 
+    /// Stands in for the listener changing the switch in Settings while Hum is
+    /// backgrounded.
+    func override(_ next: AuthState) { status = next }
+
     func request() async -> AuthState {
         requestCount += 1
         // Mirrors the real framework: iOS prompts once per install, and asking

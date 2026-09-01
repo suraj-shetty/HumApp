@@ -19,8 +19,12 @@ final class PlayerViewModel {
 
     private(set) var snapshot: PlaybackSnapshot = .idle
     private(set) var subscription: SubscriptionState = .unknown
-    /// Set when a play intent hits a subscription gap; drives Apple's offer sheet.
+    /// Set when a play intent hits a subscription gap Apple *can* close;
+    /// drives Apple's own offer sheet.
     var isPresentingSubscriptionOffer = false
+    /// Set when the gap is one an offer cannot close — the account cannot
+    /// subscribe, or the check itself failed. Drives `SubscriptionGapView`.
+    var isPresentingSubscriptionGap = false
     /// Transient message shown as a toast — the only chrome-glass content view.
     private(set) var toast: String?
 
@@ -59,7 +63,13 @@ final class PlayerViewModel {
     private let subscriptionService: SubscriptionService
     private let libraryService: MusicLibraryService
     private var observationTask: Task<Void, Never>?
+    private var subscriptionTask: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
+
+    /// The play intent the subscription gate turned back, kept so it can be
+    /// resumed if the listener subscribes — through our offer sheet or in the
+    /// Music app — without making them find the track again.
+    private var deferredIntent: (tracks: [HumTrack], index: Int, source: String)?
 
     init(environment: AppEnvironment) {
         self.playback = environment.playback
@@ -91,17 +101,53 @@ final class PlayerViewModel {
                 self.snapshot = snapshot
             }
         }
+
+        // A subscription can begin *while Hum is open* — through the offer
+        // sheet, or in the Music app. Without this the listener would have to
+        // relaunch before catalog playback started working, which reads as the
+        // app ignoring a purchase they just made.
+        subscriptionTask = Task { [weak self, subscriptionService] in
+            for await state in subscriptionService.updates {
+                guard let self, !Task.isCancelled else { return }
+                self.apply(state)
+            }
+        }
     }
 
     func stop() {
         observationTask?.cancel()
         observationTask = nil
+        subscriptionTask?.cancel()
+        subscriptionTask = nil
         toastTask?.cancel()
         toastTask = nil
     }
 
     private func refreshSubscription() async {
-        subscription = await subscriptionService.current
+        apply(await subscriptionService.current)
+    }
+
+    /// Adopts a new subscription state and resumes a turned-back play intent
+    /// if the gap has closed.
+    private func apply(_ state: SubscriptionState) {
+        subscription = state
+        guard case .active = state, let intent = deferredIntent else { return }
+        deferredIntent = nil
+        isPresentingSubscriptionOffer = false
+        isPresentingSubscriptionGap = false
+        play(intent.tracks, startingAt: intent.index, source: intent.source)
+    }
+
+    /// Re-runs the check after a failed one. Backs `SubscriptionGapView`'s
+    /// "Try Again".
+    func retrySubscriptionCheck() {
+        Task { await refreshSubscription() }
+    }
+
+    /// Apple's offer sheet failed to load. Reported plainly rather than left
+    /// as a control that visibly does nothing.
+    func subscriptionOfferFailed(_ reason: String) {
+        showToast("Couldn't open Apple Music sign-up.")
     }
 
     // MARK: - Intents
@@ -121,16 +167,18 @@ final class PlayerViewModel {
             Task { await perform { try await self.playback.play(tracks, startingAt: index) } }
 
         case .presentSubscriptionOffer:
+            deferredIntent = (tracks, index, source)
             isPresentingSubscriptionOffer = true
 
         case .explainNoSubscription:
-            showToast("An Apple Music subscription is needed to play this.")
+            deferredIntent = (tracks, index, source)
+            isPresentingSubscriptionGap = true
 
         case .awaitSubscriptionCheck:
             // Resolve the status, then retry once. Never guess — "not checked
             // yet" must not render as "you have no subscription".
             Task {
-                await refreshSubscription()
+                subscription = await subscriptionService.current
                 if case .unknown = subscription {
                     showToast("Couldn't check your Apple Music subscription.")
                 } else {

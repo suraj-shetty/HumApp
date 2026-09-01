@@ -13,8 +13,24 @@ struct AppEnvironment: Sendable {
     let library: MusicLibraryService
     let playback: PlaybackService
 
-    /// In-memory services. The only wiring available until the MusicKit
-    /// adapters land in Phase 1.
+    /// The shipping wiring.
+    ///
+    /// Authorization and subscription are live MusicKit; catalog, library, and
+    /// playback are still in-memory until their adapters land in Phase 5. The
+    /// mix is deliberate and visible rather than hidden behind a flag — it is
+    /// exactly what has been built.
+    static func live() -> AppEnvironment {
+        AppEnvironment(
+            authorization: MusicKitAuthorizationAdapter(),
+            subscription: MusicKitSubscriptionAdapter(),
+            catalog: PreviewCatalogService(),
+            library: PreviewLibraryService(),
+            playback: PreviewPlaybackService()
+        )
+    }
+
+    /// In-memory services. Backs SwiftUI previews and the Simulator, where
+    /// MusicKit does not function (DECISIONS M-09).
     static func preview(
         auth: AuthState = .authorized,
         subscription: SubscriptionState = .active

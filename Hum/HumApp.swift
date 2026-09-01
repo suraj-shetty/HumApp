@@ -2,29 +2,27 @@ import SwiftUI
 
 /// Composition root.
 ///
-/// The authorization gate is **Phase 3** — until then the app roots directly at
-/// `RootTabView`. Phase 3 wraps this in `ConnectView` driven by `AuthReducer`,
-/// which is already written and tested.
+/// The app roots at `RootGateView`, which shows `ConnectView` until MusicKit
+/// authorization is granted and `RootTabView` after — decided by `AuthReducer`.
 ///
-/// Services come from `AppEnvironment.preview()` because the MusicKit adapters
-/// do not exist yet: the Phase 1 spike that would validate them is blocked on a
-/// bundle ID and a subscribed device (DECISIONS M-09, M-10). Swapping in the
-/// live adapters is a one-line change here and touches no other file — which is
-/// the entire point of the protocol boundary.
+/// Authorization and subscription come from the live MusicKit adapters, proven
+/// on device in Phase 1. Catalog, library, and playback are still the in-memory
+/// preview services: their adapters are Phase 5. Swapping each one in is a line
+/// here and touches no other file — the entire point of the protocol boundary.
 @main
 struct HumApp: App {
     private let environment: AppEnvironment
     @State private var player: PlayerViewModel
 
     init() {
-        let environment = AppEnvironment.preview()
+        let environment = AppEnvironment.live()
         self.environment = environment
         _player = State(initialValue: PlayerViewModel(environment: environment))
     }
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            RootGateView()
                 .environment(\.appEnvironment, environment)
                 .environment(player)
                 .preferredColorScheme(.dark)

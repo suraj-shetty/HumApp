@@ -216,6 +216,54 @@ The spike itself (`MusicKitSpikeProbe.swift`) and its launch hook in `HumApp.swi
 
 ---
 
+## Phase 3 — Authorization & subscription flow · **COMPLETE (one device check outstanding)**
+
+### The gate
+
+`RootGateView` shows `ConnectView` until MusicKit says yes and `RootTabView` after. It gates on **authorization only** — a missing subscription never lands here. Blocking the whole app on a subscription would be both hostile and precisely the "broken player" the brief names.
+
+✅ `AuthViewModel` — holds no logic of its own; every transition goes through the already-tested `AuthReducer` — `Hum/Features/Connect/AuthViewModel.swift`
+✅ `RootGateView` — plus a `scenePhase` refresh, so access revoked in Settings while Hum is backgrounded is picked up **without** the relaunch the plan's gate only asked for — `Hum/Features/Root/RootGateView.swift`
+✅ `ConnectView` — one layout, four states, transcribed from the prototype: amber wash, 52pt mark, 36pt Ultra Light title, three hairline permission rows, pinned capsule and footnote — `Hum/Features/Connect/ConnectView.swift`
+✅ `HumMark` — the mark drawn as a `Canvas` rather than shipped as an asset, so it inherits the accent colour
+
+`.restricted` renders **no button**, which is the point: the reducer returns `nil` there, and a Settings link under Screen Time or an MDM profile is a dead end.
+
+### The subscription gap
+
+✅ `SubscriptionOfferAdapter` — bridges `.musicSubscriptionOffer` so `RootTabView` stays MusicKit-free and the whole UI still runs in the Simulator — `Hum/Services/Adapters/SubscriptionOfferAdapter.swift`
+✅ `SubscriptionGapView` — for the two states an offer *cannot* close: the account can't subscribe, or the check failed. Explains rather than dangling a sheet that would fail — `Hum/Features/Connect/SubscriptionGapView.swift`
+✅ `PlayerViewModel` now observes `subscriptionUpdates` and **defers the turned-back play intent**, so subscribing mid-session — through the sheet or in the Music app — resumes the track the listener actually asked for, with no relaunch
+✅ `AppEnvironment.live()` — authorization and subscription are live MusicKit; catalog, library and playback stay in-memory until Phase 5. The mix is deliberate and visible rather than hidden behind a flag
+
+No affiliate or campaign token is set on the offer. Hum takes no commission on an Apple Music signup — the cleanest available answer to the DPLA rule against indirectly monetizing access.
+
+### Verified on the iOS 26.2 Simulator
+
+| Path | Result |
+|---|---|
+| Fresh install → invitation | ✅ matches the prototype |
+| Tap Connect → system prompt | ✅ with the real usage description |
+| Decline → `deniedRecoverable` | ✅ "Access Not Granted" + Open Settings |
+| Grant → gate opens to tabs | ✅ |
+| Catalog play with no subscription | ✅ **"Couldn't Check"** — the Simulator's `MusicSubscription` genuinely fails, so `.unavailable` is the honest state, and Try Again appears only because of it |
+| Dismiss the gap sheet | ✅ returns to a working app |
+
+### Fixed during the phase
+
+The capsule **vanished** during `.connecting` — `primaryAction(for: .connecting)` correctly returns `nil`, but that is "no action", not "no button", and the screen lurched under the system prompt. The footer now renders it disabled and reading "Connecting…".
+
+### Tests — 62 in 5 suites, all passing
+
+✅ `AuthViewModelTests` — 7 tests: every status reaches a coherent screen, a settled status is never re-prompted, `.restricted` offers no button, a foreground refresh picks up revocation — `HumTests/AuthViewModelTests.swift`
+✅ `SubscriptionGateTests` — 5 tests asserting the brief's criterion directly: a gap reaches Apple's offer and **never** the player, an unofferable gap explains, a failed check still plays the library, and subscribing mid-session resumes the deferred track — `HumTests/SubscriptionGateTests.swift`
+
+### Outstanding
+
+Apple's **real** offer sheet has not yet been seen. It cannot be: the Simulator's subscription check fails outright, so it resolves to `.unavailable` rather than `.gap(canBecomeSubscriber: true)`. The device account *is* `.gap(canBecomeSubscriber: true)` (Phase 1), which makes it the only place this can be confirmed. Build is installed and launched there; the check is a catalog track tap.
+
+---
+
 ## Phase 5 — Playback · **PARTIALLY BLOCKED**
 
-The gap path is fully testable on this device and should be built and verified next (it is also the brief's named acceptance criterion). **Successful catalog playback cannot be exercised at all** until an Apple Music subscription — or a sandbox account with one — is available on the test device.
+The gap path is built and covered by tests (Phase 3 above). **Successful catalog playback cannot be exercised at all** until an Apple Music subscription — or a sandbox account with one — is available on the test device.

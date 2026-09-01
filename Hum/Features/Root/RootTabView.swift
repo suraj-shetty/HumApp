@@ -43,7 +43,9 @@ struct RootTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $selection) {
+        @Bindable var bindable = player
+
+        return TabView(selection: $selection) {
             Tab("Home", systemImage: HumIcon.home, value: HumTab.home) {
                 HomeView()
             }
@@ -72,6 +74,20 @@ struct RootTabView: View {
         .fullScreenCover(isPresented: $isShowingNowPlaying) {
             NowPlayingView()
         }
+        // Apple's own trial-membership entry point, bridged from
+        // Services/Adapters because this file may not import MusicKit. It is
+        // presented only when the tested subscription gate turns back a play
+        // intent *and* Apple can actually offer this account a membership;
+        // dismissing it returns to a working app.
+        .subscriptionOffer(
+            isPresented: $bindable.isPresentingSubscriptionOffer,
+            onFailure: { reason in player.subscriptionOfferFailed(reason) }
+        )
+        // The gap an offer cannot close: account can't subscribe, or the check
+        // failed. Explains instead of dangling a sheet that would fail.
+        .sheet(isPresented: $bindable.isPresentingSubscriptionGap) {
+            SubscriptionGapView(state: player.subscription, onRetry: retryAction)
+        }
         .overlay(alignment: .bottom) {
             if let toast = player.toast {
                 ToastView(message: toast)
@@ -80,12 +96,12 @@ struct RootTabView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: player.toast)
-        // NOTE — Phase 3 attaches `.musicSubscriptionOffer(isPresented:)` here,
-        // Apple's own trial-membership entry point. It is deliberately absent
-        // now for two reasons: it is a MusicKit symbol, and this file is not
-        // permitted to import MusicKit (it will be bridged from
-        // Services/Adapters); and presenting it cannot be verified without a
-        // device. `PlayerViewModel.isPresentingSubscriptionOffer` is already
-        // driven by the tested subscription gate and is waiting for it.
+    }
+
+    /// A retry is only honest when the check *failed*. A confirmed "no
+    /// subscription" is an answer, and offering to re-ask it would be theatre.
+    private var retryAction: (() -> Void)? {
+        guard player.subscription.isUnavailable else { return nil }
+        return { player.retrySubscriptionCheck() }
     }
 }

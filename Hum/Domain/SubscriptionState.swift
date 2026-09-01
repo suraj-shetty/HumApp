@@ -18,4 +18,11 @@ enum SubscriptionState: Sendable, Equatable {
     case gap(canBecomeSubscriber: Bool)
     /// The check itself failed. Degrade to library-only; never block the app.
     case unavailable(reason: String)
+
+    /// A failed check, as opposed to a confirmed absence. Only this case is
+    /// worth offering a retry for — the others are answers, not errors.
+    var isUnavailable: Bool {
+        if case .unavailable = self { return true }
+        return false
+    }
 }
