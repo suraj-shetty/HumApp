@@ -118,6 +118,7 @@ Progress format from Phase 0 onward: `✅ [what was done] — [file(s) affected]
 
 ## Phase 6 — Accessibility, compliance, acceptance sweep
 
+0. **Design audit of all nine screens against real MusicKit data.** Added after Phase 5: the screens were built against prototype fixtures and have not been re-walked since real titles, real artwork, and real library metadata started flowing through them. This comes before the accessibility passes, since a layout fix and a Dynamic Type fix are the same edit.
 1. **Reduce Transparency on** — walk every screen; verify SwiftUI's solid fallback stays legible with amber-on-onyx. Fix contrast; do not hand-roll a parallel glass path.
 2. **Reduce Motion on** — level meter flat, `humRise` → crossfade.
 3. Dynamic Type through the accessibility sizes. The 200-weight display and the 10.5pt tab labels are the known failure cases.

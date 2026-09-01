@@ -329,6 +329,20 @@ The adapter itself is not unit-testable — it needs a device, an account, and a
 
 **Library content is the one audible path that needs no subscription** — and the Phase 1 spike recorded `hasCloudLibraryEnabled = false` on this device, so how much library content exists there is still unknown. That is the next thing to establish, not assume.
 
+### Confirmed on device — library playback
+
+The iPhone 16 Pro **does** have library albums despite `hasCloudLibraryEnabled = false`, and a track from one **plays audibly**. So the adapters are real: `MusicKitLibraryAdapter` returns the listener's own albums, `tracks(in:)` resolves them, and `ApplicationMusicPlayerAdapter` gets sound out of `ApplicationMusicPlayer.shared`.
+
+Catalog playback remains unverifiable on this account (M-09).
+
+### One defect found by listening, then fixed
+
+**The play/pause glyph flickered during playback.** Two emitters were deriving `PlaybackState` independently — the `objectWillChange` republish and the 4 Hz progress ticker — so they could disagree on the same frame, and a `failure` set once outranked the live status forever because only one of the two consulted it.
+
+Fixed by collapsing both onto a single `yield()` with one `currentState` derivation, clearing a stale failure the moment the player reports it is playing, and dropping snapshots identical to the last (`objectWillChange` fires far more often than anything visible changes).
+
 ### Carried into Phase 6
+
+**A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.
 
 One build warning remains, pre-existing and untouched by this phase: *"All interface orientations must be supported unless the app requires full screen."* It belongs to Phase 6's zero-warning item.

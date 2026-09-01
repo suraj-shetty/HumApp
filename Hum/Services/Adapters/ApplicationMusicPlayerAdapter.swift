@@ -38,6 +38,9 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     private var isPreparing = false
     private var failure: HumError?
 
+    /// The last snapshot emitted, so identical ones can be dropped.
+    private var last: PlaybackSnapshot?
+
     private var cancellables: Set<AnyCancellable> = []
     private var ticker: Task<Void, Never>?
 
@@ -253,32 +256,48 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     private func publish() {
         syncCursor()
         updateTicker()
+        yield()
+    }
 
-        let track = queue.currentTrack
-        let state: PlaybackState
-        if let failure {
-            state = .failed(failure)
-        } else if isPreparing {
-            state = .loading
-        } else {
-            state = switch (track, player.state.playbackStatus) {
-            case (nil, _): .idle
-            case (let track?, .playing), (let track?, .seekingForward),
-                 (let track?, .seekingBackward): .playing(track)
-            case (let track?, _): .paused(track)
-            }
-        }
-
-        continuation.yield(
-            PlaybackSnapshot(
-                state: state,
-                elapsed: player.playbackTime,
-                // The player reports no duration of its own; the track carries
-                // the one MusicKit already gave us.
-                duration: track?.duration ?? 0,
-                queue: queue
-            )
+    /// The single emit path. Both the change notification and the progress
+    /// ticker come through here, so the two can never disagree about what the
+    /// player is doing on the same frame — which is what made the play/pause
+    /// glyph flicker: one emitter said playing while the other said paused.
+    private func yield() {
+        let snapshot = PlaybackSnapshot(
+            state: currentState,
+            elapsed: player.playbackTime,
+            // The player reports no duration of its own; the track carries
+            // the one MusicKit already gave us.
+            duration: queue.currentTrack?.duration ?? 0,
+            queue: queue
         )
+        // `objectWillChange` fires far more often than anything visible
+        // changes. Dropping identical snapshots keeps that churn off the UI.
+        guard snapshot != last else { return }
+        last = snapshot
+        continuation.yield(snapshot)
+    }
+
+    /// One derivation of playback state, in precedence order.
+    private var currentState: PlaybackState {
+        guard let track = queue.currentTrack else {
+            return failure.map(PlaybackState.failed) ?? .idle
+        }
+        switch player.state.playbackStatus {
+        case .playing, .seekingForward, .seekingBackward:
+            // Sound is coming out, so nothing older than that is still true.
+            // Without this, a stale failure outranked the live status forever.
+            failure = nil
+            return .playing(track)
+        default:
+            break
+        }
+        if let failure { return .failed(failure) }
+        // MusicKit has no "loading" status, but the play button would
+        // otherwise sit visibly dead through a network round trip.
+        if isPreparing { return .loading }
+        return .paused(track)
     }
 
     /// Follows the player when it advances on its own — at the end of a track,
@@ -311,17 +330,11 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         }
     }
 
-    /// The tick path. Deliberately *not* `publish()` — that would recurse
-    /// through `updateTicker()` four times a second for no reason.
+    /// The tick path. Deliberately *not* `publish()` — that would re-run the
+    /// cursor sync and the ticker bookkeeping four times a second for no
+    /// reason. The state derivation is shared either way.
     private func emitProgress() {
-        guard let track = queue.currentTrack else { return }
-        continuation.yield(
-            PlaybackSnapshot(
-                state: player.state.playbackStatus == .playing ? .playing(track) : .paused(track),
-                elapsed: player.playbackTime,
-                duration: track.duration,
-                queue: queue
-            )
-        )
+        guard queue.currentTrack != nil else { return }
+        yield()
     }
 }
