@@ -216,7 +216,7 @@ The spike itself (`MusicKitSpikeProbe.swift`) and its launch hook in `HumApp.swi
 
 ---
 
-## Phase 3 — Authorization & subscription flow · **COMPLETE (one device check outstanding)**
+## Phase 3 — Authorization & subscription flow · **COMPLETE**
 
 ### The gate
 
@@ -258,9 +258,22 @@ The capsule **vanished** during `.connecting` — `primaryAction(for: .connectin
 ✅ `AuthViewModelTests` — 7 tests: every status reaches a coherent screen, a settled status is never re-prompted, `.restricted` offers no button, a foreground refresh picks up revocation — `HumTests/AuthViewModelTests.swift`
 ✅ `SubscriptionGateTests` — 5 tests asserting the brief's criterion directly: a gap reaches Apple's offer and **never** the player, an unofferable gap explains, a failed check still plays the library, and subscribing mid-session resumes the deferred track — `HumTests/SubscriptionGateTests.swift`
 
-### Outstanding
+### Confirmed on device
 
-Apple's **real** offer sheet has not yet been seen. It cannot be: the Simulator's subscription check fails outright, so it resolves to `.unavailable` rather than `.gap(canBecomeSubscriber: true)`. The device account *is* `.gap(canBecomeSubscriber: true)` (Phase 1), which makes it the only place this can be confirmed. Build is installed and launched there; the check is a catalog track tap.
+Apple's **real** offer sheet cannot be reached in the Simulator: the subscription check fails outright there, so it resolves to `.unavailable` rather than `.gap(canBecomeSubscriber: true)`. The device account *is* `.gap(canBecomeSubscriber: true)` (Phase 1), making it the only place this could be confirmed.
+
+Confirmed on the physical iPhone (iOS 26.5): tapping a Made For You track presented **Apple's own subscription sheet**, and dismissing it returned to a working Home screen.
+
+That closes the phase gate and, with it, the brief's acceptance criterion — *"subscription-gap handling shows Apple's trial-membership entry point rather than blocking the app"*. The full chain is now proven end to end on real hardware: live `MusicSubscription` flags → `SubscriptionReducer` → `.presentSubscriptionOffer` → Apple's sheet → dismissal to a working app.
+
+### Gate
+
+| Criterion | Result |
+|---|---|
+| All four authorization paths reach a coherent screen | ✅ `.notDetermined` / `.denied` / `.authorized` observed live; `.restricted` unit-tested only (needs a Screen Time restriction to reproduce) |
+| A non-subscribing account sees Apple's offer, not a broken player | ✅ **confirmed on device** |
+| Declining the offer returns to a working app | ✅ **confirmed on device** |
+| Revoking access in Settings lands on the right state | ✅ handled without a relaunch via `scenePhase`; the revoke-and-return walk is a Phase 6 device check |
 
 ---
 
