@@ -152,16 +152,23 @@ Two consequences you should agree to now:
 
 ---
 
-## M-10 — MusicKit capability & bundle identifier ⏳ DEFERRED — you supply later
+## M-10 — MusicKit capability & bundle identifier ⚠️ MOSTLY RESOLVED — team ID still needed
+
+> **Supplied:** bundle identifier **`org.surajshetty.humapp`**, with the MusicKit app service enabled on the App ID. Wired into the project; the app builds, installs, and launches under it.
+>
+> **Still outstanding: the 10-character Team ID** that owns that App ID. Without it a device build stops at *"Signing for 'Hum' requires a development team"* — verified, and it is now the only error on that path.
+>
+> Set it in **`Config/Signing.xcconfig`** (one line) or pick the team in Xcode's Signing & Capabilities tab. It lives in an xcconfig rather than in `project.yml` so that `xcodegen generate` cannot overwrite it.
+>
+> Simulator work needs none of this and is unaffected.
+
 
 Before the app can authorize on device you need, in the Apple Developer portal:
 - The **MusicKit** app service enabled for the App ID
 - A bundle identifier — I will scaffold `com.hum.app` as a placeholder
 - `NSAppleMusicUsageDescription` in Info.plist (I'll write the string; you may want to reword it — it is user-facing)
 
-> **Status: deferred at your request.** Phase 0 proceeds on the placeholder `com.hum.app`, and Phases 2 and 4 build fine against fakes in the Simulator.
->
-> **What this still gates:** every device run — so **Phase 1 (the spike), Phase 3 (authorization), Phase 5 (playback) and Phase 6 (device verification) cannot be validated** until the real bundle ID, team, and an App ID with the MusicKit service enabled land. That is most of the acceptance criteria. Not urgent today; it becomes the critical path the moment Phase 0 closes.
+> **What this still gates:** every device run — so **Phase 1 (the spike), Phase 3 (authorization), Phase 5 (playback) and Phase 6 (device verification)** remain unvalidated until the Team ID lands, alongside a device with an active Apple Music subscription ([M-09](#m-09)). That pairing is now the critical path: Phases 0, 2 and 4 are done, and everything left needs hardware.
 
 ---
 
@@ -185,8 +192,8 @@ The prototype's Home shelf says "Recently played." MusicKit provides `MusicRecen
 |---|---|
 | ✅ **Resolved** | **M-01** (MVVM + reducer core, no TCA package) · **M-02** (no preview engine; offer sheet instead) · M-03 (Feed.fm docs superseded) · **M-04** (Add to Library, not love) |
 | ⚠️ **Defaulted, proceeding** | M-05, M-06, M-07, M-08, M-09, M-11, M-12 |
-| ⏳ **Deferred to you** | **M-10** — bundle ID, team, MusicKit-enabled App ID |
+| ⚠️ **Partially resolved** | **M-10** — bundle ID `org.surajshetty.humapp` + MusicKit service supplied; **Team ID still needed** for device builds |
 | 🚫 **Still open** | none |
 
 **Nothing blocks Phase 0, Phase 2, or Phase 4** — those build against fakes.
-**M-10 gates every device-validated phase: 1, 3, 5, 6.** Also still outstanding from [M-09](#m-09): a physical device with an **active Apple Music subscription**. Without both, the build cannot be validated past the Connect screen.
+**M-10 still gates every device-validated phase: 1, 3, 5, 6** — now only on the Team ID. Also still outstanding from [M-09](#m-09): a physical device with an **active Apple Music subscription**. Without both, the build cannot be validated past the Connect screen.

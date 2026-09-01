@@ -44,9 +44,11 @@ Format: `✅ [what was done] — [file(s) affected]`
 
 2. **`project.yml` + xcodegen.** `xcodegen` was already installed on this machine and generated the project; **the generated `HumApp.xcodeproj` is committed**, so nobody needs xcodegen to open, build, or run Hum. `project.yml` is kept because it makes build settings reviewable in a diff instead of buried in `project.pbxproj`. It is *not* an app dependency and nothing links against it. If you'd rather not carry a generator file, say so and I'll delete it and hand-maintain the pbxproj.
 
-### Not done in Phase 0, deliberately
+### Signing — updated after Phase 4
 
-Code signing is off (`CODE_SIGNING_ALLOWED = NO`) and the bundle ID is the placeholder `com.hum.app`. Both flip once [M-10](DECISIONS.md#m-10) supplies the real bundle ID, team, and a MusicKit-enabled App ID.
+The placeholder `com.hum.app` has been replaced with the real **`org.surajshetty.humapp`**, and code signing is enabled (`CODE_SIGN_STYLE = Automatic`). The app builds, installs, and launches under the new identifier on the Simulator; a device build now fails only with *"Signing for 'Hum' requires a development team"*, which is the expected and only remaining blocker.
+
+`DEVELOPMENT_TEAM` lives in **`Config/Signing.xcconfig`**, deliberately not in `project.yml`: a team chosen in Xcode's Signing tab would otherwise be wiped by the next `xcodegen generate`. Verified that the xcconfig value reaches the build settings.
 
 ---
 
@@ -154,6 +156,6 @@ The Phase 0 script matched `import MusicKit` **inside comments**, so a doc comme
 
 ## Phase 1 — MusicKit spike · **BLOCKED**
 
-Blocked on [M-10](DECISIONS.md#m-10) (bundle ID, team, MusicKit-enabled App ID) **and** a physical device with an active Apple Music subscription ([M-09](DECISIONS.md#m-09)). Neither is available yet.
+Blocked on the **Team ID** ([M-10](DECISIONS.md#m-10) — bundle ID and MusicKit service are now supplied) **and** a physical device with an active Apple Music subscription ([M-09](DECISIONS.md#m-09)).
 
 Phases 0, 2 and 4 are complete and built entirely against preview services. **Phase 3 (authorization flow) and Phase 5 (real playback) are the remaining work, and both need the device.**

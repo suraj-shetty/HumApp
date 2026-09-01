@@ -1,0 +1,15 @@
+// Signing configuration.
+//
+// Kept in an xcconfig rather than in project.yml so that a team selected here
+// (or in Xcode's Signing & Capabilities tab) survives the next
+// `xcodegen generate` instead of being overwritten.
+//
+// DEVELOPMENT_TEAM is the 10-character Team ID that owns the
+// org.surajshetty.humapp App ID — the one with the MusicKit service enabled.
+// Find it at developer.apple.com → Membership, or in Xcode's Signing tab.
+//
+// Leave it empty for Simulator work: Simulator builds do not need a team, and
+// MusicKit does not function there in any case (DECISIONS M-09). It is
+// required only for device builds, which is where Phases 1, 3, 5 and 6 live.
+
+DEVELOPMENT_TEAM =

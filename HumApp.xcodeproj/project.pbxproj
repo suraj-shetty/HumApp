@@ -113,6 +113,7 @@
 		D1F4B3E089681FB7C9B7E08E /* QueueState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueState.swift; sourceTree = "<group>"; };
 		DABAA15E95222695B69E39E4 /* QueueReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueReducer.swift; sourceTree = "<group>"; };
 		DFC0CF7BA428150D3F67CFCF /* FakeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeServices.swift; sourceTree = "<group>"; };
+		E69B3A91E5510DF6ED207AED /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		E84CB373A76311155C739767 /* HumButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumButtons.swift; sourceTree = "<group>"; };
 		EB0281C517D1566178F0F91F /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		ED09629122A79CB1AF21B048 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
@@ -130,6 +131,14 @@
 				5297D21CBD08E76BE20E7825 /* SubscriptionReducerTests.swift */,
 			);
 			path = HumTests;
+			sourceTree = "<group>";
+		};
+		2466CBFA7F6058B855E105FB /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				E69B3A91E5510DF6ED207AED /* Signing.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		2992AC139DADF46310D52899 /* Detail */ = {
@@ -324,6 +333,7 @@
 		EC37C591380B261DBFA9C1A3 = {
 			isa = PBXGroup;
 			children = (
+				2466CBFA7F6058B855E105FB /* Config */,
 				5DD1BC51EAE231D9678DB63A /* Hum */,
 				18B33C3A5178C17CE0252257 /* HumTests */,
 				29D56469BE5BD99BC98C480E /* Products */,
@@ -388,6 +398,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					96CDAA50EFF0BD557C4FF6CA = {
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -582,10 +593,10 @@
 		};
 		4D6AE334EFAF048BC1CD6B28 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E69B3A91E5510DF6ED207AED /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGN_ENTITLEMENTS = Hum/Hum.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
@@ -595,7 +606,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.hum.app;
+				PRODUCT_BUNDLE_IDENTIFIER = org.surajshetty.humapp;
 				PRODUCT_NAME = Hum;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -604,10 +615,10 @@
 		};
 		72E37E6D011D7B6175808C5D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E69B3A91E5510DF6ED207AED /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGN_ENTITLEMENTS = Hum/Hum.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
@@ -617,7 +628,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.hum.app;
+				PRODUCT_BUNDLE_IDENTIFIER = org.surajshetty.humapp;
 				PRODUCT_NAME = Hum;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -635,7 +646,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.hum.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.surajshetty.humapp.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hum.app/Hum";
@@ -653,7 +664,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.hum.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.surajshetty.humapp.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hum.app/Hum";

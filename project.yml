@@ -36,14 +36,16 @@ targets:
     sources:
       - path: Hum
         excludes: ["**/.gitkeep"]
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.hum.app   # placeholder — see DECISIONS M-10
+        PRODUCT_BUNDLE_IDENTIFIER: org.surajshetty.humapp
         PRODUCT_NAME: Hum
         INFOPLIST_FILE: Hum/Info.plist
         CODE_SIGN_ENTITLEMENTS: Hum/Hum.entitlements
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGNING_ALLOWED: NO                 # flip on once M-10 supplies a team
         TARGETED_DEVICE_FAMILY: "1,2"
         ENABLE_PREVIEWS: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -65,7 +67,7 @@ targets:
       - target: Hum
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.hum.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: org.surajshetty.humapp.tests
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGNING_ALLOWED: NO
 
