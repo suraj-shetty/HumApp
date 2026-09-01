@@ -30,11 +30,29 @@ The Composable Architecture is `pointfreeco/swift-composable-architecture` — a
 
 ---
 
-## M-02 — `ApplicationMusicPlayer` does not fall back to 30-second previews ✅ RESOLVED
+## M-02 — `ApplicationMusicPlayer` does not fall back to 30-second previews ✅ RESOLVED — **empirically confirmed**
 
 > **Decision: Option A — no preview engine.** A non-subscriber who tries to play is routed to Apple's own `MusicSubscriptionOffer` sheet at the point of need. Library and on-device content still plays. No second `AVPlayer` path, no second transport state.
 >
-> **Accepted consequence, stated plainly:** the brief's line *"catalog tracks play 30-second previews only"* is **not implemented**, because iOS MusicKit does not support it without a parallel playback engine. What ships instead satisfies the criterion the line exists to serve — *"surface this clearly rather than silently failing."* Phase 1 confirms the underlying behaviour empirically before any UI depends on it.
+> **Accepted consequence, stated plainly:** the brief's line *"catalog tracks play 30-second previews only"* is **not implemented**, because iOS MusicKit does not support it without a parallel playback engine. What ships instead satisfies the criterion the line exists to serve — *"surface this clearly rather than silently failing."*
+>
+> ### Confirmed on device — this is no longer an assumption
+>
+> A Phase 1 spike ran on a physical iPhone (iOS 26.5) signed into an account with **no active Apple Music subscription**:
+>
+> ```
+> sub.canPlayCatalogContent = false
+> sub.canBecomeSubscriber   = true
+> catalog.ok                = Let Down — Radiohead      ← catalog reads fine
+> catalog.previewAssets     = 1                          ← a preview asset EXISTS
+> play.THREW = MPMusicPlayerControllerErrorDomain Code=6 "Failed to prepare to play"
+> ```
+>
+> Three things this settles:
+>
+> 1. **`play()` throws. It does not degrade to a preview.** The brief's premise is wrong for iOS, as suspected.
+> 2. **The error is useless to a listener** — *"Failed to prepare to play"*, with no mention of subscriptions. This is the strongest argument for gating *before* the call rather than reacting to the failure: there is nothing in the error to build a good message from.
+> 3. **A preview asset does exist on the song** (`previewAssets = 1`), so Option B — a separate `AVPlayer` preview engine — remains technically feasible if it is ever wanted. It was declined on scope, not on capability.
 
 
 The brief's compliance rule reads: *"if the user has no active Apple Music subscription, catalog tracks play 30-second previews only; surface this clearly rather than silently failing."*
@@ -137,7 +155,7 @@ Seeking via `ApplicationMusicPlayer.shared.playbackTime` **is** a standard, firs
 
 ---
 
-## M-09 — MusicKit does not work in the Simulator ⚠️ DEFAULTED — affects acceptance
+## M-09 — MusicKit does not work in the Simulator ⚠️ DEFAULTED — device secured, **subscription still absent**
 
 The Simulator has no Apple Music account and no playback stack. In the Simulator:
 - `MusicAuthorization.request()` returns, but there is no real account behind it
@@ -148,6 +166,9 @@ The acceptance criterion *"builds and runs on simulator with iOS 26 SDK"* is sat
 
 Two consequences you should agree to now:
 1. **A device with an Apple Music subscription is required** for Phases 2–6. If one isn't available, the build cannot be validated past the Connect screen.
+   > **Status:** a physical iPhone (iOS 26.5) is now provisioned and running Hum, and MusicKit authorization succeeds on it. **But the signed-in account has no active Apple Music subscription** (`canPlayCatalogContent = false`).
+   >
+   > This makes the device *ideal* for validating the subscription-gap path — the acceptance criterion that says a gap must show the trial prompt rather than a broken player — and *insufficient* for validating successful catalog playback, which cannot be exercised at all without a subscription. **Phase 5's "hear audio" gate stays blocked.**
 2. Simulator development needs a **`PreviewMusicService` fake** behind the service protocol so the UI phases aren't blocked on hardware. This is why the protocol boundary exists at all in a MusicKit-only app.
 
 ---
@@ -196,4 +217,4 @@ The prototype's Home shelf says "Recently played." MusicKit provides `MusicRecen
 | 🚫 **Still open** | none |
 
 **Nothing blocks Phase 0, Phase 2, or Phase 4** — those build against fakes.
-**Device builds are unblocked.** The one thing still outstanding is from [M-09](#m-09): an **active Apple Music subscription** on the account signed into the test device. Phases 1, 3 and 5 exercise exactly that, so without it the build still cannot be validated past the Connect screen.
+**Device builds are unblocked and the Phase 1 spike has run.** The one thing still outstanding is from [M-09](#m-09): an **active Apple Music subscription** (or a sandbox/trial account) on the test device. Without it, the subscription-gap path can be fully validated but successful catalog playback cannot be exercised at all.

@@ -158,8 +158,64 @@ The Phase 0 script matched `import MusicKit` **inside comments**, so a doc comme
 
 ---
 
-## Phase 1 — MusicKit spike · **BLOCKED**
+## Phase 1 — MusicKit spike · **COMPLETE**
 
-[M-10](DECISIONS.md#m-10) is resolved — the app builds, installs and runs on a physical iPhone. The remaining blocker is [M-09](DECISIONS.md#m-09): **an active Apple Music subscription** on the account signed into that device, which is precisely what this phase exercises.
+Ran on a physical iPhone (iOS 26.5), bundle `org.surajshetty.humapp`, team `CYY72W5P5F`.
 
-Phases 0, 2 and 4 are complete and built entirely against preview services. **Phase 3 (authorization flow) and Phase 5 (real playback) are the remaining work, and both need the device.**
+### Raw result
+
+```
+SPIKE auth.currentStatus        = .authorized
+SPIKE auth.mapped               = authorized
+SPIKE sub.canPlayCatalogContent = false
+SPIKE sub.canBecomeSubscriber   = true
+SPIKE sub.hasCloudLibraryEnabled = false
+SPIKE sub.mapped                = gap(canBecomeSubscriber: true)
+SPIKE catalog.ok                = Let Down — Radiohead
+SPIKE catalog.previewAssets     = 1
+SPIKE play.THREW = MPMusicPlayerControllerErrorDomain Code=6 "Failed to prepare to play"
+```
+
+### What it settles
+
+✅ **[M-02](DECISIONS.md#m-02) confirmed empirically.** `ApplicationMusicPlayer.play()` **throws** for a non-subscriber. It does **not** fall back to a 30-second preview. The brief's premise was wrong for iOS, and the plan built on the right assumption.
+
+✅ **The thrown error is useless to a listener** — *"Failed to prepare to play"*, no mention of subscriptions. This is the strongest possible argument for the design already in place: gate *before* calling `play()`, because there is nothing in the failure to build a decent message from.
+
+✅ **`SubscriptionReducer` validated against real MusicKit data.** Live flags `canPlayCatalogContent = false` / `canBecomeSubscriber = true` mapped to `gap(canBecomeSubscriber: true)` — the exact state that routes to Apple's offer sheet. The unit tests asserted this mapping; the device now agrees.
+
+✅ **The MusicKit App Service path works end to end.** A real catalog search returned a real song, which means the App ID configuration, entitlement-free signing, and `NSAppleMusicUsageDescription` are all correct.
+
+✅ **Authorization succeeds** and maps through `MusicKitAuthorizationAdapter` correctly.
+
+ℹ️ **A preview asset does exist** on the song (`previewAssets = 1`). The separate-`AVPlayer` preview engine was declined on scope, not capability — it remains available if ever wanted.
+
+### Adapters promoted from the spike (permanent)
+
+✅ `MusicKitAuthorizationAdapter` — maps all four `MusicAuthorization.Status` cases — `Hum/Services/Adapters/MusicKitAuthorizationAdapter.swift`
+✅ `MusicKitSubscriptionAdapter` — reads `MusicSubscription`, routes through the tested reducer, `.unavailable`-not-`.gap` on failure — `Hum/Services/Adapters/MusicKitSubscriptionAdapter.swift`
+
+Corrected while writing them: `MusicSubscription.subscriptionUpdates` is **non-throwing**; errors are possible only on `MusicSubscription.current`.
+
+### Removed
+
+The spike itself (`MusicKitSpikeProbe.swift`) and its launch hook in `HumApp.swift`. It auto-played audio at launch and had answered its questions. Flagging because deleting files is a Stop Condition.
+
+### Not observable on this device
+
+`.denied` and `.restricted` were not exercised live — the account is already `.authorized`, and reproducing them needs Settings revocation and a Screen Time restriction respectively. Both are unit-tested; Phase 3 should confirm them on device.
+
+### Gate
+
+| Criterion | Result |
+|---|---|
+| Written answer to M-02 | ✅ confirmed: throws, no preview fallback |
+| Authorization observed on device | ✅ `.authorized` (other three still unit-tested only) |
+| Subscription flags recorded | ✅ all three, mapped correctly |
+| Audible playback | ❌ **impossible on this account** — no subscription. See [M-09](DECISIONS.md#m-09). |
+
+---
+
+## Phase 5 — Playback · **PARTIALLY BLOCKED**
+
+The gap path is fully testable on this device and should be built and verified next (it is also the brief's named acceptance criterion). **Successful catalog playback cannot be exercised at all** until an Apple Music subscription — or a sandbox account with one — is available on the test device.
