@@ -44,7 +44,6 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.surajshetty.humapp
         PRODUCT_NAME: Hum
         INFOPLIST_FILE: Hum/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Hum/Hum.entitlements
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1,2"
         ENABLE_PREVIEWS: YES

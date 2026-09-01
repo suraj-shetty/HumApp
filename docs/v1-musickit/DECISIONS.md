@@ -152,15 +152,15 @@ Two consequences you should agree to now:
 
 ---
 
-## M-10 — MusicKit capability & bundle identifier ⚠️ MOSTLY RESOLVED — team ID still needed
+## M-10 — MusicKit capability & bundle identifier ✅ RESOLVED
 
 > **Supplied:** bundle identifier **`org.surajshetty.humapp`**, with the MusicKit app service enabled on the App ID. Wired into the project; the app builds, installs, and launches under it.
 >
-> **Still outstanding: the 10-character Team ID** that owns that App ID. Without it a device build stops at *"Signing for 'Hum' requires a development team"* — verified, and it is now the only error on that path.
+> **Team ID: `CYY72W5P5F`**, set in `Config/Signing.xcconfig` (an xcconfig rather than `project.yml`, so `xcodegen generate` cannot overwrite it).
 >
-> Set it in **`Config/Signing.xcconfig`** (one line) or pick the team in Xcode's Signing & Capabilities tab. It lives in an xcconfig rather than in `project.yml` so that `xcodegen generate` cannot overwrite it.
+> **Verified end to end:** the app builds for `generic/platform=iOS`, signs with *Apple Development: Suraj Shetty (2Y4Q7YN79V)* under team `CYY72W5P5F`, and installs and runs on a physical iPhone (iOS 26.5).
 >
-> Simulator work needs none of this and is unaffected.
+> **Correction made along the way — MusicKit has no entitlement.** `Hum.entitlements` had declared `com.apple.developer.musickit`, which is not a real entitlement key; provisioning rejected it with *"Entitlement com.apple.developer.musickit not found and could not be included in profile."* MusicKit on iOS is enabled as an **App Service on the App ID** in the developer portal, and the app itself needs only `NSAppleMusicUsageDescription` plus runtime `MusicAuthorization`. `CODE_SIGN_ENTITLEMENTS` has been removed from the build; the now-unused file is kept as an empty placeholder rather than deleted.
 
 
 Before the app can authorize on device you need, in the Apple Developer portal:
@@ -168,7 +168,7 @@ Before the app can authorize on device you need, in the Apple Developer portal:
 - A bundle identifier — I will scaffold `com.hum.app` as a placeholder
 - `NSAppleMusicUsageDescription` in Info.plist (I'll write the string; you may want to reword it — it is user-facing)
 
-> **What this still gates:** every device run — so **Phase 1 (the spike), Phase 3 (authorization), Phase 5 (playback) and Phase 6 (device verification)** remain unvalidated until the Team ID lands, alongside a device with an active Apple Music subscription ([M-09](#m-09)). That pairing is now the critical path: Phases 0, 2 and 4 are done, and everything left needs hardware.
+> **What remains:** device *builds and runs* are unblocked. Validating MusicKit itself still needs the second half of [M-09](#m-09) — **an active Apple Music subscription on the signed-in account** — since that is what Phases 1, 3 and 5 actually exercise.
 
 ---
 
@@ -192,8 +192,8 @@ The prototype's Home shelf says "Recently played." MusicKit provides `MusicRecen
 |---|---|
 | ✅ **Resolved** | **M-01** (MVVM + reducer core, no TCA package) · **M-02** (no preview engine; offer sheet instead) · M-03 (Feed.fm docs superseded) · **M-04** (Add to Library, not love) |
 | ⚠️ **Defaulted, proceeding** | M-05, M-06, M-07, M-08, M-09, M-11, M-12 |
-| ⚠️ **Partially resolved** | **M-10** — bundle ID `org.surajshetty.humapp` + MusicKit service supplied; **Team ID still needed** for device builds |
+| ✅ **Resolved** | **M-10** — bundle ID `org.surajshetty.humapp`, team `CYY72W5P5F`; builds, installs and runs on device |
 | 🚫 **Still open** | none |
 
 **Nothing blocks Phase 0, Phase 2, or Phase 4** — those build against fakes.
-**M-10 still gates every device-validated phase: 1, 3, 5, 6** — now only on the Team ID. Also still outstanding from [M-09](#m-09): a physical device with an **active Apple Music subscription**. Without both, the build cannot be validated past the Connect screen.
+**Device builds are unblocked.** The one thing still outstanding is from [M-09](#m-09): an **active Apple Music subscription** on the account signed into the test device. Phases 1, 3 and 5 exercise exactly that, so without it the build still cannot be validated past the Connect screen.

@@ -48,7 +48,11 @@ Format: `✅ [what was done] — [file(s) affected]`
 
 The placeholder `com.hum.app` has been replaced with the real **`org.surajshetty.humapp`**, and code signing is enabled (`CODE_SIGN_STYLE = Automatic`). The app builds, installs, and launches under the new identifier on the Simulator; a device build now fails only with *"Signing for 'Hum' requires a development team"*, which is the expected and only remaining blocker.
 
-`DEVELOPMENT_TEAM` lives in **`Config/Signing.xcconfig`**, deliberately not in `project.yml`: a team chosen in Xcode's Signing tab would otherwise be wiped by the next `xcodegen generate`. Verified that the xcconfig value reaches the build settings.
+`DEVELOPMENT_TEAM` lives in **`Config/Signing.xcconfig`**, deliberately not in `project.yml`: a team chosen in Xcode's Signing tab would otherwise be wiped by the next `xcodegen generate`.
+
+✅ **Team `CYY72W5P5F` set; device build, install and launch all verified** on a physical iPhone (iOS 26.5). Signed with *Apple Development: Suraj Shetty (2Y4Q7YN79V)*.
+
+⚠️ **Fixed a Phase 0 mistake:** `Hum.entitlements` declared `com.apple.developer.musickit`, which is **not a real entitlement**. Provisioning rejected it outright. MusicKit on iOS is enabled as an *App Service on the App ID*; the app needs only `NSAppleMusicUsageDescription` and runtime `MusicAuthorization`. `CODE_SIGN_ENTITLEMENTS` removed; the empty file is kept rather than deleted.
 
 ---
 
@@ -156,6 +160,6 @@ The Phase 0 script matched `import MusicKit` **inside comments**, so a doc comme
 
 ## Phase 1 — MusicKit spike · **BLOCKED**
 
-Blocked on the **Team ID** ([M-10](DECISIONS.md#m-10) — bundle ID and MusicKit service are now supplied) **and** a physical device with an active Apple Music subscription ([M-09](DECISIONS.md#m-09)).
+[M-10](DECISIONS.md#m-10) is resolved — the app builds, installs and runs on a physical iPhone. The remaining blocker is [M-09](DECISIONS.md#m-09): **an active Apple Music subscription** on the account signed into that device, which is precisely what this phase exercises.
 
 Phases 0, 2 and 4 are complete and built entirely against preview services. **Phase 3 (authorization flow) and Phase 5 (real playback) are the remaining work, and both need the device.**
