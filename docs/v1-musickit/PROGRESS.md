@@ -307,9 +307,9 @@ The last three preview services are gone. `AppEnvironment.live()` is now MusicKi
 
 `MusicLibraryService.contains(_:)` for a **catalog** track matches on title and artist. MusicKit exposes no catalog-to-library lookup — the library copy is a different item with a different identifier. A library-sourced track returns `true` by definition. Documented at the call site; a wrong answer is at least one the listener can see for themselves.
 
-### Tests — 70 in 6 suites, all passing
+### Tests — 72 in 6 suites, all passing
 
-New suite `PlaybackSessionTests` (8 tests) covers the session wiring the adapter cannot be tested through: transport intents map one-to-one, a seek is clamped at both ends, queue intents reduce-then-mirror exactly once, a reduction that changes nothing never reaches the player, shuffle/repeat leave entries alone, and a cleared queue refills around the current track.
+New suite `PlaybackSessionTests` (10 tests) covers the session wiring the adapter cannot be tested through: transport intents map one-to-one, a seek is clamped at both ends, queue intents reduce-then-mirror exactly once, a reduction that changes nothing never reaches the player, shuffle/repeat leave entries alone, and a cleared queue refills around the current track.
 
 The adapter itself is not unit-testable — it needs a device, an account, and audio hardware. That is precisely why the decisions were kept out of it.
 
@@ -320,7 +320,7 @@ The adapter itself is not unit-testable — it needs a device, an account, and a
 | Adapters built, live wiring in place | ✅ |
 | Simulator build, zero warnings | ✅ |
 | Device build, installs and launches | ✅ iPhone 16 Pro |
-| 70 tests in 6 suites | ✅ |
+| 72 tests in 6 suites | ✅ |
 | Containment check | ✅ |
 | Play from Home / detail / queue, audibly | ❌ **blocked** — no Apple Music subscription on this account ([M-09](DECISIONS.md#m-09)) |
 | Skip, seek, reorder, remove mid-playback | ❌ blocked by the same |
@@ -335,11 +335,19 @@ The iPhone 16 Pro **does** have library albums despite `hasCloudLibraryEnabled =
 
 Catalog playback remains unverifiable on this account (M-09).
 
-### One defect found by listening, then fixed
+### One defect found by listening — and the wrong fix first
 
-**The play/pause glyph flickered during playback.** Two emitters were deriving `PlaybackState` independently — the `objectWillChange` republish and the 4 Hz progress ticker — so they could disagree on the same frame, and a `failure` set once outranked the live status forever because only one of the two consulted it.
+**The player bar flickered during playback.** Two attempts:
 
-Fixed by collapsing both onto a single `yield()` with one `currentState` derivation, clearing a stale failure the moment the player reports it is playing, and dropping snapshots identical to the last (`objectWillChange` fires far more often than anything visible changes).
+**First, wrong.** Two emitters were deriving `PlaybackState` independently — the `objectWillChange` republish and the 4 Hz progress ticker — so they could disagree on the same frame, and a `failure` set once outranked the live status forever because only one consulted it. Both are real defects and both are fixed (one shared `yield()`, one `currentState` derivation, a stale failure cleared as soon as the player reports playing, identical snapshots dropped). **But the flicker survived**, so this was not the cause.
+
+**Then, right: the observation surface.** `PlayerViewModel` exposed the whole `PlaybackSnapshot` as one `@Observable` stored property. `@Observable` tracks the properties a view *reads*, so a single `snapshot` made every consumer a progress observer: `PlayerBar` reads only the track and whether it is playing, but reading them tracked `snapshot`, which changes four times a second while playing — invalidating the bar and the entire `TabView` hosting it, 4 Hz, for the whole duration of every track.
+
+Fixed by storing the snapshot **split apart** — `state`, `elapsed`, `duration`, `queue` as separate stored properties, each assigned only when it actually differs (under `@Observable`, writing an equal value still notifies). The bar now wakes on real changes only; the progress bar still wakes on every tick, which is its job.
+
+Covered by two regression tests that assert the property directly rather than describing it: a progress tick must not invalidate a reader of `currentTrack` / `isPlaying`, and a track change must.
+
+**Worth carrying forward:** with `@Observable`, the shape of a view model's stored properties *is* its invalidation contract. One fat state struct is a performance bug waiting for a 4 Hz update to expose it.
 
 ### Carried into Phase 6
 

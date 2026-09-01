@@ -17,7 +17,17 @@ final class PlayerViewModel {
 
     // MARK: - Published state
 
-    private(set) var snapshot: PlaybackSnapshot = .idle
+    /// The snapshot is stored *split apart* rather than whole, and this is
+    /// load-bearing rather than stylistic. `@Observable` tracks the stored
+    /// properties a view actually reads, so a single `snapshot` property makes
+    /// every consumer a progress observer: the player bar, which wants only
+    /// the track and whether it is playing, would be invalidated four times a
+    /// second — taking the whole `TabView` around it with it, and visibly
+    /// churning the accessory. Split, the bar re-renders on real changes only.
+    private(set) var state: PlaybackState = .idle
+    private(set) var elapsed: TimeInterval = 0
+    private(set) var duration: TimeInterval = 0
+    private(set) var queue = QueueState()
     private(set) var subscription: SubscriptionState = .unknown
     /// Set when a play intent hits a subscription gap Apple *can* close;
     /// drives Apple's own offer sheet.
@@ -34,20 +44,19 @@ final class PlayerViewModel {
 
     // MARK: - Derived
 
-    var currentTrack: HumTrack? { snapshot.state.track }
-    var isPlaying: Bool { snapshot.state.isPlaying }
-    var queue: QueueState { snapshot.queue }
-    var upNext: [HumTrack] { snapshot.queue.upNext }
+    var currentTrack: HumTrack? { state.track }
+    var isPlaying: Bool { state.isPlaying }
+    var upNext: [HumTrack] { queue.upNext }
 
     /// 0…1, clamped. Guards against a zero-duration track producing `NaN` and
     /// a progress bar of infinite width.
     var progress: Double {
-        guard snapshot.duration > 0 else { return 0 }
-        return min(max(snapshot.elapsed / snapshot.duration, 0), 1)
+        guard duration > 0 else { return 0 }
+        return min(max(elapsed / duration, 0), 1)
     }
 
     var remaining: TimeInterval {
-        max(0, snapshot.duration - snapshot.elapsed)
+        max(0, duration - elapsed)
     }
 
     /// Where playback is coming from — the Now Playing overline.
@@ -98,7 +107,7 @@ final class PlayerViewModel {
             await self?.refreshSubscription()
             for await snapshot in playback.snapshots {
                 guard let self, !Task.isCancelled else { return }
-                self.snapshot = snapshot
+                self.adopt(snapshot)
             }
         }
 
@@ -112,6 +121,16 @@ final class PlayerViewModel {
                 self.apply(state)
             }
         }
+    }
+
+    /// Assignment is guarded per field: under `@Observable`, writing a value
+    /// equal to the one already there still notifies. Only `elapsed` changes on
+    /// a routine tick, so only progress-reading views should wake up for one.
+    private func adopt(_ snapshot: PlaybackSnapshot) {
+        if state != snapshot.state { state = snapshot.state }
+        if elapsed != snapshot.elapsed { elapsed = snapshot.elapsed }
+        if duration != snapshot.duration { duration = snapshot.duration }
+        if queue != snapshot.queue { queue = snapshot.queue }
     }
 
     func stop() {
@@ -207,8 +226,8 @@ final class PlayerViewModel {
     }
 
     func seek(toFraction fraction: Double) {
-        guard snapshot.duration > 0 else { return }
-        let target = min(max(fraction, 0), 1) * snapshot.duration
+        guard duration > 0 else { return }
+        let target = min(max(fraction, 0), 1) * duration
         Task { await playback.seek(to: target) }
     }
 
@@ -240,8 +259,8 @@ final class PlayerViewModel {
     }
 
     private func applyQueue(_ action: QueueAction) {
-        let next = QueueReducer.reduce(snapshot.queue, action)
-        guard next != snapshot.queue else { return }
+        let next = QueueReducer.reduce(queue, action)
+        guard next != queue else { return }
         Task { await perform { try await self.playback.applyQueue(next) } }
     }
 

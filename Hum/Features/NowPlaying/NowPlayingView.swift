@@ -307,7 +307,7 @@ private struct ProgressScrubber: View {
             .frame(height: 20)
 
             HStack {
-                Text(player.snapshot.elapsed.humTimestamp)
+                Text(player.elapsed.humTimestamp)
                 Spacer()
                 Text(player.remaining.humRemaining)
             }
@@ -321,7 +321,7 @@ private struct ProgressScrubber: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Playback position")
         .accessibilityValue(
-            "\(player.snapshot.elapsed.humSpokenDuration) of \(player.snapshot.duration.humSpokenDuration)"
+            "\(player.elapsed.humSpokenDuration) of \(player.duration.humSpokenDuration)"
         )
         .accessibilityAdjustableAction { direction in
             let step = 0.05

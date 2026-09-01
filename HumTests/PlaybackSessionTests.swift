@@ -1,3 +1,4 @@
+import Observation
 import Testing
 @testable import Hum
 
@@ -50,6 +51,69 @@ struct PlaybackSessionTests {
         )
         try await Task.sleep(for: .milliseconds(50))
         return (sut, playback)
+    }
+
+    // MARK: - Observation
+    //
+    // The player bar reads the track and whether it is playing, and nothing
+    // else. If those reads also track progress, every tick invalidates the
+    // bar — and the `TabView` hosting it — four times a second, which is
+    // visible on device as a flickering accessory.
+
+    /// Records whether `@Observable` woke a reader.
+    private final class Invalidation: @unchecked Sendable {
+        var fired = false
+    }
+
+    @Test("A progress tick does not invalidate a view that only reads the track")
+    func progressDoesNotInvalidateTrackReaders() async throws {
+        let (sut, playback) = try await started()
+
+        let invalidation = Invalidation()
+        withObservationTracking {
+            // Exactly what `PlayerBar` reads.
+            _ = sut.currentTrack
+            _ = sut.isPlaying
+        } onChange: {
+            invalidation.fired = true
+        }
+
+        await playback.emit(
+            PlaybackSnapshot(
+                state: .playing(Self.tracks[0]),
+                elapsed: 12,
+                duration: 200,
+                queue: QueueState(entries: Self.tracks, currentIndex: 0)
+            )
+        )
+        try await Task.sleep(for: .milliseconds(50))
+
+        #expect(!invalidation.fired)
+    }
+
+    @Test("A real change still invalidates it")
+    func trackChangeInvalidatesTrackReaders() async throws {
+        let (sut, playback) = try await started()
+
+        let invalidation = Invalidation()
+        withObservationTracking {
+            _ = sut.currentTrack
+            _ = sut.isPlaying
+        } onChange: {
+            invalidation.fired = true
+        }
+
+        await playback.emit(
+            PlaybackSnapshot(
+                state: .playing(Self.tracks[1]),
+                elapsed: 0,
+                duration: 200,
+                queue: QueueState(entries: Self.tracks, currentIndex: 1)
+            )
+        )
+        try await Task.sleep(for: .milliseconds(50))
+
+        #expect(invalidation.fired)
     }
 
     // MARK: - Transport
