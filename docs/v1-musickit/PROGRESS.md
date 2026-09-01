@@ -349,6 +349,18 @@ Covered by two regression tests that assert the property directly rather than de
 
 **Worth carrying forward:** with `@Observable`, the shape of a view model's stored properties *is* its invalidation contract. One fat state struct is a performance bug waiting for a 4 Hz update to expose it.
 
+### Two more defects found on device
+
+**Tapping Play in an album threw the listener back to the Library, which then reloaded.** `playerAccessory` wrapped `tabViewBottomAccessory` in an `if let track`, so the two branches were different view types. The first track arriving changed the `TabView`'s structural identity and SwiftUI tore down every tab beneath it: `LibraryView`'s `@State` route and view model were discarded, so the detail screen popped and `.task` re-ran the whole library load.
+
+Fixed with `tabViewBottomAccessory(isEnabled:)` — the modifier always applied, visibility toggled. The original conditional existed for a real reason, since an empty content body still leaves a blank glass pill above the tab bar (re-verified in the Simulator, screenshot-confirmed both ways). `isEnabled:` is iOS 26.1+, so 26.0 keeps the stable shape and the blank pill behind `#available`, which resolves once per process and can never flip a branch. **Worth raising with the project owner: moving the deployment target to 26.1 would delete that fallback outright.**
+
+**The artwork blinked on every play/pause.** `AsyncImage` keeps no memory of its own — each rebuild restarts the load and shows the placeholder while it runs, and the player bar rebuilds whenever playback state changes. Replaced with an in-memory `ArtworkStore` (`NSCache`, request coalescing) consulted *synchronously* in `body` as well as through `.task(id:)`, so a rebuild with art already in memory paints it on the first frame. Memory only, nothing on disk, dropped under pressure.
+
+Also corrected while there: `artworkPixels` was 1536 for every mapping, including a 40pt player-bar thumb. Decoding a 1536² master into a 40pt circle costs real time on every load, and a slow load is a visible one. Now 1024 — sized for the Now Playing hero, which is the largest place art appears.
+
+**Not reproducible locally:** the preview fixtures carry no artwork URLs, so `AsyncImage` is never exercised in the Simulator. This fix was reasoned from the mechanism and needs device confirmation.
+
 ### Carried into Phase 6
 
 **A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.

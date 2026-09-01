@@ -14,21 +14,39 @@ import SwiftUI
 /// automatically — hand-rolling a second capsule would put two glass elements
 /// outside a shared container, the specific failure Apple's guidance names.
 private extension View {
-    /// Attaches the mini player to `TabView`'s bottom accessory slot, and
-    /// attaches *nothing* when there is no track.
+    /// Attaches the mini player to `TabView`'s bottom accessory slot.
     ///
-    /// The conditional has to wrap the modifier rather than its content: the
-    /// accessory container draws its own glass capsule, so returning an empty
-    /// body from inside still leaves an empty pill floating above the tab bar.
+    /// The modifier is applied **unconditionally** and hidden via
+    /// `isEnabled:`, and that matters far more than it looks. Wrapping the
+    /// modifier in an `if/else` gives the two branches different view types,
+    /// so the moment the first track arrives the `TabView`'s structural
+    /// identity changes and SwiftUI tears down every tab beneath it: open
+    /// detail screens pop to root and every `.task` re-runs. On device that
+    /// read as "tap play, get thrown back to the library, watch it reload".
+    ///
+    /// `isEnabled:` is what makes the stable form possible. The accessory
+    /// container draws its own glass capsule, so an empty content body still
+    /// leaves a blank pill floating above the tab bar — verified in the
+    /// Simulator, and the reason the conditional was reached for originally.
     @ViewBuilder
     func playerAccessory<C: View>(
         track: HumTrack?,
         @ViewBuilder content: (HumTrack) -> C
     ) -> some View {
-        if let track {
-            self.tabViewBottomAccessory { content(track) }
+        // `#available` is resolved once for the life of the process, so
+        // unlike a `track != nil` conditional it never flips a branch and
+        // never re-identifies the `TabView`.
+        if #available(iOS 26.1, *) {
+            tabViewBottomAccessory(isEnabled: track != nil) {
+                if let track { content(track) }
+            }
         } else {
-            self
+            // 26.0 has no `isEnabled:`. Keep the stable shape and accept the
+            // blank pill before the first track: a cosmetic blemish on one
+            // point release beats tearing the tabs down on every listener.
+            tabViewBottomAccessory {
+                if let track { content(track) }
+            }
         }
     }
 }

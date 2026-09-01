@@ -10,9 +10,12 @@ import MusicKit
 /// music they own or push them at an offer sheet they don't need.
 enum MusicKitMapping {
 
-    /// 512pt at 3×. Large enough for the Now Playing hero, small enough not to
-    /// pull a 3000px master to fill a 56pt row.
-    static let artworkPixels = 1536
+    /// Sized for the largest place art appears — the Now Playing hero, roughly
+    /// 340pt at 3× — and no larger. One URL per track serves every screen, so
+    /// this is the ceiling, not the typical case: a 1536px master decoded into
+    /// a 40pt player-bar thumb costs real time on every load, and a slow load
+    /// is a visible one.
+    static let artworkPixels = 1024
 
     // MARK: - Tracks
 
