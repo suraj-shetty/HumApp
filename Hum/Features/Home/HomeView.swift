@@ -36,16 +36,15 @@ struct HomeView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(model?.greeting ?? "")
-                    .overline(size: 11.5, tracking: 1.6)
-                    .foregroundStyle(Palette.textTertiary)
-                Text("hum,")
-                    .font(HumFont.wordmark())
-                    .kerning(-0.8)
-                    .foregroundStyle(Palette.honeyAmber)
-            }
+        // The design's Home header is the greeting alone, 32/200 in white,
+        // beside the profile control — no wordmark and no overline. The
+        // wordmark belongs to Connect, splash and onboarding, where the design
+        // does use it.
+        HStack(alignment: .center) {
+            Text(model?.greeting ?? "")
+                .font(.system(size: 32, weight: .ultraLight))
+                .kerning(-0.8)
+                .foregroundStyle(Palette.textPrimary)
             Spacer()
             NavigationLink {
                 SettingsView()

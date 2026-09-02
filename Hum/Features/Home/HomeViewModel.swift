@@ -81,16 +81,19 @@ final class HomeViewModel {
         await load()
     }
 
-    /// "Sunday evening" — the prototype's greeting overline.
+    /// "Evening" — the Home title.
+    ///
+    /// The design's Home header is this one word at 32/200, and nothing else
+    /// besides the profile control. It carried a weekday and rendered as a
+    /// tracked uppercase overline under the wordmark, which was three
+    /// divergences in one header.
     var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
-        let partOfDay = switch hour {
-        case 5..<12: "morning"
-        case 12..<17: "afternoon"
-        case 17..<22: "evening"
-        default: "night"
+        return switch hour {
+        case 5..<12: "Morning"
+        case 12..<17: "Afternoon"
+        case 17..<22: "Evening"
+        default: "Night"
         }
-        let weekday = Date.now.formatted(.dateTime.weekday(.wide))
-        return "\(weekday) \(partOfDay)"
     }
 }

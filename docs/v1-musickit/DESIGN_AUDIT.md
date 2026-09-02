@@ -374,8 +374,33 @@ uses `overline()`.
 The design does use an 11pt tracked overline, for the Home greeting and the
 detail meta line. Section headers were simply never it.
 
-### Measured alongside, not yet applied
+### Measured alongside — now done, see §13.
 
-The Home **greeting** ("Wednesday night") measures **16 / 400 / white** in the
-design. The app draws it as an 11.5pt uppercase tracked overline in grey — so
-the same mistake as the section header, in the element directly above it.
+
+---
+
+## 13. Home header · **DONE**
+
+Measured on the design's Home screen, the header is **three divergences in one
+element**, and structural rather than stylistic:
+
+| | Design | Was |
+|---|---|---|
+| Content | **"Evening"** — part of day only | "WEDNESDAY NIGHT" — weekday included |
+| Style | **32 / weight 200 / white / -0.8** | 11.5 uppercase, tracked, grey |
+| Structure | greeting **+ profile control, nothing else** | greeting overline **+ `hum,` wordmark** + profile |
+
+An earlier note in §11 recorded the greeting as "16 / 400" — that was a
+mis-identified element on another board. Measured on the Home screen itself it
+is **32 / 200**, a display title.
+
+### The wordmark is gone from Home — deliberately, and worth a second opinion
+
+The design's Home carries **no wordmark**. It appears on Connect, splash and
+onboarding, where the design does use it. Following the design removes Hum's
+brand mark from the app's main screen, which is a bigger call than a type
+change and is flagged here rather than buried: **if the wordmark should stay on
+Home, this is the change to reverse.**
+
+The greeting copy also changed — the weekday is gone, because the design shows
+only the part of day.
