@@ -633,3 +633,36 @@ instead.
 
 That needs a genre browse source from MusicKit and is a **capability**, not a
 restyle. Recorded alongside §3's missing screens for the scope decision.
+
+
+---
+
+## 21. Now Playing — structural · **DONE**
+
+| Item | Design | Was |
+|---|---|---|
+| Order | artwork → **elapsed/remaining** → title & artist → transport | artwork → title & artist → progress → transport |
+| Volume | a slider between transport and the utility row | absent |
+| Utility row | queue · AirPlay | AirPlay · "Up next · n" · **share** |
+
+### Two controls that were not controls
+
+The footer's AirPlay and share glyphs were `Image`s with **no action and
+`accessibilityHidden(true)`** — drawn to make the layout match, tappable-looking,
+inert. Both are resolved rather than restyled:
+
+- **AirPlay is now `AVRoutePickerView`**, Apple's own route picker. Real, and
+  the standard surface for it.
+- **Share is deleted.** It did nothing, and sharing MusicKit content is a
+  compliance line Hum does not cross — the design itself marks screen 43
+  "reference only". A control that cannot be built should not be drawn.
+
+### Volume
+
+`MPVolumeView`, in a new `SystemAudioControls.swift`. iOS gives apps no
+programmatic volume API by design, so Apple's own view is the only route — which
+also keeps it inside the standard-transport rule.
+
+**It renders empty in the Simulator**, which has no audio route to control, so
+the gap between the transport and the utility row is expected there. **Needs a
+look on device**; it is the one thing in this pass I could not see working.

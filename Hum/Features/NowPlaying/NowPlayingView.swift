@@ -90,10 +90,12 @@ private struct NowPlayingPortraitLayout: View {
 
             Spacer(minLength: 20)
 
+            // Progress sits *above* the title in the design, not below it.
             VStack(spacing: 24) {
-                titleRow
                 ProgressScrubber()
+                titleRow
                 TransportControls(size: Metrics.transportPrimary)
+                VolumeSlider()
             }
             .padding(.horizontal, Metrics.heroGutter)
 
@@ -123,15 +125,14 @@ private struct NowPlayingPortraitLayout: View {
     }
 
     private var footer: some View {
+        // The design's utility row. Two changes beyond styling:
+        //
+        // - AirPlay was a decorative glyph with `accessibilityHidden(true)` and
+        //   no action — a control that looked tappable and was not. It is now
+        //   the system route picker.
+        // - The share glyph is gone. It did nothing, and sharing MusicKit
+        //   content is a compliance line Hum does not cross (DESIGN_AUDIT §3).
         HStack {
-            // AirPlay is presented by the system route picker in Phase 5;
-            // rendered here so the layout matches the design.
-            Image(systemName: HumIcon.airplay)
-                .font(.system(size: 20, weight: .light))
-                .foregroundStyle(Palette.iconInactive)
-                .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                .accessibilityHidden(true)
-
             Spacer()
 
             Button(action: onQueue) {
@@ -146,11 +147,10 @@ private struct NowPlayingPortraitLayout: View {
 
             Spacer()
 
-            Image(systemName: HumIcon.share)
-                .font(.system(size: 20, weight: .light))
-                .foregroundStyle(Palette.iconInactive)
+            RoutePickerButton()
                 .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                .accessibilityHidden(true)
+
+            Spacer()
         }
         .padding(.horizontal, Metrics.heroGutter)
     }
