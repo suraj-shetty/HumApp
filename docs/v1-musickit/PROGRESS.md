@@ -384,8 +384,19 @@ The padding is gone from all four screens; the constant survives as `chromeClear
 - **`metaLine` reads correctly** — "ALBUM · 2014 · 1 TRACK", singular included.
 - Long real titles wrap to two lines in the header without truncating.
 
+### Third capture pass — the queue, verified against a duplicated track
+
+A library playlist ("Away") holding several singles, one of them added twice, made the queue path testable at last. **Both earlier fixes are now confirmed against real duplicated content:**
+
+- **Duplicate identity holds.** "Say My Name (feat. Zyra)" renders as *Playing now* **and** as an up-next row simultaneously, both drawn correctly. Under the old `id: \.element.id` these were one SwiftUI identity.
+- **Reorder keeps the cursor on the right copy.** Dragging the duplicate from position 4 to position 2 left playback on the original — exactly the defect the old `firstIndex(where: id ==)` would have produced by jumping the cursor to the other copy. This is the strongest available evidence for that fix; it cannot be reproduced without a repeated track.
+- **Swipe-to-remove acts on the swiped row**, with the reveal animating correctly.
+- **`sourceLabel` works** — "UP NEXT · Away" names the playlist the session came from.
+- **Library playlists and playlist track loading work**, both previously unexercised.
+
 ### Open findings, not yet fixed
 
+0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
 1. **The detail title appears twice** — truncated in the nav bar ("Say My Name (feat. Zyra) - Sin…") and again in full below it. Prototype behaviour, but with real Apple Music titles, which are long and often carry " - Single", it reads as repetition. Suggest dropping the nav title and letting the header carry it.
 2. **Fixed hero art on small phones.** `artDetailHero` 342pt + 2×24pt gutters needs 390pt; an iPhone SE at 375pt would clip it. No SE simulator is installed, so this is arithmetic, not observation. Needs a scope decision on small phones.
 
@@ -397,8 +408,19 @@ The padding is gone from all four screens; the constant survives as `chromeClear
 
 **This library is entirely singles.** Every album in it is a one-track "- Single". Up-next therefore can never populate from it, which is why the Queue is always empty — correct behaviour, not a defect, but it means **queue mechanics cannot be exercised from this device at all**: no reorder, no swipe-to-remove, and in particular no test of the duplicate-identity fix. Those stay unverified against real data until a multi-track album or playlist exists in the library.
 
+### Third capture pass — the queue, verified against a duplicated track
+
+A library playlist ("Away") holding several singles, one of them added twice, made the queue path testable at last. **Both earlier fixes are now confirmed against real duplicated content:**
+
+- **Duplicate identity holds.** "Say My Name (feat. Zyra)" renders as *Playing now* **and** as an up-next row simultaneously, both drawn correctly. Under the old `id: \.element.id` these were one SwiftUI identity.
+- **Reorder keeps the cursor on the right copy.** Dragging the duplicate from position 4 to position 2 left playback on the original — exactly the defect the old `firstIndex(where: id ==)` would have produced by jumping the cursor to the other copy. This is the strongest available evidence for that fix; it cannot be reproduced without a repeated track.
+- **Swipe-to-remove acts on the swiped row**, with the reveal animating correctly.
+- **`sourceLabel` works** — "UP NEXT · Away" names the playlist the session came from.
+- **Library playlists and playlist track loading work**, both previously unexercised.
+
 ### Open findings, not yet fixed
 
+0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
 1. **The detail title appears twice** — truncated in the nav bar and again in full below. Confirmed on three separate albums; with Apple's "- Single" suffixes it reads as pure repetition. Suggest dropping the nav title and letting the header carry it.
 2. **The nav title may have no scroll-edge material.** In the Library grid, "Library" floats directly over album artwork with nothing behind it. Over a bright cover that would be unreadable. Needs a closer look — it may be an artefact of a mid-scroll capture.
 3. **Grid subtitles truncate** — "St. Paul & The Broken Bon…". Minor and arguably correct at one line, but worth a decision.
