@@ -491,6 +491,34 @@ Six fixes were reasoned from reading the code and all six were wrong. Every fact
 
 ---
 
+## KNOWN DEFECT — the UI does not follow automatic track advance
+
+**Status: open, logged for later. Not investigated.** Reported from device.
+
+### Reproduction
+
+Let a track finish so the player advances on its own. **The audio moves to the next song; the UI does not.** The player bar, Now Playing and the Queue's "Playing now" all keep showing the previous track. Reported on the player bar first and then observed elsewhere — one defect, seen from several screens, since they all read `currentTrack` off the same snapshot.
+
+### Where it must be
+
+`ApplicationMusicPlayerAdapter.syncCursor()` is the only thing that follows the player when it advances by itself. It runs from `publish()` and nowhere else. Two candidate mechanisms, **neither verified** — this needs measurement, not another reading of the code:
+
+1. **`publish()` never runs on auto-advance.** It is driven by `objectWillChange` from `player.state` and `player.queue`. If neither fires when the queue's current entry changes on its own, the cursor is never re-read. This fits the symptom closely: the 4 Hz ticker calls `emitProgress()`, which does **not** call `syncCursor()`, so progress would keep ticking against a stale track — which is exactly what a stale UI with a live progress bar looks like.
+2. **`syncCursor()` runs but cannot match the entry.** It compares `player.queue.currentEntry?.item?.id.rawValue` against `queue.entries[].id`. Library songs cued into `ApplicationMusicPlayer` may come back as their catalog equivalents, in which case the ids never match and the cursor silently never moves.
+
+### First moves for whoever picks this up
+
+- Distinguish the two by checking whether `publish()` is reached at all on advance. **Measure it** — Hum's own logging does not reach the device log (see the method note below), so this means a debugger breakpoint, not a print.
+- If it is (1), calling `syncCursor()` from the tick is a one-line fix, though polling for something that should be a notification is worth a second thought.
+- If it is (2), the adapter needs to track entries by `Entry.id` rather than by item id — which is also the right shape for the reorder defect above, since a queue entry is genuinely not the same thing as a track.
+
+### Consequences
+
+- The acceptance criterion that playback state is reflected in the UI is **not met** for automatic advance. Explicit skip works, because that path publishes directly.
+- Suspect the same root cause for anything else that looks like a stale player: lock-screen or Dynamic Island changes driving the shared player would land through the same `syncCursor` path.
+
+---
+
 ### Open findings, not yet fixed
 
 0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
