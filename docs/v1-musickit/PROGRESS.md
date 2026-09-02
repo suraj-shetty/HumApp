@@ -389,7 +389,22 @@ The padding is gone from all four screens; the constant survives as `chromeClear
 1. **The detail title appears twice** — truncated in the nav bar ("Say My Name (feat. Zyra) - Sin…") and again in full below it. Prototype behaviour, but with real Apple Music titles, which are long and often carry " - Single", it reads as repetition. Suggest dropping the nav title and letting the header carry it.
 2. **Fixed hero art on small phones.** `artDetailHero` 342pt + 2×24pt gutters needs 390pt; an iPhone SE at 375pt would clip it. No SE simulator is installed, so this is arithmetic, not observation. Needs a scope decision on small phones.
 
-**Still unaudited:** Now Playing, Queue, Search, Settings, and the Library grid. They need a person to navigate while captures run.
+### Second capture pass — Queue, Library grid, three album details
+
+**Confirmed fixed on device:** track rows now sit clear of the player bar. The ODESZA capture had the artist line behind the glass; the Manners and Runaway captures, after the inset fix, are clean.
+
+**Queue renders correctly** — "Playing now" with the level meter, `Clear` correctly greyed out with nothing up next, and the designed empty state with "Fill from this album".
+
+**This library is entirely singles.** Every album in it is a one-track "- Single". Up-next therefore can never populate from it, which is why the Queue is always empty — correct behaviour, not a defect, but it means **queue mechanics cannot be exercised from this device at all**: no reorder, no swipe-to-remove, and in particular no test of the duplicate-identity fix. Those stay unverified against real data until a multi-track album or playlist exists in the library.
+
+### Open findings, not yet fixed
+
+1. **The detail title appears twice** — truncated in the nav bar and again in full below. Confirmed on three separate albums; with Apple's "- Single" suffixes it reads as pure repetition. Suggest dropping the nav title and letting the header carry it.
+2. **The nav title may have no scroll-edge material.** In the Library grid, "Library" floats directly over album artwork with nothing behind it. Over a bright cover that would be unreadable. Needs a closer look — it may be an artefact of a mid-scroll capture.
+3. **Grid subtitles truncate** — "St. Paul & The Broken Bon…". Minor and arguably correct at one line, but worth a decision.
+4. **Fixed hero art on small phones.** `artDetailHero` 342pt + 2×24pt gutters needs 390pt; an iPhone SE at 375pt would clip it. Arithmetic, not observation — no SE simulator installed. Needs a scope decision.
+
+**Still unaudited:** Now Playing, Search, Settings.
 
 ### Carried into Phase 6
 
