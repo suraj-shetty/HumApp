@@ -192,39 +192,33 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     private func mirrorEntries(_ state: QueueState) async throws {
         let cued = try await resolve(state.entries)
 
-        // Reuse the `Entry` objects the player already holds, matched by item
-        // and by repeat. This is the difference between a reorder being a
-        // permutation of entries MusicKit has already prepared and it being a
-        // brand new queue: constructing fresh entries makes the player re-cue
-        // everything, on the main actor, in the middle of a drag — which read
-        // on device first as a second-long stall and then as a hang.
-        var pool: [String: [ApplicationMusicPlayer.Queue.Entry]] = [:]
-        for entry in player.queue.entries {
-            guard let id = entry.item?.id.rawValue else { continue }
-            pool[id, default: []].append(entry)
-        }
+        let playing = player.queue.currentEntry
 
+        // Every entry except the one currently sounding is rebuilt.
+        //
+        // Reusing the player's existing `Entry` objects was tried, to spare
+        // MusicKit re-cueing the queue on every reorder, and it **deadlocked**
+        // — the app blocked with 0% CPU, waiting on the media server. Handing
+        // MusicKit a collection containing entries it already holds, in new
+        // positions, is not something it tolerates. Swipe-to-remove survived
+        // it only because removal changes the entry set rather than permuting
+        // the same objects.
+        //
+        // So this rebuilds, which costs a visible stall on drop and makes
+        // MusicKit log "Inserting entries at the beginning of the queue
+        // because previous entry is unexpectedly transient" — a real desync
+        // risk, recorded in PROGRESS.md. Slow and honest beats fast and hung.
         let entries = cued.map { cued -> ApplicationMusicPlayer.Queue.Entry in
-            if var existing = pool[cued.track.id], !existing.isEmpty {
-                let entry = existing.removeFirst()
-                pool[cued.track.id] = existing
-                return entry
-            }
-            // Genuinely new to the queue, so it has to be built.
+            // The live entry for the sounding track must survive: a
+            // replacement would restart playback.
+            if let playing, playing.item?.id.rawValue == cued.track.id { return playing }
             return ApplicationMusicPlayer.Queue.Entry(cued.song)
         }
 
         // `Entries` is MusicKit's own range-replaceable collection, not an
         // Array — assigning through its initializer replaces the queue's
         // contents without tearing down the queue object itself.
-        //
-        // KNOWN ISSUE: MusicKit logs "Inserting entries at the beginning of
-        // the queue because previous entry is unexpectedly transient" on every
-        // reorder, so playback order may not match what the Queue screen
-        // shows. Reordering `queue.entries` in place with `move` was tried and
-        // **hung the app** — mutating that property goes through get-modify-set
-        // and reassigns the whole collection anyway, once per move. Left as a
-        // recorded defect rather than a worse fix; see PROGRESS.md Finding 6.
+
         player.queue.entries = ApplicationMusicPlayer.Queue.Entries(entries)
     }
 

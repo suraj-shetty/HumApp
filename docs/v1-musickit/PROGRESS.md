@@ -428,7 +428,15 @@ Inserting entries at the beginning of the queue because previous entry
 
 Assigning `queue.entries` wholesale is not a reorder to MusicKit — it reads as a removal plus an insertion. The queue Hum builds is *transient* by construction, since it is cued from `Song`s that have not played yet, so the insertion falls back to the head of the queue and a dragged row can end up somewhere other than where the Queue screen shows it. A silent desync, and precisely what the Phase 5 gate asks about.
 
-**The attempted fix made it worse and was reverted.** `reorderInPlace` moved entries within the live collection with `move(fromOffsets:toOffset:)`, which is the operation MusicKit documents for a reorder — and it **hung the app**. Mutating `player.queue.entries` goes through get-modify-set, so each `move` reassigns the whole collection anyway, once per move: strictly more of the work that caused the original hang.
+**Finding 7 — the hang was mine, and the diagnosis came from one number.** `dvt sysmon process` reported Hum at **0.0% CPU while hung**, with 7 threads and a flat memory footprint. That is a block, not a spin: the app was waiting on IPC, almost certainly the media server.
+
+That reframed the timeline. The very first reorder on device *completed* — slow and janky, but it worked. The hang appeared only after entry reuse was introduced. Handing MusicKit a collection containing `Entry` objects it already holds, in new positions, deadlocks it. Swipe-to-remove survived throughout because removal changes the entry set rather than permuting the same objects.
+
+Entry reuse is reverted. Every entry except the sounding one is rebuilt, which costs a visible stall on drop and keeps the transient-entry desync below — slow and honest beats fast and hung. The off-main-actor song resolution is kept; it was a genuine improvement and is unrelated.
+
+**Method note, worth more than the fix:** three attempts were reasoned from the code and all three were wrong, and one of them made the app unusable for the person testing it. What actually moved the diagnosis forward, in order: MusicKit's own framework log (`syslog live -pn Hum`, which names the transient-entry problem), and then a single CPU number (`dvt sysmon process`, which separated deadlock from spin). Neither required instrumenting Hum — which is fortunate, because **the app's own log output reaches neither the syslog relay nor `dvt oslog`**. Both `NSLog` and `os.Logger` were tried and neither appeared. Do not spend time instrumenting this app for device diagnosis; read the framework's logs and its process stats instead.
+
+**The attempted in-place fix made it worse and was reverted.** `reorderInPlace` moved entries within the live collection with `move(fromOffsets:toOffset:)`, which is the operation MusicKit documents for a reorder — and it **hung the app**. Mutating `player.queue.entries` goes through get-modify-set, so each `move` reassigns the whole collection anyway, once per move: strictly more of the work that caused the original hang.
 
 **Current state: the desync is a known, recorded defect, not a fixed one.** The build in hand reassigns `entries` wholesale, reusing entry objects, which does not hang. A dragged row may still not play in the position the Queue screen shows. Noted at the call site.
 
@@ -494,7 +502,15 @@ Inserting entries at the beginning of the queue because previous entry
 
 Assigning `queue.entries` wholesale is not a reorder to MusicKit — it reads as a removal plus an insertion. The queue Hum builds is *transient* by construction, since it is cued from `Song`s that have not played yet, so the insertion falls back to the head of the queue and a dragged row can end up somewhere other than where the Queue screen shows it. A silent desync, and precisely what the Phase 5 gate asks about.
 
-**The attempted fix made it worse and was reverted.** `reorderInPlace` moved entries within the live collection with `move(fromOffsets:toOffset:)`, which is the operation MusicKit documents for a reorder — and it **hung the app**. Mutating `player.queue.entries` goes through get-modify-set, so each `move` reassigns the whole collection anyway, once per move: strictly more of the work that caused the original hang.
+**Finding 7 — the hang was mine, and the diagnosis came from one number.** `dvt sysmon process` reported Hum at **0.0% CPU while hung**, with 7 threads and a flat memory footprint. That is a block, not a spin: the app was waiting on IPC, almost certainly the media server.
+
+That reframed the timeline. The very first reorder on device *completed* — slow and janky, but it worked. The hang appeared only after entry reuse was introduced. Handing MusicKit a collection containing `Entry` objects it already holds, in new positions, deadlocks it. Swipe-to-remove survived throughout because removal changes the entry set rather than permuting the same objects.
+
+Entry reuse is reverted. Every entry except the sounding one is rebuilt, which costs a visible stall on drop and keeps the transient-entry desync below — slow and honest beats fast and hung. The off-main-actor song resolution is kept; it was a genuine improvement and is unrelated.
+
+**Method note, worth more than the fix:** three attempts were reasoned from the code and all three were wrong, and one of them made the app unusable for the person testing it. What actually moved the diagnosis forward, in order: MusicKit's own framework log (`syslog live -pn Hum`, which names the transient-entry problem), and then a single CPU number (`dvt sysmon process`, which separated deadlock from spin). Neither required instrumenting Hum — which is fortunate, because **the app's own log output reaches neither the syslog relay nor `dvt oslog`**. Both `NSLog` and `os.Logger` were tried and neither appeared. Do not spend time instrumenting this app for device diagnosis; read the framework's logs and its process stats instead.
+
+**The attempted in-place fix made it worse and was reverted.** `reorderInPlace` moved entries within the live collection with `move(fromOffsets:toOffset:)`, which is the operation MusicKit documents for a reorder — and it **hung the app**. Mutating `player.queue.entries` goes through get-modify-set, so each `move` reassigns the whole collection anyway, once per move: strictly more of the work that caused the original hang.
 
 **Current state: the desync is a known, recorded defect, not a fixed one.** The build in hand reassigns `entries` wholesale, reusing entry objects, which does not hang. A dragged row may still not play in the position the Queue screen shows. Noted at the call site.
 
