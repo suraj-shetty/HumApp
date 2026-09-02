@@ -428,7 +428,11 @@ Inserting entries at the beginning of the queue because previous entry
 
 Assigning `queue.entries` wholesale is not a reorder to MusicKit — it reads as a removal plus an insertion. The queue Hum builds is *transient* by construction, since it is cued from `Song`s that have not played yet, so the insertion falls back to the head of the queue and a dragged row can end up somewhere other than where the Queue screen shows it. A silent desync, and precisely what the Phase 5 gate asks about.
 
-`reorderInPlace` now moves entries within the live collection when the desired order is a permutation of the current one — the operation MusicKit expects — and falls back to a rebuild only when the membership genuinely changed.
+**The attempted fix made it worse and was reverted.** `reorderInPlace` moved entries within the live collection with `move(fromOffsets:toOffset:)`, which is the operation MusicKit documents for a reorder — and it **hung the app**. Mutating `player.queue.entries` goes through get-modify-set, so each `move` reassigns the whole collection anyway, once per move: strictly more of the work that caused the original hang.
+
+**Current state: the desync is a known, recorded defect, not a fixed one.** The build in hand reassigns `entries` wholesale, reusing entry objects, which does not hang. A dragged row may still not play in the position the Queue screen shows. Noted at the call site.
+
+Approaches not yet tried, for whoever picks this up: cueing the queue from `PlayableMusicItem`s that are not transient (playing entries are not transient — only cued-but-unplayed ones are); driving reorder through `ApplicationMusicPlayer.Queue.insert(_:position:)` rather than the entries collection; or keeping Hum's queue authoritative and handing the player only the next entry as each track ends.
 
 **On method:** the first two attempts at this bug were reasoned from the code and both were wrong about the mechanism. What settled it was `pymobiledevice3 syslog live -pn Hum`, which surfaces MusicKit's own diagnostics. Worth reaching for early on any adapter-layer defect. Note that the app's own `NSLog` output does **not** appear in that stream — only framework logs do — so instrumenting Hum itself was wasted effort.
 
@@ -490,7 +494,11 @@ Inserting entries at the beginning of the queue because previous entry
 
 Assigning `queue.entries` wholesale is not a reorder to MusicKit — it reads as a removal plus an insertion. The queue Hum builds is *transient* by construction, since it is cued from `Song`s that have not played yet, so the insertion falls back to the head of the queue and a dragged row can end up somewhere other than where the Queue screen shows it. A silent desync, and precisely what the Phase 5 gate asks about.
 
-`reorderInPlace` now moves entries within the live collection when the desired order is a permutation of the current one — the operation MusicKit expects — and falls back to a rebuild only when the membership genuinely changed.
+**The attempted fix made it worse and was reverted.** `reorderInPlace` moved entries within the live collection with `move(fromOffsets:toOffset:)`, which is the operation MusicKit documents for a reorder — and it **hung the app**. Mutating `player.queue.entries` goes through get-modify-set, so each `move` reassigns the whole collection anyway, once per move: strictly more of the work that caused the original hang.
+
+**Current state: the desync is a known, recorded defect, not a fixed one.** The build in hand reassigns `entries` wholesale, reusing entry objects, which does not hang. A dragged row may still not play in the position the Queue screen shows. Noted at the call site.
+
+Approaches not yet tried, for whoever picks this up: cueing the queue from `PlayableMusicItem`s that are not transient (playing entries are not transient — only cued-but-unplayed ones are); driving reorder through `ApplicationMusicPlayer.Queue.insert(_:position:)` rather than the entries collection; or keeping Hum's queue authoritative and handing the player only the next entry as each track ends.
 
 **On method:** the first two attempts at this bug were reasoned from the code and both were wrong about the mechanism. What settled it was `pymobiledevice3 syslog live -pn Hum`, which surfaces MusicKit's own diagnostics. Worth reaching for early on any adapter-layer defect. Note that the app's own `NSLog` output does **not** appear in that stream — only framework logs do — so instrumenting Hum itself was wasted effort.
 
