@@ -519,6 +519,10 @@ Let a track finish so the player advances on its own. **The audio moves to the n
 
 ---
 
+### Logged for the Phase 7 audit
+
+**The tab bar changes appearance when the now-playing capsule appears.** Reported from device. This is the system morphing between `tabViewBottomAccessory` and the tab bar — they share a container by design, and iOS 26 adjusts the bar when an accessory is present. So it is very likely *not* a Hum bug. Whether it is what the design intends is a different question, and one only the design can answer: check it against `01-iPhone-Screens-and-UI-System` in the audit, and if the design shows a stable tab bar, that is an argument against the accessory slot rather than a bug to patch.
+
 ### Open findings, not yet fixed
 
 0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.

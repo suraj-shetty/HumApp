@@ -116,25 +116,68 @@ Progress format from Phase 0 onward: `✅ [what was done] — [file(s) affected]
 
 ---
 
-## Phase 6 — Accessibility, compliance, acceptance sweep
+## Phase 6 — Accessibility, compliance, acceptance sweep · *partly done*
 
-0. **Design audit of all nine screens against real MusicKit data.** Added after Phase 5: the screens were built against prototype fixtures and have not been re-walked since real titles, real artwork, and real library metadata started flowing through them. This comes before the accessibility passes, since a layout fix and a Dynamic Type fix are the same edit.
+0. ~~Design audit against real MusicKit data~~ — **superseded by Phase 7.** The pass that was done found and fixed four real defects (see PROGRESS.md), but it audited the screens against *data*, not against the designs. The gap that matters turned out to be a different one.
 1. **Reduce Transparency on** — walk every screen; verify SwiftUI's solid fallback stays legible with amber-on-onyx. Fix contrast; do not hand-roll a parallel glass path.
 2. **Reduce Motion on** — level meter flat, `humRise` → crossfade.
 3. Dynamic Type through the accessibility sizes. The 200-weight display and the 10.5pt tab labels are the known failure cases.
 4. VoiceOver pass — decorative meter hidden, progress bar has value + seek action, artwork labelled with the album not "image".
-5. **Compliance sweep against [ARCH §7](ARCHITECTURE.md#7-compliance-mapped-to-code):** `grep -r "import StoreKit"` empty · no ad code · no export/share of MusicKit content · no local cache · art appears only alongside playback/library.
-6. Zero-warning build with warnings-as-errors on.
+5. ✅ **Compliance sweep** — passed, evidence in PROGRESS.md.
+6. ✅ **Zero-warning build** with warnings-as-errors on.
 7. Walk the brief's Acceptance Criteria one by one, recording pass/fail **with evidence**.
 
 **Gate:** every acceptance box checked with evidence, or explicitly listed as not-met with a reason.
 
 ---
 
-## Phase 7 — Handoff
+## Phase 7 — Complete iPhone design audit · **NEXT**
+
+*Added after the first device sessions. The implemented UI diverges from the designs substantially — not in ones and twos, but across screens. Everything before this built against a prototype read once, in Phase 4, and re-read only in fragments since.*
+
+**Source of truth:** `designs/Hum-All-Platforms.html`, which bundles three documents:
+
+| Source | Authority for |
+|---|---|
+| `01-iPhone-Screens-and-UI-System` | screens, tokens, the UI system |
+| `02-iPhone-Interactive-Prototype` | **behaviour** — the authority when static and interactive disagree |
+| `03-iPad-and-Watch-Screens` | companion platforms (Phases 8 and 9) |
+
+1. **Read all three sources properly first**, and write down the token set before touching code. The bundle names at least one token the implementation does not have — `warning #D2714A`, distinct from the amber accent — which alone resolves the open finding about the destructive swipe action rendering in the affirmative colour.
+2. **Screen-by-screen diff, design against build**, for all nine iPhone screens. Record every divergence before fixing any of it, so the list can be triaged rather than worked through in discovery order.
+3. **Fix in priority order**, and re-verify each on device with real content — the fixtures hide too much, as the Phase 6 pass proved.
+4. **Re-check the two glass boundary rules hold** after the changes; the containment script makes this cheap.
+
+**Known divergences already recorded** (in PROGRESS.md, not yet triaged): the detail title duplicated between nav bar and header; the nav title lacking scroll-edge material over artwork; grid subtitles truncating; the destructive swipe action drawn in the accent colour; fixed hero art that clips below 390pt of width; and **the tab bar changing appearance when the now-playing capsule appears** — system-owned morphing between the accessory and the tab bar, which the design may or may not intend.
+
+**Gate:** every screen matched to the design or its divergence recorded with a reason.
+
+---
+
+## Phase 8 — iPad
+
+Per `03-iPad-and-Watch-Screens`. The target already builds for iPad (`TARGETED_DEVICE_FAMILY = "1,2"`) and all four orientations are declared, so what exists today is the iPhone layout stretched. Scope to be set from the design; expect the navigation shape and the detail/queue layouts to differ rather than scale.
+
+**Gate:** to be written once the design has been read.
+
+---
+
+## Phase 9 — Apple Watch
+
+Per `03-iPad-and-Watch-Screens`. A new target, a new extension, and a `WatchConnectivity` or independent-MusicKit decision that has not been made. The design notes a distinct ground colour for the watch (`#000`, not `#0A0A0A`), so the token set is not simply inherited.
+
+**Note:** this is a new platform, not a refinement — it needs its own architecture pass before any code, and it is the first thing in this plan that adds a target.
+
+**Gate:** to be written once the design has been read.
+
+---
+
+## Phase 10 — Handoff
 1. `README.md` — setup, MusicKit capability, the device+subscription requirement, how to run tests.
 2. Fold spike findings and any defaults-taken-under-silence back into [DECISIONS.md](DECISIONS.md) as resolved.
-3. Known-gaps list, including the four designed-by-inference screens.
+3. Known-gaps list — including the two open defects carried from Phase 5 (drag-to-reorder hangs during playback; the UI does not follow automatic track advance).
+
+*Deliberately last: a handoff written before the platforms exist would need rewriting for each of them.*
 
 ---
 
@@ -153,6 +196,10 @@ Progress format from Phase 0 onward: `✅ [what was done] — [file(s) affected]
 | Queue live-mutation misbehaves on the real player | Medium | High | Proven in Phase 1 spike, before the Queue screen exists |
 | MusicKit capability / bundle ID not provisioned | **Certain (deferred)** | **High** | M-10; blocks Phases 1, 3, 5, 6 — i.e. most acceptance criteria. Becomes critical path once Phase 0 closes |
 | iOS 26 glass APIs shift in a point release | Low | Medium | All glass funnels through one file |
+| **Implemented UI diverges from the designs across screens** | **Certain — observed** | **High** — the app does not look like the thing that was designed | Phase 7, a full audit against all three design sources rather than fragments |
+| **Drag-to-reorder hangs during playback** | **Certain — observed** | High | Open defect, six failed attempts, recorded in PROGRESS.md with the untried approaches |
+| **UI does not follow automatic track advance** | **Certain — observed** | **High** — the player shows the wrong song on every screen | Open defect, logged in PROGRESS.md with two unverified candidate mechanisms |
+| Apple Watch adds a target, an extension and a connectivity decision | **Certain** | Medium | Phase 9 gets its own architecture pass before any code |
 
 ---
 
