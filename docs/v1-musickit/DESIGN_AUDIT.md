@@ -437,3 +437,36 @@ sample is not enough to generalise, and changing it means changing what
 
 Library's grid still uses a 148pt adaptive minimum and its own card rendering;
 it is a separate component in the design and has not been audited yet.
+
+
+---
+
+## 15. Now Playing transport · **DONE**
+
+| Part | Design | Was |
+|---|---|---|
+| Controls in the main row | **3** — previous, play, next | **5** — shuffle, previous, play, next, repeat |
+| Row spacing | **34** | `Spacer()` between all five |
+| Play button | **78**, **solid `#E8A33D`**, glow `rgba(232,163,61,.35) 0 10px 34px`, no border | 76, translucent 30%→13% wash, white border, black shadow |
+| Play glyph | 27 | 26.5 (derived from size) |
+| Prev / next glyph | 26 | 27 |
+| Shuffle / repeat | secondary row, **21pt, white 66%**, amber when active | in the main row, 19pt, `iconInactive` |
+
+The play button was the clearest error: a translucent amber wash with a white
+border reads as a *dimmed* control, where the design has the screen's one bright
+disc. Solid fill and an amber glow instead of a black drop shadow.
+
+Shuffle and repeat move out of the transport row. The design does not put them
+there — it has a secondary utility row below — so keeping them inline was
+crowding the primary controls and flattening the hierarchy.
+
+### Measured on the same screen, not applied
+
+The design's Now Playing is ordered **artwork → elapsed/remaining → title and
+artist → transport**, where the build runs **artwork → title and artist →
+progress → transport**. It also carries two rows Hum does not have: a **volume
+slider**, and a bottom utility row of **queue · AirPlay · shuffle** at 21pt with
+56 between them. Hum's queue button sits in the top bar instead.
+
+Repeat is kept, though the design's utility row shows only shuffle — dropping it
+would remove a capability `QueueReducer` supports and the Queue screen exposes.

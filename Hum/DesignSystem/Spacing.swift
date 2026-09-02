@@ -47,7 +47,7 @@ enum Metrics {
 
     static let tapTarget: CGFloat = 44
     static let transportSecondary: CGFloat = 52
-    static let transportPrimary: CGFloat = 76
+    static let transportPrimary: CGFloat = 78
     static let transportPrimaryCompact: CGFloat = 66
 
     // MARK: - Artwork

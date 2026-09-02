@@ -341,54 +341,68 @@ private struct TransportControls: View {
     @Environment(PlayerViewModel.self) private var player
 
     var body: some View {
-        HStack(spacing: alignment == .leading ? 26 : 0) {
+        // Measured from the design: three controls only — previous, play,
+        // next — 26pt glyphs either side of a 78pt disc, 34 apart and centred.
+        // Shuffle and repeat are not in this row; the design puts shuffle in a
+        // secondary utility row below, and `secondaryControls` follows it.
+        VStack(spacing: 26) {
+            HStack(spacing: alignment == .leading ? 26 : 34) {
+                if alignment == .leading { Spacer(minLength: 0) }
+
+                IconButton(
+                    systemName: HumIcon.previous,
+                    size: 26,
+                    tint: Palette.textPrimary,
+                    target: Metrics.transportSecondary,
+                    pressScale: Motion.pressScaleTransport,
+                    label: "Previous track",
+                    action: player.skipToPrevious
+                )
+
+                playButton
+
+                IconButton(
+                    systemName: HumIcon.next,
+                    size: 26,
+                    tint: Palette.textPrimary,
+                    target: Metrics.transportSecondary,
+                    pressScale: Motion.pressScaleTransport,
+                    label: "Next track",
+                    action: player.skipToNext
+                )
+
+                if alignment == .leading { Spacer(minLength: 0) }
+            }
+
+            secondaryControls
+        }
+        .frame(maxWidth: alignment == .leading ? nil : .infinity)
+    }
+
+    /// Shuffle and repeat, at the design's secondary weight: 21pt glyphs, 56
+    /// apart, white at 66% until active, then amber.
+    private var secondaryControls: some View {
+        HStack(spacing: 56) {
             IconButton(
                 systemName: HumIcon.shuffle,
-                size: 19,
-                tint: player.queue.shuffleEnabled ? Palette.honeyAmber : Palette.iconInactive,
+                size: 21,
+                tint: player.queue.shuffleEnabled
+                    ? Palette.honeyAmber
+                    : Palette.textPrimary.opacity(0.66),
                 label: player.queue.shuffleEnabled ? "Shuffle on" : "Shuffle off",
                 action: player.toggleShuffle
             )
 
-            if alignment == .center { Spacer() }
-
-            IconButton(
-                systemName: HumIcon.previous,
-                size: 27,
-                tint: Palette.textPrimary,
-                target: Metrics.transportSecondary,
-                pressScale: Motion.pressScaleTransport,
-                label: "Previous track",
-                action: player.skipToPrevious
-            )
-
-            if alignment == .center { Spacer() }
-
-            playButton
-
-            if alignment == .center { Spacer() }
-
-            IconButton(
-                systemName: HumIcon.next,
-                size: 27,
-                tint: Palette.textPrimary,
-                target: Metrics.transportSecondary,
-                pressScale: Motion.pressScaleTransport,
-                label: "Next track",
-                action: player.skipToNext
-            )
-
-            if alignment == .center { Spacer() }
-
             IconButton(
                 systemName: player.queue.repeatMode == .one ? HumIcon.repeatOne : HumIcon.repeatAll,
-                size: 19,
-                tint: player.queue.repeatMode == .off ? Palette.iconInactive : Palette.honeyAmber,
+                size: 21,
+                tint: player.queue.repeatMode == .off
+                    ? Palette.textPrimary.opacity(0.66)
+                    : Palette.honeyAmber,
                 label: repeatLabel,
                 action: player.cycleRepeat
             )
         }
-        .frame(maxWidth: alignment == .leading ? nil : .infinity)
     }
 
     private var repeatLabel: String {
@@ -402,12 +416,14 @@ private struct TransportControls: View {
     private var playButton: some View {
         Button(action: player.togglePlayPause) {
             Image(systemName: player.isPlaying ? HumIcon.pause : HumIcon.play)
-                .font(.system(size: size * 0.34, weight: .regular))
+                .font(.system(size: 27, weight: .regular))
                 .foregroundStyle(Palette.textPrimary)
                 .frame(width: size, height: size)
-                .background(Palette.amberTransport, in: Circle())
-                .overlay(Circle().strokeBorder(Palette.buttonStroke.opacity(1.1), lineWidth: 1))
-                .shadow(color: .black.opacity(0.5), radius: 17, y: 12)
+                // Solid Honey Amber with an amber glow, as measured. The build
+                // had a translucent 30%→13% wash and a white border, which read
+                // as a dimmed button rather than the screen's one bright disc.
+                .background(Palette.honeyAmber, in: Circle())
+                .shadow(color: Palette.honeyAmber.opacity(0.35), radius: 17, y: 10)
         }
         .buttonStyle(.pressableTransport)
         .accessibilityLabel(player.isPlaying ? "Pause" : "Play")
