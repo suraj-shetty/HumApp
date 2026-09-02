@@ -69,7 +69,7 @@ struct TrackRow: View {
             ArtworkView(
                 url: track.artworkURL,
                 size: Metrics.artRow,
-                cornerRadius: Metrics.radiusArt
+                cornerRadius: Metrics.radiusArtRow
             )
         case .index(let number):
             Text("\(number)")

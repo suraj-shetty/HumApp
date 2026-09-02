@@ -311,3 +311,45 @@ revert.
 Container geometry: the design's 362 × 64 at radius **26** is a flatter shape
 than the capsule `tabViewBottomAccessory` draws, and the accessory owns its own
 size. Unchanged, per the decision to keep native chrome.
+
+
+---
+
+## 10. Track row · **DONE**
+
+Measured from the design's DOM:
+
+| Part | Design | Was | Now |
+|---|---|---|---|
+| Row height | 74 (56 art + 9 top + 9 bottom) | 78 | 74 |
+| Vertical padding | **9** | 11 | 9 |
+| Content inset | **20** | 24 | 20 |
+| Art | 56, radius **8** | 56, radius 10 | 56, radius 8 |
+| Gap | 14 | 14 | ✅ already |
+| Title | 16 / 400 white | 16 / 400 | ✅ already |
+| Artist | 13.5 / 400, **amber 80%** | 13.5 amber 80% | ✅ already |
+
+The art radius forced a second exception to the "one art radius" law: rows
+measure **8**, the player bar **10**. Per §9's resolution, the rendering wins, so
+`radiusArtRow` exists alongside `radiusArt`.
+
+The content inset moved from 24 to 20 **globally** — the design's row is
+full-width with 20pt internal padding, so 20 is the content gutter. This is the
+first change in this audit to affect every screen at once.
+
+---
+
+## 11. Measured while auditing the row — not yet applied
+
+Two divergences surfaced during the row measurement and are recorded rather than
+silently fixed:
+
+1. **Section headers are wrong at a glance.** The design renders "Recently
+   played" as **19px, weight 300, white, sentence case, -0.2 tracking**. The app
+   renders "RECENTLY PLAYED" as an uppercase grey overline with wide tracking.
+   This is one of the largest single differences on the Home screen, and it
+   affects every section header in the app.
+2. **Shelf cards are 160×160 at radius 10**; the app uses 148.
+
+Next components in order: section header, shelf card, Now Playing transport,
+Connect screen.

@@ -5,8 +5,10 @@ enum Metrics {
 
     // MARK: - Gutters
 
-    /// Universal screen gutter.
-    static let gutter: CGFloat = 24
+    /// Universal screen gutter. Measured from the design's track row, which is
+    /// full-width with 20pt of internal padding, so content sits 20 from the
+    /// edge — not 24.
+    static let gutter: CGFloat = 20
     /// Hero content — detail artwork, Now Playing.
     static let heroGutter: CGFloat = 34
     /// Nav rows sit wider than body content.
@@ -34,7 +36,7 @@ enum Metrics {
 
     static let rowSpacing: CGFloat = 14
     static let rowSpacingWide: CGFloat = 16
-    static let rowPaddingCompact: CGFloat = 11
+    static let rowPaddingCompact: CGFloat = 9
     static let rowPadding: CGFloat = 12
     static let rowPaddingRelaxed: CGFloat = 13
 
@@ -64,6 +66,10 @@ enum Metrics {
     /// art. The build had invented four, which is why a shelf card and a row
     /// thumb never quite looked like the same family.
     static let radiusArt: CGFloat = 10
+    /// Row thumbnails measure 8, not 10. The design's "one art radius" law and
+    /// its own rendering disagree; the rendering wins for visual values, as
+    /// settled in DESIGN_AUDIT §9.
+    static let radiusArtRow: CGFloat = 8
     /// Cards — shelf tiles and grid cells.
     static let radiusCard: CGFloat = 18
 }
