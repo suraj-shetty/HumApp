@@ -12,21 +12,27 @@ struct DetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                ArtworkView(
-                    url: collection.artworkURL,
-                    size: Metrics.artDetailHero,
-                    cornerRadius: Metrics.radiusArt,
-                    label: collection.title
-                )
-                .frame(maxWidth: .infinity)
-                .shadow(color: .black.opacity(0.6), radius: 30, y: 20)
+            VStack(spacing: 20) {
+                // Full-bleed and square-cornered, as measured: the design runs
+                // the hero edge to edge at the screen's full width, not as a
+                // centred rounded card.
+                GeometryReader { proxy in
+                    ArtworkView(
+                        url: collection.artworkURL,
+                        size: proxy.size.width,
+                        cornerRadius: 0,
+                        label: collection.title
+                    )
+                }
+                .aspectRatio(1, contentMode: .fit)
 
-                metadata
-                actions
-                trackList
+                VStack(spacing: 20) {
+                    metadata
+                    actions
+                    trackList
+                }
+                .padding(.horizontal, Metrics.gutter)
             }
-            .padding(.horizontal, Metrics.gutter)
         }
         .scrollIndicators(.hidden)
         .background(Palette.deepOnyx)
@@ -55,38 +61,53 @@ struct DetailView: View {
 
     // MARK: - Header
 
+    /// Centred, per the design — the build had it leading-aligned.
     private var metadata: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 6) {
             Text(collection.title)
-                .humTitle(size: 27, weight: .light, tracking: -0.5)
+                .humTitle(size: 26, weight: .light, tracking: -0.4)
                 .foregroundStyle(Palette.textPrimary)
+                .multilineTextAlignment(.center)
 
             if !collection.subtitle.isEmpty {
                 Text(collection.subtitle)
                     .font(.system(size: 16))
-                    .foregroundStyle(Palette.honeyAmber)
+                    .foregroundStyle(Palette.textPrimary.opacity(0.82))
+                    .multilineTextAlignment(.center)
             }
 
+            // 14 / 400 in amber at 80% — not a tracked uppercase overline.
             Text(collection.metaLine)
-                .overline(size: 12.5, tracking: 1.2)
-                .foregroundStyle(Palette.textQuaternary)
+                .font(.system(size: 14))
+                .foregroundStyle(Palette.honeyAmber.opacity(0.8))
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
     private var actions: some View {
         if let tracks = model?.tracks.value, !tracks.isEmpty {
+            // Measured: a compact solid-amber Play with a Deep Onyx label —
+            // dark on amber, not white on a translucent wash — beside an
+            // outlined Shuffle in amber. Centred, sized to their content.
             HStack(spacing: 12) {
-                AmberCapsuleButton(title: "Play", systemImage: HumIcon.play, height: 50) {
-                    play(tracks, at: 0)
-                }
+                DetailActionButton(
+                    title: "Play",
+                    systemImage: HumIcon.play,
+                    style: .filled
+                ) { play(tracks, at: 0) }
+
                 if model?.showsShuffle == true {
-                    NeutralCapsuleButton(title: "Shuffle", systemImage: HumIcon.shuffle) {
-                        shuffle(tracks)
-                    }
+                    DetailActionButton(
+                        title: "Shuffle",
+                        systemImage: HumIcon.shuffle,
+                        style: .outlined
+                    ) { shuffle(tracks) }
                 }
             }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -139,5 +160,45 @@ struct DetailView: View {
         guard !tracks.isEmpty else { return }
         player.play(tracks, startingAt: Int.random(in: tracks.indices), source: collection.title)
         if !player.queue.shuffleEnabled { player.toggleShuffle() }
+    }
+}
+
+
+/// The detail screen's Play and Shuffle, measured from the design.
+///
+/// Deliberately not `AmberCapsuleButton`: that is Connect's full-width capsule,
+/// a translucent amber wash with a white label. The design's detail actions are
+/// a different component — compact, solid amber with a **Deep Onyx** label, or
+/// outlined in amber with an amber label.
+private struct DetailActionButton: View {
+    enum Style { case filled, outlined }
+
+    let title: String
+    let systemImage: String
+    let style: Style
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 15, weight: .regular))
+                Text(title)
+                    .font(.system(size: 16, weight: style == .filled ? .medium : .regular))
+            }
+            .foregroundStyle(style == .filled ? Palette.deepOnyx : Palette.honeyAmber)
+            .padding(.horizontal, 22)
+            .frame(height: style == .filled ? 48 : 50)
+            .background {
+                if style == .filled {
+                    Capsule(style: .continuous).fill(Palette.honeyAmber)
+                } else {
+                    Capsule(style: .continuous)
+                        .strokeBorder(Palette.honeyAmber.opacity(0.5), lineWidth: 1)
+                }
+            }
+        }
+        .buttonStyle(.pressable)
+        .accessibilityLabel(title)
     }
 }

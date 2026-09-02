@@ -524,3 +524,34 @@ deliberate, this is the line to change.**
 Three components have now diverged because the same thing was drawn twice —
 Library's card against Home's, and Now Playing's transport against the player
 bar's. Where the design draws one component, the build should have one view.
+
+
+---
+
+## 18. Detail header · **DONE** — the largest divergence found
+
+| Part | Design | Was |
+|---|---|---|
+| Hero art | **full-bleed, screen width, radius 0** | 342 centred card, radius 10, drop shadow |
+| Title | 26 / 300 / -0.4, **centred** | 27 / light / -0.5, **leading** |
+| Meta line | **14 / 400, amber 80%** | 12.5 uppercase, tracked, grey |
+| Play | **113 × 48, radius 24, solid amber, label 16/500 in Deep Onyx** | full-width capsule, translucent amber wash, **white** label |
+| Shuffle | **128 × 50, radius 24, transparent, 1px amber 50% border, amber label** | full-width neutral capsule, white label |
+
+The hero was the structural error — the design runs artwork edge to edge, and
+the build framed it as a rounded card floating in a 20pt gutter. The buttons were
+the second: the design's Play is a **compact solid amber pill with dark text**,
+the strongest affordance on the screen. The build's was a wide translucent wash
+with a white label, which is the *Connect* button — reused where it did not
+belong.
+
+`DetailActionButton` is therefore its own component rather than another
+`AmberCapsuleButton` configuration. That is the same lesson as §17 read from the
+other end: **where the design draws two different components, the build should
+not share one.**
+
+### Loose end
+
+`HumFont.button` was moved 16 → 17 in §16 for Connect, and Detail's buttons
+shared it. They now carry their own 16/500 and 16/400, measured, so that token is
+back to serving Connect alone.
