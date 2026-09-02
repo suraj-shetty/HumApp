@@ -41,7 +41,7 @@ struct PlayerBar: View {
             IconButton(
                 systemName: isPlaying ? HumIcon.pause : HumIcon.play,
                 size: 19,
-                weight: .semibold,
+                weight: .regular,
                 tint: Palette.textPrimary,
                 label: isPlaying ? "Pause" : "Play",
                 action: onPlayPause
@@ -50,7 +50,7 @@ struct PlayerBar: View {
             IconButton(
                 systemName: HumIcon.next,
                 size: 19,
-                weight: .semibold,
+                weight: .regular,
                 tint: Palette.textPrimary.opacity(0.82),
                 label: "Next track",
                 action: onNext

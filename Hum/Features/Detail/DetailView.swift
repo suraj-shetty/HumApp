@@ -16,7 +16,7 @@ struct DetailView: View {
                 ArtworkView(
                     url: collection.artworkURL,
                     size: Metrics.artDetailHero,
-                    cornerRadius: Metrics.radiusArtMedium,
+                    cornerRadius: Metrics.radiusArt,
                     label: collection.title
                 )
                 .frame(maxWidth: .infinity)

@@ -75,7 +75,7 @@ struct LibraryView: View {
             switch state {
             case .idle, .loading:
                 ForEach(0..<2, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: Metrics.radiusArtShelf, style: .continuous)
+                    RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
                         .fill(Palette.artworkFill)
                         .frame(height: Metrics.artShelf)
                 }

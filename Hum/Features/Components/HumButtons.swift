@@ -24,7 +24,7 @@ struct AmberCapsuleButton: View {
                         .tint(Palette.honeyAmber)
                 } else if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .regular))
                 }
                 Text(title)
                     .font(HumFont.button)
@@ -65,7 +65,7 @@ struct NeutralCapsuleButton: View {
             HStack(spacing: 9) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 15, weight: .regular))
                 }
                 Text(title)
                     .font(HumFont.button)
@@ -112,7 +112,7 @@ struct OutlineCapsuleButton: View {
 struct IconButton: View {
     let systemName: String
     var size: CGFloat = 20
-    var weight: Font.Weight = .medium
+    var weight: Font.Weight = .regular
     var tint: Color = Palette.iconInactive
     var target: CGFloat = Metrics.tapTarget
     var pressScale: CGFloat = Motion.pressScaleButton

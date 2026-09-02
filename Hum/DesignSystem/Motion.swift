@@ -8,7 +8,7 @@ import SwiftUI
 enum Motion {
 
     /// `humRise` — opacity 0→1 with a 14pt lift. 0.32s ease-out.
-    static let rise = Animation.easeOut(duration: 0.32)
+    static let rise = Animation.easeOut(duration: 0.3)
     /// Screen-to-screen content changes.
     ///
     /// Computed, not stored: `AnyTransition` is not `Sendable`, so a static
@@ -21,7 +21,9 @@ enum Motion {
     /// Stagger between the three meter bars.
     static let levelBarStagger: Double = 0.22
     /// Press feedback.
-    static let press = Animation.spring(response: 0.24, dampingFraction: 0.7)
+    /// Ease-out, not a spring: the design says "no bounce, no spring", and a
+    /// spring on every pressable control was the most widespread breach of it.
+    static let press = Animation.easeOut(duration: 0.16)
 
     static let pressScaleButton: CGFloat = 0.98
     static let pressScaleTransport: CGFloat = 0.94

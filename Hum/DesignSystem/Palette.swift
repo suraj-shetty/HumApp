@@ -14,6 +14,13 @@ enum Palette {
     static let honeyAmber = Color(hex: 0xE8A33D)
     /// `#F2B75C` — pressed/hover lift.
     static let honeyAmberLift = Color(hex: 0xF2B75C)
+
+    /// Terracotta — the design's error colour, and the *only* one. Its absence
+    /// is why destructive and failed states were previously drawn in the
+    /// accent, which is the colour that means "yes" everywhere else.
+    static let terracotta = Color(hex: 0xD2714A)
+    /// The lighter warning step, for text on onyx where Terracotta is too dark.
+    static let terracottaLift = Color(hex: 0xE29070)
     /// `#1C1A18` — raised chips (the Home avatar).
     static let surfaceRaised = Color(hex: 0x1C1A18)
 
@@ -40,7 +47,8 @@ enum Palette {
     // Shown while artwork loads and when a track has none. Warm-toned so a
     // missing image reads as intentional rather than broken.
 
-    static let artworkFill = Color(hex: 0x15141A)
+    /// Slate 900 — the art plate, per the design's colour table.
+    static let artworkFill = Color(hex: 0x1E1E20)
     static let artworkGradient = LinearGradient(
         colors: [Color(hex: 0x26241F), Color(hex: 0x16151A)],
         startPoint: .topLeading,

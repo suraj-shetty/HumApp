@@ -66,7 +66,7 @@ final class ArtworkStore {
 struct ArtworkView: View {
     let url: URL?
     var size: CGFloat
-    var cornerRadius: CGFloat = Metrics.radiusArtShelf
+    var cornerRadius: CGFloat = Metrics.radiusArt
     var warm: Bool = false
     /// Names the image for VoiceOver — the album or track title, not "image".
     var label: String?

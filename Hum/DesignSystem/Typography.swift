@@ -9,7 +9,10 @@ enum HumFont {
 
     /// The wordmark. The only rounded type in the app.
     static func wordmark(size: CGFloat = 32) -> Font {
-        .system(size: size, weight: .semibold, design: .rounded)
+        // 400 is the heaviest weight the design permits — "weights 200/300/400
+        // only". The wordmark was Semibold, which broke that law in the one
+        // place the brand is most visible.
+        .system(size: size, weight: .regular, design: .rounded)
     }
 
     // MARK: - Display & titles
@@ -26,7 +29,7 @@ enum HumFont {
         .system(size: size, weight: .light)
     }
 
-    static func titleM(_ size: CGFloat = 27) -> Font {
+    static func titleM(_ size: CGFloat = 26) -> Font {
         .system(size: size, weight: .light)
     }
 
@@ -38,16 +41,24 @@ enum HumFont {
 
     static let bodyL = Font.system(size: 16, weight: .light)
     static let button = Font.system(size: 16, weight: .regular)
-    static let rowTitle = Font.system(size: 15.5, weight: .regular)
+    static let rowTitle = Font.system(size: 16, weight: .regular)
     static let rowSubtitle = Font.system(size: 13.5, weight: .regular)
     static let caption = Font.system(size: 12.5, weight: .regular)
-    static let tabLabel = Font.system(size: 10.5, weight: .regular)
+
+    /// Every timecode, everywhere. The design asks for `ui-monospace`, which is
+    /// a monospaced *face* — `.monospacedDigit()` only equalises digit widths
+    /// on the proportional face and is not the same thing.
+    static func timecode(_ size: CGFloat = 12.5) -> Font {
+        .system(size: size, weight: .regular, design: .monospaced)
+    }
+    /// 11, not 10.5: the design's floor is "nothing below 11pt".
+    static let tabLabel = Font.system(size: 11, weight: .regular)
 
     /// The uppercase wide-tracked overline — "RECENTLY PLAYED", "UP NEXT",
     /// "PLAYING NOW". The system's most distinctive typographic move, and the
     /// reason `.overline()` exists as a modifier rather than being respecified
     /// at each of its ~10 call sites.
-    static func overline(_ size: CGFloat = 13) -> Font {
+    static func overline(_ size: CGFloat = 11) -> Font {
         .system(size: size, weight: .regular)
     }
 

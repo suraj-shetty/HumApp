@@ -54,14 +54,16 @@ enum Metrics {
     static let artDetailHero: CGFloat = 342
     static let artNowPlaying: CGFloat = 322
     static let artQueueHeader: CGFloat = 56
-    static let artRow: CGFloat = 52
+    static let artRow: CGFloat = 56
     static let artPlayerBar: CGFloat = 46
 
     // MARK: - Radii
 
-    static let radiusArtLarge: CGFloat = 14
-    static let radiusArtMedium: CGFloat = 12
-    static let radiusArtShelf: CGFloat = 10
-    static let radiusArtSmall: CGFloat = 8
-    static let radiusRowThumb: CGFloat = 7
+    /// **One** art radius, at every size. The design's radius scale is
+    /// "46 device · 24 sheet · 18 card · 10 art · 22 pill" — a single value for
+    /// art. The build had invented four, which is why a shelf card and a row
+    /// thumb never quite looked like the same family.
+    static let radiusArt: CGFloat = 10
+    /// Cards — shelf tiles and grid cells.
+    static let radiusCard: CGFloat = 18
 }

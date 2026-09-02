@@ -175,7 +175,7 @@ private struct ShelfCard: View {
             ArtworkView(
                 url: collection.artworkURL,
                 size: Metrics.artShelf,
-                cornerRadius: Metrics.radiusArtShelf,
+                cornerRadius: Metrics.radiusArt,
                 label: collection.title
             )
             Text(collection.title)
@@ -201,7 +201,7 @@ struct ShelfSkeleton: View {
             HStack(spacing: Metrics.rowSpacing) {
                 ForEach(0..<3, id: \.self) { _ in
                     VStack(alignment: .leading, spacing: 10) {
-                        RoundedRectangle(cornerRadius: Metrics.radiusArtShelf, style: .continuous)
+                        RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
                             .fill(Palette.artworkFill)
                             .frame(width: Metrics.artShelf, height: Metrics.artShelf)
                         Capsule().fill(Palette.artworkFill).frame(width: 110, height: 11)
@@ -226,7 +226,7 @@ struct RowSkeleton: View {
         VStack(spacing: 0) {
             ForEach(0..<count, id: \.self) { _ in
                 HStack(spacing: Metrics.rowSpacing) {
-                    RoundedRectangle(cornerRadius: Metrics.radiusRowThumb, style: .continuous)
+                    RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
                         .fill(Palette.artworkFill)
                         .frame(width: Metrics.artRow, height: Metrics.artRow)
                     VStack(alignment: .leading, spacing: 6) {
@@ -248,7 +248,9 @@ struct InlineError: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: HumIcon.warning)
-                .foregroundStyle(Palette.honeyAmber)
+                // Terracotta, not amber. Amber means "yes" everywhere else in
+                // this app; an error drawn in it reads as an invitation.
+                .foregroundStyle(Palette.terracottaLift)
             Text(message)
                 .font(HumFont.rowSubtitle)
                 .foregroundStyle(Palette.textSecondary)

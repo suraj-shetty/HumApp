@@ -8,8 +8,8 @@
 **Method:** every divergence recorded before anything is fixed, so the list can
 be triaged rather than worked through in discovery order.
 
-**Status:** step 1 complete — sources read, tokens diffed, screen inventory
-taken. Nothing fixed yet.
+**Status:** step 1 complete (sources read, tokens diffed, screens inventoried).
+**Triage A — token corrections — done**, see §6. B, C and D open.
 
 ---
 
@@ -138,3 +138,37 @@ Carried from the earlier data-audit, now with design context:
 **C — Missing screens.** Splash, onboarding, context menu, add-to-playlist, AirPlay, lyrics, the three Settings sub-screens, new playlist. **This is a scope question, not an audit finding** — it is roughly as much UI again as exists today, and several items need capabilities the app does not have.
 
 **D — Out of scope.** Share (43) collides with the compliance rule against export of MusicKit content, and should stay unbuilt whatever the design shows.
+
+
+---
+
+## 6. Triage A — token corrections · **DONE**
+
+Every item in §2 that was a mechanical mismatch is now corrected. Verified in the
+Simulator and installed on device.
+
+| Correction | Was | Now |
+|---|---|---|
+| Terracotta error token added | absent | `terracotta #D2714A`, `terracottaLift #E29070` |
+| Errors drawn in the error colour | `InlineError` icon in Honey Amber | Terracotta — amber means "yes" everywhere else, so an error drawn in it read as an invitation |
+| Destructive swipe action | inherited the app's amber tint | `.tint(Palette.terracotta)` |
+| Art plate | `0x15141A` | Slate 900 `0x1E1E20` |
+| Wordmark weight | `.semibold` (600) | `.regular` (400) — the law was broken in the one place the brand is most visible |
+| `IconButton` default weight | `.medium` (500) | `.regular` |
+| Player bar transport, Now Playing transport, capsule buttons | `.semibold` / `.medium` | `.regular` |
+| Track artist | `textTertiary`, white 52% | Honey Amber at 80%, per the type ramp |
+| Timecodes | `.monospacedDigit()` on the proportional face | `HumFont.timecode()` on a genuinely monospaced face |
+| Track row art | 52pt | 56pt |
+| Art radii | four values: 14 / 12 / 10 / 8 / 7 | **one**: `radiusArt = 10`. `radiusCard = 18` added for cards, which the design scales separately |
+| Row title | 15.5 | 16 |
+| Title M | 27 | 26 |
+| Overline default | 13 | 11 |
+| Tab label | 10.5 | 11 — the design's floor is "nothing below 11pt" |
+| Press animation | `.spring(response: 0.24)` | `.easeOut(0.16)` — "no bounce, no spring" |
+| Rise | 0.32s | 0.30s |
+
+**Not addressed by A, deliberately:** the 22pt pill radius needs measuring against
+the design rather than guessing, and the sheet radius (24) is currently whatever
+the system provides. Both are recorded in §2.
+
+72 tests pass; containment passes; device and Simulator builds are warning-free.

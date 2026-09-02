@@ -83,7 +83,7 @@ private struct NowPlayingPortraitLayout: View {
             ArtworkView(
                 url: track.artworkURL,
                 size: Metrics.artNowPlaying,
-                cornerRadius: Metrics.radiusArtLarge,
+                cornerRadius: Metrics.radiusArt,
                 label: track.albumTitle ?? track.title
             )
             .shadow(color: .black.opacity(0.6), radius: 30, y: 26)
@@ -172,7 +172,7 @@ private struct NowPlayingLandscapeLayout: View {
             ArtworkView(
                 url: track.artworkURL,
                 size: Metrics.artNowPlaying,
-                cornerRadius: Metrics.radiusArtMedium,
+                cornerRadius: Metrics.radiusArt,
                 label: track.albumTitle ?? track.title
             )
             .shadow(color: .black.opacity(0.6), radius: 26, y: 18)
@@ -239,7 +239,7 @@ private struct NowPlayingBar: View {
             IconButton(
                 systemName: HumIcon.collapse,
                 size: 22,
-                weight: .semibold,
+                weight: .regular,
                 tint: Palette.textSecondary,
                 label: "Close player",
                 action: onClose
@@ -311,8 +311,7 @@ private struct ProgressScrubber: View {
                 Spacer()
                 Text(player.remaining.humRemaining)
             }
-            .font(.system(size: 12))
-            .monospacedDigit()
+            .font(HumFont.timecode(12))
             .foregroundStyle(Palette.textTertiary)
         }
         // One accessibility element for the whole control, with a real value
@@ -403,7 +402,7 @@ private struct TransportControls: View {
     private var playButton: some View {
         Button(action: player.togglePlayPause) {
             Image(systemName: player.isPlaying ? HumIcon.pause : HumIcon.play)
-                .font(.system(size: size * 0.34, weight: .medium))
+                .font(.system(size: size * 0.34, weight: .regular))
                 .foregroundStyle(Palette.textPrimary)
                 .frame(width: size, height: size)
                 .background(Palette.amberTransport, in: Circle())

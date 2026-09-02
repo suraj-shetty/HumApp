@@ -82,7 +82,7 @@ struct QueueView: View {
             ArtworkView(
                 url: track.artworkURL,
                 size: Metrics.artQueueHeader,
-                cornerRadius: Metrics.radiusArtSmall
+                cornerRadius: Metrics.radiusArt
             )
 
             VStack(alignment: .leading, spacing: 4) {
@@ -139,6 +139,9 @@ struct QueueView: View {
                 Button("Remove", systemImage: HumIcon.remove, role: .destructive) {
                     player.remove(at: index)
                 }
+                // Without this the action inherits the app's amber tint — the
+                // colour that means "play" — for a destructive control.
+                .tint(Palette.terracotta)
             }
             .accessibilityActions {
                 Button("Play now") { player.jump(to: index) }

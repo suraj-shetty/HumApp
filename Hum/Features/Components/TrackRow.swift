@@ -36,16 +36,18 @@ struct TrackRow: View {
 
                     Text(track.artist)
                         .font(HumFont.rowSubtitle)
-                        .foregroundStyle(Palette.textTertiary)
+                        // Amber at 80%, per the design's type ramp — the row
+                        // artist is the one piece of body copy that carries
+                        // the accent.
+                        .foregroundStyle(Palette.honeyAmber.opacity(0.8))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 if showsDuration, track.duration > 0 {
                     Text(track.duration.humTimestamp)
-                        .font(HumFont.caption)
+                        .font(HumFont.timecode())
                         .foregroundStyle(Palette.textQuaternary)
-                        .monospacedDigit()
                 }
             }
             .padding(.vertical, rowPadding)
@@ -67,13 +69,12 @@ struct TrackRow: View {
             ArtworkView(
                 url: track.artworkURL,
                 size: Metrics.artRow,
-                cornerRadius: Metrics.radiusRowThumb
+                cornerRadius: Metrics.radiusArt
             )
         case .index(let number):
             Text("\(number)")
-                .font(.system(size: 14))
+                .font(HumFont.timecode(14))
                 .foregroundStyle(isCurrent ? Palette.honeyAmber : Palette.textQuaternary)
-                .monospacedDigit()
                 .frame(width: 18, alignment: .leading)
         }
     }
