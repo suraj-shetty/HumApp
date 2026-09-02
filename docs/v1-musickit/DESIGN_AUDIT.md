@@ -172,3 +172,64 @@ the design rather than guessing, and the sheet radius (24) is currently whatever
 the system provides. Both are recorded in §2.
 
 72 tests pass; containment passes; device and Simulator builds are warning-free.
+
+
+---
+
+## 7. Measured component specs — read from the rendered design
+
+§2 diffed the design's *prose*. This section reads the rendered board's DOM and
+computed styles, which is the only way to audit appearance. It immediately
+corrected one of my own §6 changes and produced numbers no amount of reading
+would have given.
+
+**Authority, stated in the design's own header:** *"Board 01 wins on visual
+values. Board 02 wins on behaviour. Board 03 inherits every law from 01."*
+
+### Correction to §6 — the wordmark
+
+Every `hum,` in the design, at every size **including the 30pt one inside the
+Home header**, measures `ui-rounded` at **weight 600**, amber. The
+"weights 200/300/400" law governs **SF Pro Display**, the UI face; the wordmark
+is a brand asset and is exempt. §6 lowered it to Regular on the strength of the
+prose — wrong, and now reverted. Its default size is also 30, not 32.
+
+### Chrome — measured
+
+| Element | Design | Built |
+|---|---|---|
+| **Player bar** | **362 × 64**, radius **26**, border `1px rgba(255,255,255,.16)`, `blur(26) saturate(1.8)` | system `tabViewBottomAccessory`, system capsule |
+| **Tab bar** | **288 × 64**, radius **28** — *fixed width, independent of the player bar* | system tab bar, width varies with the accessory |
+| **Search island** | **64 × 64 circle**, same glass | `Tab(role: .search)`, system-sized |
+| Toast | 362 × 46, radius **26** | capsule |
+| Toast with action | 350 × 49, radius 26, carries **Retry** | no action variant exists |
+| Offline banner | 362 × 41, radius **20** | not built |
+| Search field | 350 × 48, radius **23** | system `.searchable` |
+| Context menu | 350 × 372, radius **20** | not built |
+| Bottom sheet | 390 × 641, radius **38 38 0 0** | system detent |
+| Circular buttons | 64 and 46, radius 50% | mixed |
+| Splash mark plate | 172 × 172, radius 38 | not built |
+
+**This answers the tab bar report.** In the design the tab bar is a **fixed 288pt
+wide** and the player bar above it is **362pt** — deliberately different widths,
+with the tab bar plus the 64pt search island together spanning the player bar's
+width. The app's tab bar instead *resizes* when the accessory appears. So the
+behaviour you noticed is a genuine divergence, not a system quirk to accept.
+
+The radius law says "24 sheet", but the measured sheet is 38. Board 01 wins on
+visual values, so **38**.
+
+### What this implies
+
+The player bar and tab bar are `tabViewBottomAccessory` and the system `TabView`,
+which own their own geometry. Matching 362/288/64 and radii 26/28 may not be
+expressible through those APIs. That is a **real architectural decision** —
+the brief says not to hand-build the tab bar, and the design specifies
+measurements the system does not offer. It needs to be taken deliberately, not
+discovered halfway through a styling pass.
+
+### Method note
+
+Reading the design as text produced a wrong change to the wordmark and missed
+every measurement above. Serving the bundle over `http://` and querying the DOM
+produced both. **Audit rendered output, not prose.**

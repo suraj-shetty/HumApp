@@ -8,11 +8,13 @@ import SwiftUI
 enum HumFont {
 
     /// The wordmark. The only rounded type in the app.
-    static func wordmark(size: CGFloat = 32) -> Font {
-        // 400 is the heaviest weight the design permits — "weights 200/300/400
-        // only". The wordmark was Semibold, which broke that law in the one
-        // place the brand is most visible.
-        .system(size: size, weight: .regular, design: .rounded)
+    static func wordmark(size: CGFloat = 30) -> Font {
+        // Semibold on purpose. The "weights 200/300/400 only" law governs
+        // SF Pro Display — the UI face. The wordmark is a brand asset in
+        // ui-rounded, and every instance of it in the design measures at 600,
+        // including the 30pt one in the Home header. Corrected after reading
+        // the rendered design rather than its prose.
+        .system(size: size, weight: .semibold, design: .rounded)
     }
 
     // MARK: - Display & titles
