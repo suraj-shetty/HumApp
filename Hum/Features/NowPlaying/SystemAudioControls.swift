@@ -21,6 +21,11 @@ struct VolumeSlider: UIViewRepresentable {
 
     func updateUIView(_ view: MPVolumeView, context: Context) {}
 
+    // `MPVolumeView` and `AVRoutePickerView` carry UIKit's own accessibility —
+    // the slider announces itself as a volume slider, the picker as AirPlay —
+    // so neither is relabelled here. Overriding them would replace correct,
+    // localised system labels with worse English ones.
+
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MPVolumeView, context: Context) -> CGSize? {
         CGSize(width: proposal.width ?? 322, height: 28)
     }

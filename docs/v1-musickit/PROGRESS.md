@@ -696,6 +696,40 @@ so must live in a `ViewModifier` rather than in a static `Font` token — meanin
 task, and doing half of it would leave the type system inconsistent, which is
 worse than leaving it whole and broken with a note.
 
+### VoiceOver pass — done
+
+Phase 4 had already done the hard parts, and they hold up: the progress bar is a
+single element with a label, a spoken value and an **adjustable action** for
+seeking; the level meter is hidden; track rows, shelf cards and the player bar
+are combined elements with composed labels; `IconButton` requires a label at the
+type level, so no icon-only control can ship without one.
+
+What this pass fixed:
+
+**Decorative glyphs were being announced.** The empty-state icon, the
+subscription-gap icon, the Connect permission-row icons, the inline-error warning
+triangle, and the glyphs inside capsule buttons are all decoration sitting beside
+text that already says the same thing. VoiceOver read them as extra stops. All
+now `accessibilityHidden(true)`.
+
+**Headings were not headings.** The three screen titles ("Evening", "Search",
+"Settings"), Settings' group labels and the Queue's "next from" label are visually
+headings but carried no `.isHeader` trait, so rotor navigation by heading skipped
+straight past them. `SectionHeader` already had it; the styles added during the
+design audit did not, because the trait lived on the component rather than the
+style.
+
+**Left alone deliberately:** `MPVolumeView` and `AVRoutePickerView` carry UIKit's
+own accessibility — the slider announces itself as a volume slider, the picker as
+AirPlay, both localised. Relabelling them would replace correct system strings
+with worse English ones.
+
+**Not verified by a real VoiceOver walk.** This is a static audit: every
+interactive element checked for a label, every image for a label or a hidden
+flag, every heading for its trait. Driving VoiceOver itself needs a device in
+someone's hands, and `XCUIApplication.performAccessibilityAudit()` needs a UI
+test target this project does not have. **Both are worth doing before release.**
+
 ### Carried into Phase 6
 
 **A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.

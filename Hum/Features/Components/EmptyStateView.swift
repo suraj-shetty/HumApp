@@ -18,6 +18,8 @@ struct EmptyStateView: View {
             Image(systemName: icon)
                 .humFont(34, weight: .light)
                 .foregroundStyle(Palette.honeyAmber.opacity(0.7))
+                // Decorative: the headline and message say everything it does.
+                .accessibilityHidden(true)
 
             Text(headline)
                 .humFont(HumTextStyle(size: 19, weight: .light, relativeTo: .title))

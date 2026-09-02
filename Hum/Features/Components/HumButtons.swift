@@ -25,6 +25,8 @@ struct AmberCapsuleButton: View {
                 } else if let systemImage {
                     Image(systemName: systemImage)
                         .humFont(16, weight: .regular)
+                        // The title carries the meaning; the glyph repeats it.
+                        .accessibilityHidden(true)
                 }
                 Text(title)
                     .humFont(.button)
@@ -66,6 +68,7 @@ struct NeutralCapsuleButton: View {
                 if let systemImage {
                     Image(systemName: systemImage)
                         .humFont(15, weight: .regular)
+                        .accessibilityHidden(true)
                 }
                 Text(title)
                     .humFont(.button)

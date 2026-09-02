@@ -183,6 +183,7 @@ private struct DetailActionButton: View {
             HStack(spacing: 9) {
                 Image(systemName: systemImage)
                     .humFont(15, weight: .regular)
+                    .accessibilityHidden(true)
                 Text(title)
                     .humFont(16, weight: style == .filled ? .medium : .regular)
             }

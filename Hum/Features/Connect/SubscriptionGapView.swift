@@ -27,6 +27,7 @@ struct SubscriptionGapView: View {
                 Image(systemName: icon)
                     .humFont(38, weight: .light)
                     .foregroundStyle(Palette.honeyAmber.opacity(0.8))
+                    .accessibilityHidden(true)
 
                 VStack(spacing: 14) {
                     Text(title)

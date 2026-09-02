@@ -44,6 +44,7 @@ struct HomeView: View {
             Text(model?.greeting ?? "")
                 .humFont(.screenTitle)
                 .foregroundStyle(Palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
             Spacer()
             NavigationLink {
                 SettingsView()
@@ -260,6 +261,7 @@ struct InlineError: View {
                 // Terracotta, not amber. Amber means "yes" everywhere else in
                 // this app; an error drawn in it reads as an invitation.
                 .foregroundStyle(Palette.terracottaLift)
+                .accessibilityHidden(true)
             Text(message)
                 .humFont(.rowSubtitle)
                 .foregroundStyle(Palette.textSecondary)

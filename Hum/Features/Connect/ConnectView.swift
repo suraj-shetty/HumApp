@@ -196,6 +196,7 @@ private struct PermissionRow: View {
                 .humFont(17, weight: .light)
                 .foregroundStyle(Palette.honeyAmber)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(text)
                 .humFont(15.5, weight: .light)

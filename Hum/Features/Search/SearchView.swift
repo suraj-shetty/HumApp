@@ -117,6 +117,7 @@ struct SearchView: View {
                 Text("Search")
                     .humFont(.screenTitle)
                     .foregroundStyle(Palette.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Metrics.gutter)
                     .padding(.bottom, 12)

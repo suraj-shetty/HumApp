@@ -100,6 +100,7 @@ struct SettingsView: View {
             Text("Settings")
                 .humFont(.screenTitle)
                 .foregroundStyle(Palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Metrics.gutter)
                 .padding(.bottom, 12)
@@ -132,5 +133,6 @@ struct SettingsView: View {
         Text(title)
             .humFont(.groupLabel)
             .foregroundStyle(Palette.textPrimary.opacity(0.62))
+            .accessibilityAddTraits(.isHeader)
     }
 }

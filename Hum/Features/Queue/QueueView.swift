@@ -45,6 +45,7 @@ struct QueueView: View {
                             Text(upNextLabel)
                                 .humFont(.groupLabel)
                                 .foregroundStyle(Palette.textPrimary.opacity(0.62))
+                                .accessibilityAddTraits(.isHeader)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             .listRowInsets(
                                 .init(
