@@ -191,19 +191,33 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
     private func mirrorEntries(_ state: QueueState) async throws {
         let cued = try await resolve(state.entries)
-        let playing = player.queue.currentEntry
+
+        // Reuse the `Entry` objects the player already holds, matched by item
+        // and by repeat. This is the difference between a reorder being a
+        // permutation of entries MusicKit has already prepared and it being a
+        // brand new queue: constructing fresh entries makes the player re-cue
+        // everything, on the main actor, in the middle of a drag — which read
+        // on device first as a second-long stall and then as a hang.
+        var pool: [String: [ApplicationMusicPlayer.Queue.Entry]] = [:]
+        for entry in player.queue.entries {
+            guard let id = entry.item?.id.rawValue else { continue }
+            pool[id, default: []].append(entry)
+        }
+
+        let entries = cued.map { cued -> ApplicationMusicPlayer.Queue.Entry in
+            if var existing = pool[cued.track.id], !existing.isEmpty {
+                let entry = existing.removeFirst()
+                pool[cued.track.id] = existing
+                return entry
+            }
+            // Genuinely new to the queue, so it has to be built.
+            return ApplicationMusicPlayer.Queue.Entry(cued.song)
+        }
 
         // `Entries` is MusicKit's own range-replaceable collection, not an
         // Array — assigning through its initializer replaces the queue's
         // contents without tearing down the queue object itself.
-        player.queue.entries = ApplicationMusicPlayer.Queue.Entries(
-            cued.map { entry in
-                // Reuse the live entry object for the track that is sounding
-                // right now; a replacement entry would restart playback.
-                if let playing, playing.item?.id.rawValue == entry.track.id { return playing }
-                return ApplicationMusicPlayer.Queue.Entry(entry.song)
-            }
-        )
+        player.queue.entries = ApplicationMusicPlayer.Queue.Entries(entries)
     }
 
     /// Shuffle and repeat are the *player's* modes, not a reordering Hum
@@ -229,17 +243,12 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     /// dropped rather than cued as a hole that would stall playback.
     private func resolve(_ tracks: [HumTrack]) async throws -> [CuedTrack] {
         let unknown = tracks.filter { songs[$0.id] == nil }
-        let catalogIDs = unknown.filter { $0.source == .catalog }.map { MusicItemID($0.id) }
-        let libraryIDs = unknown.filter { $0.source == .library }.map { MusicItemID($0.id) }
-
-        if !catalogIDs.isEmpty {
-            let request = MusicCatalogResourceRequest<Song>(matching: \.id, memberOf: catalogIDs)
-            for song in try await request.response().items { songs[song.id.rawValue] = song }
-        }
-        if !libraryIDs.isEmpty {
-            var request = MusicLibraryRequest<Song>()
-            request.filter(matching: \.id, memberOf: libraryIDs)
-            for song in try await request.response().items { songs[song.id.rawValue] = song }
+        if !unknown.isEmpty {
+            let fetched = try await Self.fetchSongs(
+                catalog: unknown.filter { $0.source == .catalog }.map { MusicItemID($0.id) },
+                library: unknown.filter { $0.source == .library }.map { MusicItemID($0.id) }
+            )
+            for song in fetched { songs[song.id.rawValue] = song }
         }
 
         let cued = tracks.compactMap { track in
@@ -249,6 +258,28 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         let live = Set(cued.map(\.track.id))
         songs = songs.filter { live.contains($0.key) }
         return cued
+    }
+
+    /// `nonisolated` on purpose: these are network round trips, and running
+    /// them on the main actor blocks the UI for as long as they take. A
+    /// reorder of already-cued tracks resolves entirely from `songs` and never
+    /// reaches this at all.
+    private nonisolated static func fetchSongs(
+        catalog: [MusicItemID],
+        library: [MusicItemID]
+    ) async throws -> [Song] {
+        var songs: [Song] = []
+
+        if !catalog.isEmpty {
+            let request = MusicCatalogResourceRequest<Song>(matching: \.id, memberOf: catalog)
+            songs += Array(try await request.response().items)
+        }
+        if !library.isEmpty {
+            var request = MusicLibraryRequest<Song>()
+            request.filter(matching: \.id, memberOf: library)
+            songs += Array(try await request.response().items)
+        }
+        return songs
     }
 
     // MARK: - Publishing

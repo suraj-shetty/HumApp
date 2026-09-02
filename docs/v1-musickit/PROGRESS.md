@@ -408,6 +408,17 @@ Up-next rows now carry `"<track id>#<nth repeat>"`, which is the same before and
 
 Verified in the Simulator: dragging the third row to first lands correctly and the list is settled in the frame immediately after release.
 
+**Finding 5 — the reorder hung the app, and Finding 4 was the same defect wearing a smaller hat.** `mirrorEntries` reused the live `Entry` object for the *playing* track and constructed a brand new one for every other row. A reorder therefore handed MusicKit an entirely new queue to cue and prepare — on the main actor, in the middle of a drag.
+
+That cost was always there. With position identity the list did a jarring reload that hid it behind roughly a second of stall; once the move actually animated, the same work presented as a hang.
+
+Two changes:
+
+1. **Entry objects are reused, matched by item and by repeat.** A reorder is now a permutation of entries the player has already prepared; only a track genuinely new to the queue gets built.
+2. **Song resolution moved off the main actor** (`nonisolated static fetchSongs`). Those are network round trips and had no business blocking the UI. A reorder of already-cued tracks resolves entirely from the in-memory map and never reaches them at all.
+
+**Not reproducible locally** — the Simulator runs preview services, where a drag was always smooth, which is itself the evidence that the defect lived in the adapter rather than the view. Needs device confirmation.
+
 ### Open findings, not yet fixed
 
 0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
@@ -445,6 +456,17 @@ Identifying rows by position fixed duplicates but broke moves: every row changes
 Up-next rows now carry `"<track id>#<nth repeat>"`, which is the same before and after a move. Two copies of one track do swap identities when dragged past each other — and are pixel-identical when they do, so there is nothing to see. Only the Queue needs this; Home, Search and Detail never reorder, so position identity stays correct there.
 
 Verified in the Simulator: dragging the third row to first lands correctly and the list is settled in the frame immediately after release.
+
+**Finding 5 — the reorder hung the app, and Finding 4 was the same defect wearing a smaller hat.** `mirrorEntries` reused the live `Entry` object for the *playing* track and constructed a brand new one for every other row. A reorder therefore handed MusicKit an entirely new queue to cue and prepare — on the main actor, in the middle of a drag.
+
+That cost was always there. With position identity the list did a jarring reload that hid it behind roughly a second of stall; once the move actually animated, the same work presented as a hang.
+
+Two changes:
+
+1. **Entry objects are reused, matched by item and by repeat.** A reorder is now a permutation of entries the player has already prepared; only a track genuinely new to the queue gets built.
+2. **Song resolution moved off the main actor** (`nonisolated static fetchSongs`). Those are network round trips and had no business blocking the UI. A reorder of already-cued tracks resolves entirely from the in-memory map and never reaches them at all.
+
+**Not reproducible locally** — the Simulator runs preview services, where a drag was always smooth, which is itself the evidence that the defect lived in the adapter rather than the view. Needs device confirmation.
 
 ### Open findings, not yet fixed
 
