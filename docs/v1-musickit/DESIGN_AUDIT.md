@@ -274,3 +274,40 @@ forbids and which was explicitly ruled out. **Left as a known divergence.**
 Also unmatched, and gated on the same constraint: the tab bar's fixed 288pt width
 and 28pt radius, the player bar's 362×64 at radius 26, and the 64pt search
 island. All are system geometry.
+
+
+---
+
+## 9. Player bar — measured part by part · **DONE**
+
+The tint alone did not make it match, because almost every *part* diverged.
+Measured from the design's own DOM:
+
+| Part | Design | Was | Now |
+|---|---|---|---|
+| Artwork | **40 × 40, radius 10** — a rounded square | 46pt **circle** | 40pt rounded square |
+| Title | 13.5, weight **500**, white | 14.5, Regular | 13.5 Medium |
+| Artist | 11.5, weight 400, **amber at 85%** | 12.5, **grey** | 11.5 amber 85% |
+| Transport icons | 17 | 19 | 17 |
+| Row gap | 11 | 13 | 11 |
+| Padding | 9 vertical, 11 horizontal | 10 / 8 | 9 / 11 |
+
+The circular thumbnail was the single most visible error: the design has never
+had one. `CircularArtworkView` is now unused by the player bar.
+
+### The weight conflict, resolved once
+
+The design's prose says "weights 200/300/400 only". Its rendering uses **500**
+for this title and **600** for the wordmark. Both cannot hold.
+
+**Resolution: the rendering wins for visual values**, per the design's own
+authority note, and the prose law is read as describing the *body* ramp rather
+than every label. This is recorded here so it is settled once rather than
+re-litigated at each component — it has already caused one wrong change and one
+revert.
+
+### Still divergent, and system-owned
+
+Container geometry: the design's 362 × 64 at radius **26** is a flatter shape
+than the capsule `tabViewBottomAccessory` draws, and the accessory owns its own
+size. Unchanged, per the decision to keep native chrome.

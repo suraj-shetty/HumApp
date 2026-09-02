@@ -19,17 +19,25 @@ struct PlayerBar: View {
     let onNext: () -> Void
 
     var body: some View {
-        HStack(spacing: 13) {
-            CircularArtworkView(url: track.artworkURL, size: Metrics.artPlayerBar)
+        // Measured from the design: 40pt art at radius 10 — a rounded square,
+        // not a circle; title 13.5/Medium; artist 11.5 in amber at 85%; 11pt
+        // gap. The app had a 46pt circle, a 14.5 title and a grey artist.
+        HStack(spacing: 11) {
+            ArtworkView(
+                url: track.artworkURL,
+                size: Metrics.artPlayerBar,
+                cornerRadius: Metrics.radiusArt,
+                warm: true
+            )
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
-                    .font(.system(size: 14.5))
+                    .font(.system(size: 13.5, weight: .medium))
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(track.artist)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Palette.textSecondary.opacity(0.85))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Palette.honeyAmber.opacity(0.85))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -40,7 +48,7 @@ struct PlayerBar: View {
 
             IconButton(
                 systemName: isPlaying ? HumIcon.pause : HumIcon.play,
-                size: 19,
+                size: 17,
                 weight: .regular,
                 tint: Palette.textPrimary,
                 label: isPlaying ? "Pause" : "Play",
@@ -49,15 +57,15 @@ struct PlayerBar: View {
 
             IconButton(
                 systemName: HumIcon.next,
-                size: 19,
+                size: 17,
                 weight: .regular,
-                tint: Palette.textPrimary.opacity(0.82),
+                tint: Palette.textPrimary,
                 label: "Next track",
                 action: onNext
             )
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 8)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 9)
         // The accessory slot supplies the material; this is the design's amber
         // tint laid over it. No shadow — the slot casts its own.
         .amberGlass(in: Capsule(style: .continuous), shadow: false)

@@ -55,7 +55,7 @@ enum Metrics {
     static let artNowPlaying: CGFloat = 322
     static let artQueueHeader: CGFloat = 56
     static let artRow: CGFloat = 56
-    static let artPlayerBar: CGFloat = 46
+    static let artPlayerBar: CGFloat = 40
 
     // MARK: - Radii
 
