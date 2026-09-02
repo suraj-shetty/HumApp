@@ -98,8 +98,7 @@ struct SettingsView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             // 32 / 200, the same display title Home and Search carry.
             Text("Settings")
-                .font(HumFont.screenTitle)
-                .kerning(-0.8)
+                .humFont(.screenTitle)
                 .foregroundStyle(Palette.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Metrics.gutter)
@@ -117,11 +116,11 @@ struct SettingsView: View {
     private func row(_ title: String, _ value: String) -> some View {
         LabeledContent {
             Text(value)
-                .font(.system(size: 15))
+                .humFont(15)
                 .foregroundStyle(Palette.textPrimary.opacity(0.62))
         } label: {
             Text(title)
-                .font(.system(size: 16))
+                .humFont(16)
                 .foregroundStyle(Palette.textPrimary)
         }
         .accessibilityElement(children: .combine)
@@ -131,9 +130,7 @@ struct SettingsView: View {
     /// the same style the Queue uses for "next from", not a section title.
     private func groupLabel(_ title: String) -> some View {
         Text(title)
-            .font(HumFont.groupLabel)
-            .textCase(.uppercase)
-            .kerning(1.5)
+            .humFont(.groupLabel)
             .foregroundStyle(Palette.textPrimary.opacity(0.62))
     }
 }

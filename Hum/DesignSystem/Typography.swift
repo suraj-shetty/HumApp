@@ -5,83 +5,70 @@ import SwiftUI
 /// Two families: **SF Pro Rounded Semibold** for the `hum,` wordmark alone, and
 /// **SF Pro Display** for everything else. Weights run light — the heaviest
 /// non-wordmark weight in the entire prototype is 400.
-enum HumFont {
+/// One entry in the ramp: a size, a weight, and the text style it scales
+/// against.
+///
+/// Sizes are **points at the default Dynamic Type size**. They are not applied
+/// directly — `humFont(_:)` runs them through `@ScaledMetric`, which is the only
+/// supported way to make a custom point size follow the listener's text size.
+/// `Font.system(size:)` has no scaling variant, and using it directly is why
+/// Dynamic Type did nothing in this app until now.
+struct HumTextStyle {
+    var size: CGFloat
+    var weight: Font.Weight = .regular
+    var design: Font.Design = .default
+    /// The metric the size scales against. Body for content, caption for the
+    /// small tracked labels, title for display type.
+    var relativeTo: Font.TextStyle = .body
+    var tracking: CGFloat = 0
+    var uppercase: Bool = false
 
-    /// The wordmark. The only rounded type in the app.
-    static func wordmark(size: CGFloat = 30) -> Font {
-        // Semibold on purpose. The "weights 200/300/400 only" law governs
-        // SF Pro Display — the UI face. The wordmark is a brand asset in
-        // ui-rounded, and every instance of it in the design measures at 600,
-        // including the 30pt one in the Home header. Corrected after reading
-        // the rendered design rather than its prose.
-        .system(size: size, weight: .semibold, design: .rounded)
+    func size(_ newSize: CGFloat) -> HumTextStyle {
+        var copy = self
+        copy.size = newSize
+        return copy
     }
+}
+
+extension HumTextStyle {
 
     // MARK: - Display & titles
-    //
-    // `relativeTo:` keeps Dynamic Type working. Weight steps *up* as size
-    // grows (see `weight(for:)`) because Ultra Light does not survive the
-    // accessibility sizes — it thins out to near-invisibility.
 
-    static func display(_ size: CGFloat = 36) -> Font {
-        .system(size: size, weight: .ultraLight)
-    }
-
-    static func titleL(_ size: CGFloat = 30) -> Font {
-        .system(size: size, weight: .light)
-    }
-
-    static func titleM(_ size: CGFloat = 26) -> Font {
-        .system(size: size, weight: .light)
-    }
-
-    static func titleS(_ size: CGFloat = 23) -> Font {
-        .system(size: size, weight: .regular)
-    }
+    /// "Evening", "Search", "Settings" — 32 / 200 / -0.8.
+    static let screenTitle = Self(size: 32, weight: .ultraLight, relativeTo: .largeTitle, tracking: -0.8)
+    /// "Recently played", "Made for you" — 19 / 300 / -0.2.
+    static let sectionTitle = Self(size: 19, weight: .light, relativeTo: .title3, tracking: -0.2)
+    static let display = Self(size: 36, weight: .ultraLight, relativeTo: .largeTitle, tracking: -0.9)
+    static let titleL = Self(size: 30, weight: .light, relativeTo: .title)
+    static let titleM = Self(size: 26, weight: .light, relativeTo: .title2, tracking: -0.4)
+    static let titleS = Self(size: 23, weight: .regular, relativeTo: .title3)
 
     // MARK: - Body & rows
 
-    static let bodyL = Font.system(size: 16, weight: .light)
-    /// 17, measured on the Connect button's label. Detail's Play and Shuffle
-    /// buttons have not been measured yet and share this token.
-    static let button = Font.system(size: 17, weight: .regular)
-    static let rowTitle = Font.system(size: 16, weight: .regular)
-    static let rowSubtitle = Font.system(size: 13.5, weight: .regular)
-    static let caption = Font.system(size: 12.5, weight: .regular)
-
-    /// Every timecode, everywhere. The design asks for `ui-monospace`, which is
-    /// a monospaced *face* — `.monospacedDigit()` only equalises digit widths
-    /// on the proportional face and is not the same thing.
-    static func timecode(_ size: CGFloat = 12.5) -> Font {
-        .system(size: size, weight: .regular, design: .monospaced)
-    }
+    static let bodyL = Self(size: 16, weight: .light)
+    static let button = Self(size: 17)
+    static let rowTitle = Self(size: 16)
+    static let rowSubtitle = Self(size: 13.5, relativeTo: .subheadline)
+    static let caption = Self(size: 12.5, relativeTo: .caption)
+    /// The design asks for `ui-monospace` — a monospaced *face*, which is not
+    /// the same as `.monospacedDigit()` on the proportional one.
+    static let timecode = Self(size: 12.5, design: .monospaced, relativeTo: .caption)
     /// 11, not 10.5: the design's floor is "nothing below 11pt".
-    static let tabLabel = Font.system(size: 11, weight: .regular)
+    static let tabLabel = Self(size: 11, relativeTo: .caption2)
 
-    /// The uppercase wide-tracked overline — "RECENTLY PLAYED", "UP NEXT",
-    /// "PLAYING NOW". The system's most distinctive typographic move, and the
-    /// reason `.overline()` exists as a modifier rather than being respecified
-    /// at each of its ~10 call sites.
-    /// The uppercase tracked label — Settings' group headers, the Queue's
-    /// "next from", the detail meta line. 11.5 / 400 / white 62% / 1.5.
-    static let groupLabel = Font.system(size: 11.5, weight: .regular)
+    // MARK: - Tracked labels
 
-    static func overline(_ size: CGFloat = 11) -> Font {
-        .system(size: size, weight: .regular)
-    }
+    /// Settings' group headers, the Queue's "next from", the detail meta line.
+    static let groupLabel = Self(size: 11.5, relativeTo: .caption, tracking: 1.5, uppercase: true)
+    /// The uppercase wide-tracked overline — the greeting, meta lines.
+    static let overline = Self(size: 11, relativeTo: .caption2, tracking: 1.4, uppercase: true)
 
-    /// The screen title — "Evening", "Search", "Settings". Measured at
-    /// 32 / weight 200 / white / -0.8 on every screen that carries one.
-    static let screenTitle = Font.system(size: 32, weight: .ultraLight)
+    /// The wordmark — the only rounded type in the app, and the only place a
+    /// weight above 400 is permitted.
+    static let wordmark = Self(size: 30, weight: .semibold, design: .rounded, relativeTo: .largeTitle, tracking: -0.8)
+}
 
-    /// Section headers — "Recently played", "Made for you", "Downloaded".
-    ///
-    /// Measured at 19 / Light / white / sentence case, with -0.2 tracking. The
-    /// app had been drawing these as uppercase, tracked, grey overlines, which
-    /// was the single largest difference on the Home screen. The overline style
-    /// is real, but it belongs to the greeting and the detail meta line, not to
-    /// section headers.
-    static let sectionTitle = Font.system(size: 19, weight: .light)
+enum HumFont {
 
     /// Ultra Light and Light fail at accessibility sizes. Rather than letting
     /// them stretch, step the weight up as the text scales.
@@ -100,46 +87,48 @@ enum HumFont {
 
 // MARK: - Modifiers
 
-private struct OverlineModifier: ViewModifier {
-    let size: CGFloat
-    let tracking: CGFloat
+/// Applies a `HumTextStyle`, scaled.
+///
+/// `@ScaledMetric` is a property wrapper, so it cannot live inside a static
+/// `Font` constant — which is exactly why the ramp has to be data plus a
+/// modifier rather than a set of `Font` values.
+private struct HumFontModifier: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    @Environment(\.dynamicTypeSize) private var typeSize
 
-    func body(content: Content) -> some View {
-        content
-            .font(HumFont.overline(size))
-            .tracking(tracking)
-            .textCase(.uppercase)
+    private let style: HumTextStyle
+
+    init(_ style: HumTextStyle) {
+        self.style = style
+        _size = ScaledMetric(wrappedValue: style.size, relativeTo: style.relativeTo)
     }
-}
-
-/// Steps weight up at accessibility sizes so light display type stays legible.
-private struct ScalingWeightModifier: ViewModifier {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    let size: CGFloat
-    let base: Font.Weight
-    let tracking: CGFloat
 
     func body(content: Content) -> some View {
         content
-            .font(.system(size: size, weight: HumFont.weight(for: base, at: dynamicTypeSize)))
-            .tracking(tracking)
+            .font(
+                .system(
+                    size: size,
+                    weight: HumFont.weight(for: style.weight, at: typeSize),
+                    design: style.design
+                )
+            )
+            .tracking(style.tracking)
+            .textCase(style.uppercase ? .uppercase : nil)
     }
 }
 
 extension View {
-    /// Section headers and metadata lines. Tracking runs +1.4 to +1.8 in the
-    /// prototype depending on size.
-    func overline(size: CGFloat = 13, tracking: CGFloat = 1.4) -> some View {
-        modifier(OverlineModifier(size: size, tracking: tracking))
+
+    /// The one way type is applied in Hum. Scales with Dynamic Type, steps
+    /// weight up at accessibility sizes, and carries the style's tracking and
+    /// casing so call sites cannot forget them.
+    func humFont(_ style: HumTextStyle) -> some View {
+        modifier(HumFontModifier(style))
     }
 
-    /// Display and title type that survives Dynamic Type by gaining weight
-    /// rather than stretching thin.
-    func humTitle(
-        size: CGFloat,
-        weight: Font.Weight = .light,
-        tracking: CGFloat = 0
-    ) -> some View {
-        modifier(ScalingWeightModifier(size: size, base: weight, tracking: tracking))
+    /// An ad-hoc size that still scales — for the handful of places the design
+    /// specifies a one-off.
+    func humFont(_ size: CGFloat, weight: Font.Weight = .regular, relativeTo: Font.TextStyle = .body) -> some View {
+        modifier(HumFontModifier(HumTextStyle(size: size, weight: weight, relativeTo: relativeTo)))
     }
 }

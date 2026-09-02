@@ -115,8 +115,7 @@ struct SearchView: View {
                 // The design gives Search the same 32/200 display title Home
                 // carries, in the content rather than the nav bar.
                 Text("Search")
-                    .font(HumFont.screenTitle)
-                    .kerning(-0.8)
+                    .humFont(.screenTitle)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Metrics.gutter)

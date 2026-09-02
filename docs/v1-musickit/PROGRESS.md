@@ -650,7 +650,31 @@ system's opaque material and Hum's tint do not disagree.
 the title to three lines and the artist to two, and drop the duration to give
 them the width. This is what the design's AX3 screen shows.
 
-### ⚠️ Dynamic Type does not work at all — confirmed, not fixed
+### Dynamic Type — **fixed**, see below. Original finding kept for the record.
+
+The ramp is now data plus a modifier. `HumTextStyle` carries size, weight,
+design, the text style to scale against, tracking and casing; `humFont(_:)`
+applies it through `@ScaledMetric`. That indirection is not decoration — it is
+forced: `@ScaledMetric` is a property wrapper and cannot live inside a static
+`Font` constant, which is precisely why the old ramp could not scale.
+
+- **58 call sites migrated**: 19 named tokens, 29 inline `Font.system(size:)`,
+  10 `humTitle`/`overline` modifiers.
+- **Tracking and casing moved into the styles.** Every `.kerning()` call in the
+  app is gone — the two that survived migration were doubling the style's own
+  tracking. A call site can no longer forget them or apply them twice.
+- **Weight-stepping still applies**, so the 200-weight display type gains weight
+  at accessibility sizes instead of thinning to nothing. Verified: the "Night"
+  title is legible at AX-XL.
+- **One thing deliberately not scaled**: the artwork placeholder glyph, which is
+  sized as a fraction of its artwork. It is proportional decoration, not text.
+
+Verified in the Simulator at `accessibility-extra-large`: text scales throughout,
+rows reflow, durations drop. **Known limitation:** shelf and Library card titles
+truncate at AX sizes because the card is a fixed 160 wide. The design's AX3
+screen shows list reflow and says nothing about cards.
+
+### ⚠️ The original finding — Dynamic Type did not work at all
 
 **The type ramp is fixed-size.** All nine `HumFont` tokens use
 `Font.system(size:)`, which does **not** scale with Dynamic Type. The only

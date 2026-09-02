@@ -16,16 +16,16 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 34, weight: .light))
+                .humFont(34, weight: .light)
                 .foregroundStyle(Palette.honeyAmber.opacity(0.7))
 
             Text(headline)
-                .humTitle(size: 19, weight: .light)
+                .humFont(HumTextStyle(size: 19, weight: .light, relativeTo: .title))
                 .foregroundStyle(Palette.textPrimary)
                 .multilineTextAlignment(.center)
 
             Text(message)
-                .font(.system(size: 14.5, weight: .light))
+                .humFont(14.5, weight: .light)
                 .foregroundStyle(Palette.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -51,13 +51,12 @@ struct SectionHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(HumFont.sectionTitle)
-                .kerning(-0.2)
+                .humFont(.sectionTitle)
                 .foregroundStyle(Palette.textPrimary)
             Spacer(minLength: 8)
             if let trailing {
                 Text(trailing)
-                    .font(HumFont.caption)
+                    .humFont(.caption)
                     .foregroundStyle(Palette.textQuaternary)
             }
         }

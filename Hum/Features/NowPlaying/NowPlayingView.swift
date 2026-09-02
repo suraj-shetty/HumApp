@@ -110,11 +110,11 @@ private struct NowPlayingPortraitLayout: View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 7) {
                 Text(track.title)
-                    .humTitle(size: 23, weight: .regular, tracking: -0.3)
+                    .humFont(HumTextStyle(size: 23, weight: .regular, relativeTo: .title, tracking: -0.3))
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(track.artist)
-                    .font(.system(size: 17))
+                    .humFont(17)
                     .foregroundStyle(Palette.honeyAmber)
                     .lineLimit(1)
             }
@@ -137,7 +137,7 @@ private struct NowPlayingPortraitLayout: View {
 
             Button(action: onQueue) {
                 Text("Up next · \(player.upNext.count)")
-                    .overline(size: 13, tracking: 1.4)
+                    .humFont(HumTextStyle(size: 13, relativeTo: .caption2, tracking: 1.4, uppercase: true))
                     .foregroundStyle(Palette.textSecondary.opacity(0.9))
                     .frame(height: Metrics.tapTarget)
                     .padding(.horizontal, 12)
@@ -181,14 +181,14 @@ private struct NowPlayingLandscapeLayout: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 9) {
                     Text(player.sourceLabel.isEmpty ? "Now playing" : "Playing from \(player.sourceLabel)")
-                        .overline(size: 11.5, tracking: 1.6)
+                        .humFont(HumTextStyle(size: 11.5, relativeTo: .caption2, tracking: 1.6, uppercase: true))
                         .foregroundStyle(Palette.textQuaternary)
                     Text(track.title)
-                        .humTitle(size: 30, weight: .light, tracking: -0.5)
+                        .humFont(HumTextStyle(size: 30, weight: .light, relativeTo: .title, tracking: -0.5))
                         .foregroundStyle(Palette.textPrimary)
                         .lineLimit(1)
                     Text(track.artist)
-                        .font(.system(size: 18))
+                        .humFont(18)
                         .foregroundStyle(Palette.honeyAmber)
                         .lineLimit(1)
                 }
@@ -246,7 +246,7 @@ private struct NowPlayingBar: View {
             )
             Spacer()
             Text(player.sourceLabel)
-                .overline(size: 11.5, tracking: 1.6)
+                .humFont(HumTextStyle(size: 11.5, relativeTo: .caption2, tracking: 1.6, uppercase: true))
                 .foregroundStyle(Palette.textTertiary)
                 .lineLimit(1)
             Spacer()
@@ -311,7 +311,7 @@ private struct ProgressScrubber: View {
                 Spacer()
                 Text(player.remaining.humRemaining)
             }
-            .font(HumFont.timecode(12))
+            .humFont(HumTextStyle.timecode.size(12))
             .foregroundStyle(Palette.textTertiary)
         }
         // One accessibility element for the whole control, with a real value
@@ -416,7 +416,7 @@ private struct TransportControls: View {
     private var playButton: some View {
         Button(action: player.togglePlayPause) {
             Image(systemName: player.isPlaying ? HumIcon.pause : HumIcon.play)
-                .font(.system(size: 27, weight: .regular))
+                .humFont(27, weight: .regular)
                 .foregroundStyle(Palette.textPrimary)
                 .frame(width: size, height: size)
                 // Solid Honey Amber with an amber glow, as measured. The build

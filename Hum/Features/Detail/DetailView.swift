@@ -65,20 +65,20 @@ struct DetailView: View {
     private var metadata: some View {
         VStack(spacing: 6) {
             Text(collection.title)
-                .humTitle(size: 26, weight: .light, tracking: -0.4)
+                .humFont(HumTextStyle(size: 26, weight: .light, relativeTo: .title, tracking: -0.4))
                 .foregroundStyle(Palette.textPrimary)
                 .multilineTextAlignment(.center)
 
             if !collection.subtitle.isEmpty {
                 Text(collection.subtitle)
-                    .font(.system(size: 16))
+                    .humFont(16)
                     .foregroundStyle(Palette.textPrimary.opacity(0.82))
                     .multilineTextAlignment(.center)
             }
 
             // 14 / 400 in amber at 80% — not a tracked uppercase overline.
             Text(collection.metaLine)
-                .font(.system(size: 14))
+                .humFont(14)
                 .foregroundStyle(Palette.honeyAmber.opacity(0.8))
                 .multilineTextAlignment(.center)
         }
@@ -182,9 +182,9 @@ private struct DetailActionButton: View {
         Button(action: action) {
             HStack(spacing: 9) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 15, weight: .regular))
+                    .humFont(15, weight: .regular)
                 Text(title)
-                    .font(.system(size: 16, weight: style == .filled ? .medium : .regular))
+                    .humFont(16, weight: style == .filled ? .medium : .regular)
             }
             .foregroundStyle(style == .filled ? Palette.deepOnyx : Palette.honeyAmber)
             .padding(.horizontal, 22)

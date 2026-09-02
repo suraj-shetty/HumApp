@@ -24,10 +24,10 @@ struct AmberCapsuleButton: View {
                         .tint(Palette.honeyAmber)
                 } else if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 16, weight: .regular))
+                        .humFont(16, weight: .regular)
                 }
                 Text(title)
-                    .font(HumFont.button)
+                    .humFont(.button)
             }
             .foregroundStyle(Palette.textPrimary)
             .frame(maxWidth: .infinity)
@@ -65,10 +65,10 @@ struct NeutralCapsuleButton: View {
             HStack(spacing: 9) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 15, weight: .regular))
+                        .humFont(15, weight: .regular)
                 }
                 Text(title)
-                    .font(HumFont.button)
+                    .humFont(.button)
             }
             .foregroundStyle(Palette.textPrimary.opacity(0.86))
             .frame(maxWidth: .infinity)
@@ -91,7 +91,7 @@ struct OutlineCapsuleButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15.5))
+                .humFont(15.5)
                 .foregroundStyle(Palette.textPrimary)
                 .padding(.horizontal, 26)
                 .frame(height: 46)
@@ -122,7 +122,7 @@ struct IconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: size, weight: weight))
+                .humFont(size, weight: weight)
                 .foregroundStyle(tint)
                 .frame(minWidth: target, minHeight: target)
                 .contentShape(.rect)

@@ -85,7 +85,7 @@ struct LibraryView: View {
 
             case .loaded(let collections) where collections.isEmpty:
                 Text("Nothing here yet.")
-                    .font(HumFont.rowSubtitle)
+                    .humFont(.rowSubtitle)
                     .foregroundStyle(Palette.textTertiary)
 
             case .loaded(let collections):

@@ -25,16 +25,16 @@ struct SubscriptionGapView: View {
 
             VStack(spacing: 22) {
                 Image(systemName: icon)
-                    .font(.system(size: 38, weight: .light))
+                    .humFont(38, weight: .light)
                     .foregroundStyle(Palette.honeyAmber.opacity(0.8))
 
                 VStack(spacing: 14) {
                     Text(title)
-                        .humTitle(size: 27, weight: .light)
+                        .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title))
                         .foregroundStyle(Palette.textPrimary)
 
                     Text(message)
-                        .font(.system(size: 15, weight: .light))
+                        .humFont(15, weight: .light)
                         .foregroundStyle(Palette.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)

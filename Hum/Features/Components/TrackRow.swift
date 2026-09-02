@@ -31,7 +31,7 @@ struct TrackRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(track.title)
-                        .font(HumFont.rowTitle)
+                        .humFont(.rowTitle)
                         .foregroundStyle(isCurrent ? Palette.honeyAmber : Palette.textPrimary)
                         // The design's AX3 screen shows long titles *wrapping*
                         // rather than truncating — "Kitchen Light in the Late
@@ -41,7 +41,7 @@ struct TrackRow: View {
                         .truncationMode(.tail)
 
                     Text(track.artist)
-                        .font(HumFont.rowSubtitle)
+                        .humFont(.rowSubtitle)
                         // Amber at 80%, per the design's type ramp — the row
                         // artist is the one piece of body copy that carries
                         // the accent.
@@ -54,7 +54,7 @@ struct TrackRow: View {
                 // and artist the width instead, which is what the design shows.
                 if showsDuration, track.duration > 0, !isAccessibilitySize {
                     Text(track.duration.humTimestamp)
-                        .font(HumFont.timecode())
+                        .humFont(.timecode)
                         .foregroundStyle(Palette.textQuaternary)
                 }
             }
@@ -83,7 +83,7 @@ struct TrackRow: View {
             )
         case .index(let number):
             Text("\(number)")
-                .font(HumFont.timecode(14))
+                .humFont(HumTextStyle.timecode.size(14))
                 .foregroundStyle(isCurrent ? Palette.honeyAmber : Palette.textQuaternary)
                 .frame(width: 18, alignment: .leading)
         }

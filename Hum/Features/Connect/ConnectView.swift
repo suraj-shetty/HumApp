@@ -36,13 +36,13 @@ struct ConnectView: View {
 
                     VStack(alignment: .leading, spacing: 16) {
                         Text(copy.title)
-                            .humTitle(size: 36, weight: .ultraLight, tracking: -0.9)
+                            .humFont(HumTextStyle(size: 36, weight: .ultraLight, relativeTo: .title, tracking: -0.9))
                             .lineSpacing(3)
                             .foregroundStyle(Palette.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text(copy.body)
-                            .font(HumFont.bodyL)
+                            .humFont(.bodyL)
                             .lineSpacing(4)
                             .foregroundStyle(Palette.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -111,7 +111,7 @@ struct ConnectView: View {
             }
 
             Text(copy.footnote)
-                .font(HumFont.caption)
+                .humFont(.caption)
                 .foregroundStyle(Palette.textPrimary.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -193,12 +193,12 @@ private struct PermissionRow: View {
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .light))
+                .humFont(17, weight: .light)
                 .foregroundStyle(Palette.honeyAmber)
                 .frame(width: 24)
 
             Text(text)
-                .font(.system(size: 15.5, weight: .light))
+                .humFont(15.5, weight: .light)
                 .lineSpacing(2)
                 .foregroundStyle(Palette.textPrimary.opacity(0.82))
                 .fixedSize(horizontal: false, vertical: true)

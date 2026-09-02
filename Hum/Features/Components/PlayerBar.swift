@@ -32,11 +32,11 @@ struct PlayerBar: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
-                    .font(.system(size: 13.5, weight: .medium))
+                    .humFont(13.5, weight: .medium)
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(track.artist)
-                    .font(.system(size: 11.5))
+                    .humFont(11.5)
                     .foregroundStyle(Palette.honeyAmber.opacity(0.85))
                     .lineLimit(1)
             }
@@ -84,7 +84,7 @@ struct ToastView: View {
 
     var body: some View {
         Text(message)
-            .font(.system(size: 14))
+            .humFont(14)
             .foregroundStyle(Palette.textPrimary)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)

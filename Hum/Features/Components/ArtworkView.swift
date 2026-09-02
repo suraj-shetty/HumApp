@@ -108,6 +108,11 @@ struct ArtworkView: View {
         ZStack {
             if warm { Palette.artworkGradientWarm } else { Palette.artworkGradient }
             Image(systemName: HumIcon.musicNote)
+                // Deliberately *not* scaled: this glyph is sized as a fraction
+                // of the artwork it sits in, so it is proportional decoration
+                // rather than text. Scaling it would break the artwork's
+                // composition at accessibility sizes without helping anyone
+                // read anything.
                 .font(.system(size: max(12, size * 0.22), weight: .light))
                 .foregroundStyle(.white.opacity(0.18))
         }

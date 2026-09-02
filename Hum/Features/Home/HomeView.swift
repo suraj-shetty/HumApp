@@ -42,15 +42,14 @@ struct HomeView: View {
         // does use it.
         HStack(alignment: .center) {
             Text(model?.greeting ?? "")
-                .font(HumFont.screenTitle)
-                .kerning(-0.8)
+                .humFont(.screenTitle)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
             NavigationLink {
                 SettingsView()
             } label: {
                 Image(systemName: HumIcon.person)
-                    .font(.system(size: 20, weight: .light))
+                    .humFont(20, weight: .light)
                     .foregroundStyle(Palette.textSecondary)
                     .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
                     .background(Palette.surfaceRaised, in: Circle())
@@ -187,11 +186,11 @@ struct ShelfCard: View {
             )
             VStack(alignment: .leading, spacing: 4) {
                 Text(collection.title)
-                    .font(.system(size: 15))
+                    .humFont(15)
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(collection.subtitle)
-                    .font(.system(size: 13))
+                    .humFont(13)
                     // Amber at 80%, the same treatment the row artist carries.
                     .foregroundStyle(Palette.honeyAmber.opacity(0.8))
                     .lineLimit(1)
@@ -262,7 +261,7 @@ struct InlineError: View {
                 // this app; an error drawn in it reads as an invitation.
                 .foregroundStyle(Palette.terracottaLift)
             Text(message)
-                .font(HumFont.rowSubtitle)
+                .humFont(.rowSubtitle)
                 .foregroundStyle(Palette.textSecondary)
         }
         .padding(.horizontal, Metrics.gutter)

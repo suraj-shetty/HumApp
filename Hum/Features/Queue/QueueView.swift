@@ -43,9 +43,7 @@ struct QueueView: View {
                             // LATE KITCHEN" — where Home's section headers are
                             // 19pt sentence case. Same words, different role.
                             Text(upNextLabel)
-                                .font(.system(size: 11.5))
-                                .textCase(.uppercase)
-                                .kerning(1.5)
+                                .humFont(.groupLabel)
                                 .foregroundStyle(Palette.textPrimary.opacity(0.62))
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             .listRowInsets(
@@ -95,14 +93,14 @@ struct QueueView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Now playing")
-                    .overline(size: 11, tracking: 1.5)
+                    .humFont(HumTextStyle(size: 11, relativeTo: .caption2, tracking: 1.5, uppercase: true))
                     .foregroundStyle(Palette.honeyAmber)
                 Text(track.title)
-                    .font(.system(size: 16))
+                    .humFont(16)
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(track.artist)
-                    .font(HumFont.rowSubtitle)
+                    .humFont(.rowSubtitle)
                     .foregroundStyle(Palette.textTertiary)
                     .lineLimit(1)
             }
