@@ -108,7 +108,10 @@ struct DetailView: View {
 
         case .loaded(let tracks):
             LazyVStack(spacing: 0) {
-                ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
+                // Identified by position, not by track id: a real playlist can hold
+                // the same song twice, and duplicate SwiftUI identities make
+                // rows drop out and taps land on the wrong one.
+                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
                     TrackRow(
                         track: track,
                         leading: model?.usesTrackNumbers == true
@@ -118,7 +121,7 @@ struct DetailView: View {
                     ) {
                         play(tracks, at: index)
                     }
-                    if track.id != tracks.last?.id { RowDivider() }
+                    if index < tracks.count - 1 { RowDivider() }
                 }
             }
 

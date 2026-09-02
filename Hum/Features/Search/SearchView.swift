@@ -81,14 +81,18 @@ struct SearchView: View {
                 case .loaded(let tracks):
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(Array(tracks.enumerated()), id: \.element.id) { index, track in
+                            // Identified by position, not by track id: results
+                            // can repeat a song, and duplicate SwiftUI
+                            // identities make rows drop out and taps land on
+                            // the wrong one.
+                            ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
                                 TrackRow(
                                     track: track,
                                     isCurrent: player.currentTrack?.id == track.id
                                 ) {
                                     player.play(tracks, startingAt: index, source: "Search")
                                 }
-                                if track.id != tracks.last?.id { RowDivider() }
+                                if index < tracks.count - 1 { RowDivider() }
                             }
                         }
                         .padding(.horizontal, Metrics.gutter)

@@ -116,7 +116,10 @@ struct QueueView: View {
         // offset past the cursor. Computed once here rather than per row.
         let base = (player.queue.currentIndex ?? -1) + 1
 
-        return ForEach(Array(player.upNext.enumerated()), id: \.element.id) { offset, track in
+        // By position, not by track id — a queue very often holds the same
+        // track twice, and duplicate identities break both rendering and
+        // which row a swipe acts on.
+        return ForEach(Array(player.upNext.enumerated()), id: \.offset) { offset, track in
             let index = base + offset
             TrackRow(track: track, showsDuration: false) {
                 player.jump(to: index)
@@ -141,13 +144,14 @@ struct QueueView: View {
     /// Native drag-to-reorder. The reducer owns cursor validity, so this
     /// rebuilds the full entry list and hands it over as a `setQueue`.
     private func move(from source: IndexSet, to destination: Int, base: Int) {
+        guard let current = player.queue.currentIndex else { return }
         var entries = player.queue.entries
         let absoluteSource = IndexSet(source.map { base + $0 })
         entries.move(fromOffsets: absoluteSource, toOffset: base + destination)
-        guard let current = player.currentTrack,
-              let newIndex = entries.firstIndex(where: { $0.id == current.id })
-        else { return }
-        player.replaceQueue(entries, currentIndex: newIndex)
+        // Only up-next rows can move, and `base` is one past the cursor, so
+        // the playing entry never shifts. Re-finding it by id would pick the
+        // wrong copy the moment a track appears in the queue twice.
+        player.replaceQueue(entries, currentIndex: current)
     }
 
     private var emptyState: some View {
