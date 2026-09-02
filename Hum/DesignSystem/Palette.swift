@@ -93,6 +93,12 @@ enum Palette {
         startPoint: .top,
         endPoint: .bottom
     )
+    /// The Reduce Transparency substitute for every glass surface: the design
+    /// names it exactly — `#1C1A17` at 96%, with a 1px amber-tinted edge.
+    /// Layout, tap targets and hierarchy are unchanged; only the material is.
+    static let glassOpaqueFallback = Color(hex: 0x1C1A17, alpha: 0.96)
+    static let glassOpaqueEdge = Color(hex: 0xE8A33D, alpha: 0.35)
+
     /// The hairline every glass surface carries, at 16%.
     static let glassHairline = Color.white.opacity(0.16)
     /// The 1pt inset highlight along a glass surface's top edge.

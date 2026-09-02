@@ -635,6 +635,43 @@ The one remaining warning is gone: *"All interface orientations must be supporte
 
 Device and Simulator builds are both clean with `SWIFT_TREAT_WARNINGS_AS_ERRORS = YES`.
 
+### Phase 6 accessibility — partly done
+
+**Reduce Transparency — implemented.** It was read in `SettingsView` to display a
+status and acted on nowhere. The design specifies the substitute exactly: every
+glass surface becomes **`#1C1A17` at 96% with a 1px amber-tinted edge**, layout
+and tap targets unchanged. `amberGlass` now swaps its tint layer to match, so the
+system's opaque material and Hum's tint do not disagree.
+
+**Reduce Motion — already correct**, from Phase 4. The level meter freezes flat,
+`humRise` degrades, and `LevelMeter` was already `accessibilityHidden(true)`.
+
+**Dynamic Type reflow — implemented.** At accessibility sizes track rows now wrap
+the title to three lines and the artist to two, and drop the duration to give
+them the width. This is what the design's AX3 screen shows.
+
+### ⚠️ Dynamic Type does not work at all — confirmed, not fixed
+
+**The type ramp is fixed-size.** All nine `HumFont` tokens use
+`Font.system(size:)`, which does **not** scale with Dynamic Type. The only
+occurrence of `relativeTo:` in `Typography.swift` is *inside a comment* claiming
+it keeps Dynamic Type working. It does not.
+
+Verified in the Simulator at `accessibility-extra-large`: the row reflow fires —
+durations disappear, proving the size class is read — while **every piece of text
+stays exactly the same size**.
+
+This is a genuine accessibility failure and larger than the phase note predicted,
+which named only the 200-weight display and the small tab labels. The problem is
+the whole ramp.
+
+**The fix, not attempted here:** `Font.system(size:)` has no scaling variant. The
+supported route is `@ScaledMetric(relativeTo:)`, which is a property wrapper and
+so must live in a `ViewModifier` rather than in a static `Font` token — meaning
+`HumFont`'s shape has to change and every call site with it. That is its own
+task, and doing half of it would leave the type system inconsistent, which is
+worse than leaving it whole and broken with a note.
+
 ### Carried into Phase 6
 
 **A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.

@@ -43,6 +43,8 @@ enum Motion {
 /// Under Reduce Motion the bars freeze flat. The prototype's own Dynamic Island
 /// note specifies the same static state for "paused", so one appearance serves
 /// both cases.
+/// Decorative. Hidden from VoiceOver — it carries no information a listener
+/// cannot get from the playback state itself.
 struct LevelMeter: View {
     var isAnimating: Bool = true
     var barCount: Int = 3

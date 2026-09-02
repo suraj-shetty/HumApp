@@ -14,6 +14,8 @@ struct TrackRow: View {
         case index(Int)
     }
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     let track: HumTrack
     var leading: Leading = .artwork
     var isCurrent: Bool = false
@@ -31,7 +33,11 @@ struct TrackRow: View {
                     Text(track.title)
                         .font(HumFont.rowTitle)
                         .foregroundStyle(isCurrent ? Palette.honeyAmber : Palette.textPrimary)
-                        .lineLimit(1)
+                        // The design's AX3 screen shows long titles *wrapping*
+                        // rather than truncating — "Kitchen Light in the Late
+                        // Afternoon" runs to a second line. At normal sizes a
+                        // single line keeps the row rhythm.
+                        .lineLimit(isAccessibilitySize ? 3 : 1)
                         .truncationMode(.tail)
 
                     Text(track.artist)
@@ -40,11 +46,13 @@ struct TrackRow: View {
                         // artist is the one piece of body copy that carries
                         // the accent.
                         .foregroundStyle(Palette.honeyAmber.opacity(0.8))
-                        .lineLimit(1)
+                        .lineLimit(isAccessibilitySize ? 2 : 1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                if showsDuration, track.duration > 0 {
+                // Dropped at accessibility sizes: the reflow gives the title
+                // and artist the width instead, which is what the design shows.
+                if showsDuration, track.duration > 0, !isAccessibilitySize {
                     Text(track.duration.humTimestamp)
                         .font(HumFont.timecode())
                         .foregroundStyle(Palette.textQuaternary)
@@ -59,6 +67,8 @@ struct TrackRow: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(action == nil ? [] : .isButton)
     }
+
+    private var isAccessibilitySize: Bool { typeSize >= .accessibility1 }
 
     // MARK: - Pieces
 

@@ -46,12 +46,14 @@ private struct AmberGlassModifier<S: Shape>: ViewModifier {
     let shape: S
     var shadow: Bool = true
 
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     func body(content: Content) -> some View {
         content
-            .background(Palette.amberGlassTint, in: shape)
+            .background(fill, in: shape)
             .overlay {
                 shape
-                    .stroke(Palette.glassHairline, lineWidth: 1)
+                    .stroke(edge, lineWidth: 1)
                     .overlay(alignment: .top) {
                         shape
                             .stroke(Palette.glassTopHighlight, lineWidth: 1)
@@ -61,6 +63,18 @@ private struct AmberGlassModifier<S: Shape>: ViewModifier {
                     }
             }
             .shadow(color: .black.opacity(shadow ? 0.5 : 0), radius: 34 / 2, y: 10)
+    }
+
+    /// The system substitutes an opaque material for the glass itself; this
+    /// substitutes the tint laid over it, so the two do not disagree.
+    private var fill: AnyShapeStyle {
+        reduceTransparency
+            ? AnyShapeStyle(Palette.glassOpaqueFallback)
+            : AnyShapeStyle(Palette.amberGlassTint)
+    }
+
+    private var edge: Color {
+        reduceTransparency ? Palette.glassOpaqueEdge : Palette.glassHairline
     }
 }
 
