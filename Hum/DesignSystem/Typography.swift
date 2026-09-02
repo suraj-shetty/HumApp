@@ -62,9 +62,17 @@ enum HumFont {
     /// "PLAYING NOW". The system's most distinctive typographic move, and the
     /// reason `.overline()` exists as a modifier rather than being respecified
     /// at each of its ~10 call sites.
+    /// The uppercase tracked label — Settings' group headers, the Queue's
+    /// "next from", the detail meta line. 11.5 / 400 / white 62% / 1.5.
+    static let groupLabel = Font.system(size: 11.5, weight: .regular)
+
     static func overline(_ size: CGFloat = 11) -> Font {
         .system(size: size, weight: .regular)
     }
+
+    /// The screen title — "Evening", "Search", "Settings". Measured at
+    /// 32 / weight 200 / white / -0.8 on every screen that carries one.
+    static let screenTitle = Font.system(size: 32, weight: .ultraLight)
 
     /// Section headers — "Recently played", "Made for you", "Downloaded".
     ///

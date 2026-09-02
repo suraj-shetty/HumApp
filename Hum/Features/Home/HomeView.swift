@@ -42,7 +42,7 @@ struct HomeView: View {
         // does use it.
         HStack(alignment: .center) {
             Text(model?.greeting ?? "")
-                .font(.system(size: 32, weight: .ultraLight))
+                .font(HumFont.screenTitle)
                 .kerning(-0.8)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()

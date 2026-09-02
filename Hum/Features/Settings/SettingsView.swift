@@ -62,7 +62,7 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section("Apple Music") {
+            Section {
                 row("Access", model?.authorizationDescription ?? "—")
                 row("Subscription", model?.subscriptionDescription ?? "—")
 
@@ -71,12 +71,14 @@ struct SettingsView: View {
                     Link("Open Settings", destination: url)
                         .tint(Palette.honeyAmber)
                 }
+            } header: {
+                groupLabel("Apple Music")
             }
 
             Section {
                 row("Reduce Transparency", reduceTransparency ? "On" : "Off")
             } header: {
-                Text("Appearance")
+                groupLabel("Appearance")
             } footer: {
                 Text("Hum follows your system accessibility settings. With Reduce Transparency on, the player and tab bar render solid.")
             }
@@ -84,7 +86,7 @@ struct SettingsView: View {
             Section {
                 row("Version", model?.appVersion ?? "—")
             } header: {
-                Text("About")
+                groupLabel("About")
             } footer: {
                 // Stated plainly because the Connect screen promises it.
                 Text("Hum plays your Apple Music library through Apple's own playback engine. No account, no tracking, no ads.")
@@ -93,7 +95,18 @@ struct SettingsView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Palette.deepOnyx)
-        .navigationTitle("Settings")
+        .safeAreaInset(edge: .top, spacing: 0) {
+            // 32 / 200, the same display title Home and Search carry.
+            Text("Settings")
+                .font(HumFont.screenTitle)
+                .kerning(-0.8)
+                .foregroundStyle(Palette.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.bottom, 12)
+                .background(Palette.deepOnyx)
+        }
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             if model == nil { model = SettingsViewModel(environment: environment) }
@@ -102,9 +115,25 @@ struct SettingsView: View {
     }
 
     private func row(_ title: String, _ value: String) -> some View {
-        LabeledContent(title) {
-            Text(value).foregroundStyle(Palette.textTertiary)
+        LabeledContent {
+            Text(value)
+                .font(.system(size: 15))
+                .foregroundStyle(Palette.textPrimary.opacity(0.62))
+        } label: {
+            Text(title)
+                .font(.system(size: 16))
+                .foregroundStyle(Palette.textPrimary)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// Settings' group headers are the design's uppercase tracked label —
+    /// the same style the Queue uses for "next from", not a section title.
+    private func groupLabel(_ title: String) -> some View {
+        Text(title)
+            .font(HumFont.groupLabel)
+            .textCase(.uppercase)
+            .kerning(1.5)
+            .foregroundStyle(Palette.textPrimary.opacity(0.62))
     }
 }

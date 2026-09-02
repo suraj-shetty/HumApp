@@ -111,7 +111,20 @@ struct SearchView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Palette.deepOnyx)
-            .navigationTitle("Search")
+            .safeAreaInset(edge: .top, spacing: 0) {
+                // The design gives Search the same 32/200 display title Home
+                // carries, in the content rather than the nav bar.
+                Text("Search")
+                    .font(HumFont.screenTitle)
+                    .kerning(-0.8)
+                    .foregroundStyle(Palette.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Metrics.gutter)
+                    .padding(.bottom, 12)
+                    .background(Palette.deepOnyx)
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationBarTitleDisplayMode(.inline)
         }
         .searchable(

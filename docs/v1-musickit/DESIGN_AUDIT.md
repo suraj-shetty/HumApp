@@ -591,3 +591,45 @@ and every screen where the build guessed that mapping diverged.
 The leading action changing from a back chevron to "Done" also reflects an
 intent: the design treats the queue as a sheet you finish with, not a page you
 navigated to.
+
+
+---
+
+## 20. Search and Settings · **DONE**
+
+Both carry the same **32 / 200 / -0.8 display title** Home does. That is now a
+shared token, `HumFont.screenTitle` — Home had it inline from §13, and finding it
+again on two more screens confirmed it is the pattern rather than one screen's
+heading.
+
+| Screen | Design | Was |
+|---|---|---|
+| Search | title "Search" 32/200 in content | system nav title |
+| Search | placeholder "Songs, albums, artists" | ✅ already |
+| Settings | title "Settings" 32/200 in content | system inline nav title |
+| Settings | group headers **11.5 uppercase, tracked 1.5, white 62%** | system section headers |
+| Settings | rows 16/400 white, values 15/400 white 62% | default `LabeledContent` |
+
+`HumFont.groupLabel` is the third style to be named rather than reproduced ad
+hoc: it is the Queue's "NEXT FROM", Settings' group headers, and the detail meta
+line. Naming it is what stops the next screen guessing.
+
+### Confirmed by Settings: Terracotta was right
+
+The design's Settings draws **"Disconnect Apple Music" in `rgb(210,113,74)`** —
+Terracotta, the error colour added in §6 on the strength of the token table
+alone. Seeing it used for a real destructive action confirms the reading.
+
+Hum has no disconnect action to colour: MusicKit authorization cannot be revoked
+in-app, only in system Settings, which is why the screen offers a link there
+instead. **Not invented.**
+
+### Not built — a missing feature, not a styling gap
+
+Search-before-typing in the design is not an empty state. It is a **"Browse"
+section with a two-column grid of genre tiles** — Ambient, Jazz, Classical, Folk,
+Electronic — at 16/300 on 160-wide tiles. Hum shows a designed empty state
+instead.
+
+That needs a genre browse source from MusicKit and is a **capability**, not a
+restyle. Recorded alongside §3's missing screens for the scope decision.
