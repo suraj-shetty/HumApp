@@ -41,6 +41,18 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     /// The last snapshot emitted, so identical ones can be dropped.
     private var last: PlaybackSnapshot?
 
+    /// True while the player's own queue is being rewritten.
+    ///
+    /// That mutation raises `objectWillChange`, which this class observes and
+    /// turns into a `publish()` — and `publish()` reads
+    /// `player.queue.currentEntry`, a read that blocks until the mutation it
+    /// is nested inside completes. The observer deadlocks against our own
+    /// write. Paused there is no media-server round trip and it survives;
+    /// playing, it hangs the app at 0% CPU, which is exactly the shape
+    /// reported from device: "drag while playing hangs, drag while paused is
+    /// merely janky".
+    private var isMirroring = false
+
     private var cancellables: Set<AnyCancellable> = []
     private var ticker: Task<Void, Never>?
 
@@ -82,10 +94,12 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             let requestedID = tracks[safe: index]?.id
             let start = cued.firstIndex { $0.track.id == requestedID } ?? 0
 
+            isMirroring = true
             player.queue = ApplicationMusicPlayer.Queue(
                 for: cued.map(\.song),
                 startingAt: cued[start].song
             )
+            isMirroring = false
             queue = QueueReducer.reduce(queue, .setQueue(cued.map(\.track), startingAt: start))
             applyModes()
 
@@ -219,7 +233,9 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         // Array — assigning through its initializer replaces the queue's
         // contents without tearing down the queue object itself.
 
+        isMirroring = true
         player.queue.entries = ApplicationMusicPlayer.Queue.Entries(entries)
+        isMirroring = false
     }
 
     /// Shuffle and repeat are the *player's* modes, not a reordering Hum
@@ -287,6 +303,9 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     // MARK: - Publishing
 
     private func publish() {
+        // Never read the player's queue while we are in the middle of
+        // rewriting it. See `isMirroring`.
+        guard !isMirroring else { return }
         syncCursor()
         updateTicker()
         yield()
@@ -367,7 +386,7 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     /// cursor sync and the ticker bookkeeping four times a second for no
     /// reason. The state derivation is shared either way.
     private func emitProgress() {
-        guard queue.currentTrack != nil else { return }
+        guard !isMirroring, queue.currentTrack != nil else { return }
         yield()
     }
 }
