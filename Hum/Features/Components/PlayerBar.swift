@@ -58,6 +58,9 @@ struct PlayerBar: View {
         }
         .padding(.leading, 10)
         .padding(.trailing, 8)
+        // The accessory slot supplies the material; this is the design's amber
+        // tint laid over it. No shadow — the slot casts its own.
+        .amberGlass(in: Capsule(style: .continuous), shadow: false)
         .contentShape(.rect)
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .contain)
@@ -78,6 +81,7 @@ struct ToastView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
             .chromeGlassCapsule(tint: nil)
+            .amberGlass(in: Capsule(style: .continuous))
             .accessibilityAddTraits(.isStaticText)
     }
 }

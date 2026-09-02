@@ -79,6 +79,25 @@ enum Palette {
         startPoint: .top,
         endPoint: .bottom
     )
+    /// **Amber Glass** — the chrome tint. Every glass surface in the design
+    /// carries it, which is what makes the chrome read as one family.
+    ///
+    /// The design measures 17% → 7% over a *transparent* backdrop-filter. The
+    /// system's Liquid Glass already tints and darkens what it covers, so
+    /// laying the measured value on top of it double-counts and reads brown
+    /// rather than warm. Halved to match the design's **appearance**, which is
+    /// what the value was expressing — checked side by side against the
+    /// rendered board.
+    static let amberGlassTint = LinearGradient(
+        colors: [Color(hex: 0xE8A33D, alpha: 0.085), Color(hex: 0xE8A33D, alpha: 0.035)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    /// The hairline every glass surface carries, at 16%.
+    static let glassHairline = Color.white.opacity(0.16)
+    /// The 1pt inset highlight along a glass surface's top edge.
+    static let glassTopHighlight = Color.white.opacity(0.2)
+
     static let amberOutlineFill = Color(hex: 0xE8A33D, alpha: 0.16)
     static let amberOutlineStroke = Color(hex: 0xE8A33D, alpha: 0.40)
 

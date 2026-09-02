@@ -233,3 +233,44 @@ discovered halfway through a styling pass.
 Reading the design as text produced a wrong change to the wordmark and missed
 every measurement above. Serving the bundle over `http://` and querying the DOM
 produced both. **Audit rendered output, not prose.**
+
+
+---
+
+## 8. Amber Glass — the chrome fill · **DONE**
+
+Decision taken: **keep the native tab bar and accessory**, match the *background*
+to the design. Measured recipe, identical on every glass surface the design draws:
+
+```
+background   linear-gradient(#E8A33D 17% → #E8A33D 7%)
+border       1px  rgba(255,255,255,.16)
+highlight    1pt inset along the top edge, rgba(255,255,255,.20)
+shadow       rgba(0,0,0,.5) 0 10px 34px
+material     blur(26) saturate(1.8)     ← supplied by the system, not us
+```
+
+Implemented as `amberGlass(in:)` in `GlassSurface.swift` — a **tint layer over**
+the system material, not a second material, which is what the design's
+"Amber Glass · chrome tint only" token describes and why it does not breach the
+glass-on-glass rule. Applied to the player bar and the toast, the two glass
+surfaces Hum controls.
+
+**The measured value had to be halved to match the measured appearance.** The
+design's 17% sits over a transparent `backdrop-filter`; the system's Liquid Glass
+already tints and darkens what it covers, so laying 17% on top double-counts and
+reads brown rather than warm. At 8.5% → 3.5% the result matches the board side by
+side. Recorded because it is a judgement, not a measurement: **the design's
+number describes an appearance over a different base.**
+
+### What could not be matched
+
+**The tab bar's fill is system-owned.** `TabView` draws its own material and
+offers no hook for a tint layer — `.tint` colours the items, not the bar. So the
+player bar carries the design's amber and the tab bar does not, and the two do
+not read as one family. Matching it means hand-building the bar, which the brief
+forbids and which was explicitly ruled out. **Left as a known divergence.**
+
+Also unmatched, and gated on the same constraint: the tab bar's fixed 288pt width
+and 28pt radius, the player bar's 362×64 at radius 26, and the 64pt search
+island. All are system geometry.

@@ -29,6 +29,49 @@ enum GlassSurface {
     // What remains below is used by surfaces the system does not place for us.
 }
 
+// MARK: - Amber Glass
+
+/// The design's chrome fill, measured from the rendered board and identical on
+/// every glass surface it draws:
+///
+/// - an amber gradient, 17% → 7% top to bottom
+/// - a 1px hairline at white 16%
+/// - a 1pt inset highlight along the top edge, white 20%
+/// - a soft drop shadow, black 50% at y+10, radius 34
+///
+/// This is a *tint layer over* the system material, not a second material —
+/// which is exactly what the design's "Amber Glass · chrome tint only" token
+/// describes, and why it does not violate the glass-on-glass rule.
+private struct AmberGlassModifier<S: Shape>: ViewModifier {
+    let shape: S
+    var shadow: Bool = true
+
+    func body(content: Content) -> some View {
+        content
+            .background(Palette.amberGlassTint, in: shape)
+            .overlay {
+                shape
+                    .stroke(Palette.glassHairline, lineWidth: 1)
+                    .overlay(alignment: .top) {
+                        shape
+                            .stroke(Palette.glassTopHighlight, lineWidth: 1)
+                            .mask(alignment: .top) {
+                                Rectangle().frame(height: 1)
+                            }
+                    }
+            }
+            .shadow(color: .black.opacity(shadow ? 0.5 : 0), radius: 34 / 2, y: 10)
+    }
+}
+
+extension View {
+    /// Lays the design's Amber Glass tint over a surface the system has already
+    /// given a material — the player bar's accessory slot, a toast.
+    func amberGlass(in shape: some Shape, shadow: Bool = true) -> some View {
+        modifier(AmberGlassModifier(shape: shape, shadow: shadow))
+    }
+}
+
 // MARK: - Modifiers
 
 private struct ChromeGlassModifier<S: Shape>: ViewModifier {
