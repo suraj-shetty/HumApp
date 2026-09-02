@@ -521,7 +521,16 @@ Let a track finish so the player advances on its own. **The audio moves to the n
 
 ### Logged for the Phase 7 audit
 
-**The tab bar changes appearance when the now-playing capsule appears.** Reported from device. This is the system morphing between `tabViewBottomAccessory` and the tab bar — they share a container by design, and iOS 26 adjusts the bar when an accessory is present. So it is very likely *not* a Hum bug. Whether it is what the design intends is a different question, and one only the design can answer: check it against `01-iPhone-Screens-and-UI-System` in the audit, and if the design shows a stable tab bar, that is an argument against the accessory slot rather than a bug to patch.
+**The tab bar capsule changes width when the now-playing bar appears.** Reported from device with screenshots.
+
+- **No player bar:** the capsule hugs its contents, ending just past "Library" — roughly half the screen width.
+- **Player bar showing:** the capsule expands to match the width of the accessory above it.
+
+The item treatment is identical in both, so it is the container that moves, not the contents.
+
+**Reproducible in the Simulator against preview services**, which rules MusicKit out — it is purely the `tabViewBottomAccessory` / tab bar interaction. The two share a container by design on iOS 26 and the system aligns them, so this may simply be what the platform does.
+
+One Hum-specific thing to rule out first: the accessory is currently applied *unconditionally* and hidden with `tabViewBottomAccessory(isEnabled:)` — a deliberate choice, because making the modifier conditional tore down the whole tab hierarchy (see the pop-and-reload defect above). The container may therefore still be participating in layout while hidden. Compare against a build with the modifier genuinely absent to tell "the system does this" from "we asked for this". If it is the system, the question becomes whether the design accepts it, which only `01-iPhone-Screens-and-UI-System` can answer.
 
 ### Open findings, not yet fixed
 
