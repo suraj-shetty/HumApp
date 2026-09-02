@@ -444,6 +444,53 @@ Approaches not yet tried, for whoever picks this up: cueing the queue from `Play
 
 **On method:** the first two attempts at this bug were reasoned from the code and both were wrong about the mechanism. What settled it was `pymobiledevice3 syslog live -pn Hum`, which surfaces MusicKit's own diagnostics. Worth reaching for early on any adapter-layer defect. Note that the app's own `NSLog` output does **not** appear in that stream — only framework logs do — so instrumenting Hum itself was wasted effort.
 
+---
+
+## KNOWN DEFECT — drag-to-reorder hangs the app during playback
+
+**Status: open, not fixed. Six attempts, none successful.** Recorded here in full so the next person starts from evidence rather than from my wrong turns.
+
+### Reproduction
+
+Play a track from a library playlist, open Now Playing → Queue, drag an up-next row and release. The app hangs. **Paused, the same drag completes** — janky, with the rows overlapping briefly and the list appearing to reload, but it completes.
+
+### What is established
+
+| Fact | How it was established |
+|---|---|
+| It is a **block, not a spin** | `dvt sysmon process` reports Hum at **0.0% CPU** while hung, 7 threads, flat footprint |
+| A **media-server round trip** is involved | Hangs only while playing; paused it completes |
+| MusicKit is unhappy with the queue write regardless | Its own log, every reorder: *"Inserting entries at the beginning of the queue because previous entry … is unexpectedly transient"* |
+| The player's queue is **transient by construction** | Hum cues from `Song`s that have not played yet; only played entries are non-transient |
+
+### What was tried, and why each failed
+
+1. **Row identity by position** (`id: \.offset`) — fixes duplicate rows, but `List` cannot animate a move, so the drop is janky. Does **not** hang.
+2. **Row identity by repeat number** (`"<id>#<nth>"`) — restores the move animation, and the hang appears. Initially blamed, wrongly: the hang is not caused by identity, it is *revealed* by it, because a real move animation changes when the blocking write happens.
+3. **Reusing the player's existing `Entry` objects** — deadlocked immediately. MusicKit will not accept a collection containing entries it already holds in new positions.
+4. **`move(fromOffsets:toOffset:)` on `queue.entries`** — the documented reorder operation, and worse: mutating that property goes through get-modify-set, so each move reassigns the whole collection anyway.
+5. **Moving song resolution off the main actor** — a genuine improvement, kept, unrelated to the hang.
+6. **`isMirroring` re-entrancy guard** — stops `publish()` reading `player.queue` mid-write, which is correct on its own terms and is kept, but does not fix the hang. So the blocking read is somewhere other than our observer.
+
+### Not yet tried
+
+- **A backtrace.** Never obtained. `pymobiledevice3 debugserver start-server` exits with the shell in a non-interactive session, taking the tunnel with it, so lldb never connects. **Attaching Xcode and pausing on Thread 1 would settle this in minutes** and should be the first move.
+- Cueing the queue from non-transient items, so the condition MusicKit complains about never arises.
+- `ApplicationMusicPlayer.Queue.insert(_:position:)` instead of writing the entries collection.
+- Keeping Hum's queue authoritative and handing the player only the *next* entry as each track ends. Removes the problem at its root but changes lock-screen and Dynamic Island behaviour, so it is a scoped piece of work, not a patch.
+
+### Consequences
+
+- **Phase 5's gate item "reorder and remove queue entries mid-playback without desync" is NOT met.** Removal is fine; reorder is not.
+- **The gesture is still enabled.** A one-line change (`.onMove` removed, or disabled while playing) would trade a missing capability for an app that never hangs. Not done unilaterally — it is a product call — but recommended before this build goes near anyone else.
+- Everything else in the queue is verified working: duplicates render distinctly, swipe-to-remove acts on the right row, the cursor stays on the correct copy, `Clear` and the empty state behave.
+
+### Method note
+
+Six fixes were reasoned from reading the code and all six were wrong. Every fact that actually narrowed the problem came from measurement — the framework's own log, one CPU number, and the listener's observation that pausing changes the outcome. **Read the device's logs and process stats before changing code.** Note also that Hum's own log output reaches neither the syslog relay nor `dvt oslog`: `NSLog` and `os.Logger` were both tried and neither appeared, so instrumenting the app for device diagnosis is wasted effort.
+
+---
+
 ### Open findings, not yet fixed
 
 0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
