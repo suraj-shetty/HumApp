@@ -730,6 +730,106 @@ flag, every heading for its trait. Driving VoiceOver itself needs a device in
 someone's hands, and `XCUIApplication.performAccessibilityAudit()` needs a UI
 test target this project does not have. **Both are worth doing before release.**
 
+---
+
+## Acceptance criteria — walked, with evidence
+
+The brief's seven criteria, each marked from what can actually be shown. Where a
+criterion is not met, the reason is stated rather than the mark softened.
+
+### 1. Builds and runs with no warnings on the iOS 26 SDK — ✅
+
+`SWIFT_TREAT_WARNINGS_AS_ERRORS = YES` and `GCC_TREAT_WARNINGS_AS_ERRORS = YES`
+are on, so a warning fails the build. Device build against **iOS 26.5**:
+**0 warnings**. Runs on an iPhone 16 Pro (iOS 26.5) and the iPhone 17 Pro
+Simulator (26.2). The last outstanding warning — iPad's missing fourth
+orientation — was closed earlier this phase.
+
+### 2. Authorization handles all four `MusicAuthorization.Status` cases — ✅ *(three unobserved on device)*
+
+`MusicKitAuthorizationAdapter` maps **4 of 4** cases plus `@unknown default`.
+`AuthReducer` gives each a distinct screen, and the `.denied` / `.restricted`
+split is explicit: `.restricted` offers **no** Settings button, because that
+button leads nowhere when a Screen Time or MDM restriction is the cause.
+
+Covered by the "Authorization" and "Auth view model" suites. **Only
+`.authorized` has been observed on a real device** — reproducing `.denied` needs
+a revocation and `.restricted` needs a device restriction. Unit-tested, not
+device-confirmed.
+
+### 3. A subscription gap shows the trial prompt, not a broken player — ✅
+
+`SubscriptionReducer` gates every play intent; a `.gap` state cannot reach
+`ApplicationMusicPlayer.play()`. Proven twice:
+
+- **On device** (Phase 3): tapping catalog content on a non-subscriber account
+  presented Apple's own `.musicSubscriptionOffer` sheet, and dismissing it
+  returned cleanly to Home.
+- **In tests**: the "Subscription" and "Subscription gate" suites assert that a
+  closable gap reaches the offer, an unofferable gap explains instead, a failed
+  check degrades to library-only, and subscribing mid-session resumes the track
+  that was turned back.
+
+### 4. Player bar and tab bar are native Liquid Glass, amber-tinted; content opaque — ⚠️ **partly met**
+
+- **Native**: both are the system's own — `tabViewBottomAccessory` and `TabView`.
+  Not hand-built.
+- **Content opaque**: enforced as a build error. `glassEffect(` appears in
+  exactly **one** file, and `Scripts/check-containment.sh` fails the build
+  anywhere else.
+- **Amber-tinted**: the player bar and toasts carry the design's measured Amber
+  Glass. **The tab bar does not.** `TabView` draws its own material and offers no
+  hook for a tint layer, and matching it would mean hand-building the bar, which
+  the brief forbids. **Recorded divergence, not met.**
+
+### 5. Playback uses only standard, user-initiated MusicKit transport — ✅
+
+`PlaybackService` exposes **7 methods**, all mapping to standard
+`ApplicationMusicPlayer` controls: play, resume, pause, skip next, skip previous,
+seek, apply queue. No custom transport, no content substitution, nothing that
+alters playback behaviour. The compliance sweep is clean: no StoreKit, no ad
+code, no export or share of MusicKit content, and **no on-disk persistence
+anywhere in the app**.
+
+### 6. Legible with Reduce Transparency enabled — ⚠️ **implemented, not verified**
+
+Implemented to the design's own specification: every glass surface becomes
+`#1C1A17` at 96% with a 1px amber-tinted edge, layout and tap targets unchanged.
+Before this phase the setting was read in `SettingsView` and acted on nowhere.
+
+**Not visually confirmed.** It was exercised in the Simulator, but no screen-by-
+screen legibility walk has been done with the setting on, on a device. The
+criterion says "legible", and legibility is judged by eye.
+
+### 7. Unit tests pass for authorization, subscription-status and queue-state — ✅
+
+**72 tests in 6 suites, all passing**, and the three named areas each have their
+own suite:
+
+| Suite | Covers |
+|---|---|
+| Authorization · Auth view model | criterion 1 — all four statuses, and the gate |
+| Subscription · Subscription gate | criterion 2 — the decision table, and the app honouring it |
+| Queue | criterion 3 — cursor arithmetic and every invariant |
+| Playback session | the session wiring around the queue |
+
+---
+
+## What is still not proven, and why
+
+| Item | Blocked by |
+|---|---|
+| **Audible catalog playback** | No Apple Music subscription on the test account ([M-09](DECISIONS.md#m-09)). Library playback *is* confirmed audible. |
+| Skip, seek and reorder under real audio | The same |
+| Lock screen and Dynamic Island correctness | The same |
+| `.denied` and `.restricted` on device | Needs a revocation and a Screen Time restriction |
+| Reduce Transparency legibility | Needs an eyes-on walk with the setting enabled |
+| VoiceOver behaviour | Static audit only; needs a real VoiceOver walk, or a UI test target for `performAccessibilityAudit()` |
+
+Two open defects are recorded in full above: **drag-to-reorder hangs during
+playback**, and **the UI does not follow automatic track advance**. The second is
+the more serious of the two for a music app.
+
 ### Carried into Phase 6
 
 **A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.
