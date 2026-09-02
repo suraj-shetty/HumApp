@@ -111,64 +111,42 @@ struct QueueView: View {
 
     // MARK: - Up next
 
-    /// One up-next row, carrying an identity that is both **stable across a
-    /// reorder** and **unique across repeats**. Neither half comes free:
+    /// BISECT: identity is back to position, the last form confirmed working
+    /// on device. Occurrence-numbered identity — `"<track id>#<nth repeat>"` —
+    /// is what `onMove` needs to animate a reorder, and introducing it is the
+    /// change that began the drag hang. Every adapter fix attempted afterwards
+    /// was chasing the wrong file.
     ///
-    /// - Identifying by track id collapses two copies of the same song into a
-    ///   single SwiftUI identity: rows drop out and a swipe lands on the wrong
-    ///   one. A queue holds repeats routinely.
-    /// - Identifying by position makes every row change identity the moment
-    ///   anything moves, so `List` cannot animate a reorder — the dropped row
-    ///   overlaps its neighbour, the gap it left never opens, and the list
-    ///   appears to reload once the dust settles.
+    /// The likely mechanism, unconfirmed: with stable identities SwiftUI runs
+    /// a real move animation, and the player mirror's blocking MusicKit call
+    /// then lands *inside* that transaction. With position identity the list
+    /// reloads instead, and the same call happens outside it — janky, but it
+    /// completes.
     ///
-    /// Numbering each repeat gives a row the same identity before and after a
-    /// move, which is what `onMove` needs to animate. Two copies of one track
-    /// do swap identities when dragged past each other — and are pixel-identical
-    /// when they do, so there is nothing to see.
-    private struct UpNextRow: Identifiable {
-        let id: String
-        /// Index into the full queue, not into `upNext`.
-        let index: Int
-        let track: HumTrack
-    }
-
-    private var upNextEntries: [UpNextRow] {
-        // `upNext` is a suffix of `entries`, so a row's queue index is its
-        // offset past the cursor.
-        let base = (player.queue.currentIndex ?? -1) + 1
-        var seen: [String: Int] = [:]
-
-        return player.upNext.enumerated().map { offset, track in
-            let occurrence = seen[track.id, default: 0]
-            seen[track.id] = occurrence + 1
-            return UpNextRow(
-                id: "\(track.id)#\(occurrence)",
-                index: base + offset,
-                track: track
-            )
-        }
-    }
-
+    /// Cost of this form: duplicate rows share an identity, and a reorder
+    /// cannot animate. See PROGRESS.md Findings 1 and 4.
     private var upNextRows: some View {
-        ForEach(upNextEntries) { row in
-            TrackRow(track: row.track, showsDuration: false) {
-                player.jump(to: row.index)
+        let base = (player.queue.currentIndex ?? -1) + 1
+
+        return ForEach(Array(player.upNext.enumerated()), id: \.offset) { offset, track in
+            let index = base + offset
+            TrackRow(track: track, showsDuration: false) {
+                player.jump(to: index)
             }
             .listRowInsets(.horizontalGutter)
             .listRowSeparatorTint(Palette.hairline)
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                 Button("Remove", systemImage: HumIcon.remove, role: .destructive) {
-                    player.remove(at: row.index)
+                    player.remove(at: index)
                 }
             }
             .accessibilityActions {
-                Button("Play now") { player.jump(to: row.index) }
-                Button("Remove from queue") { player.remove(at: row.index) }
+                Button("Play now") { player.jump(to: index) }
+                Button("Remove from queue") { player.remove(at: index) }
             }
         }
         .onMove { source, destination in
-            move(from: source, to: destination, base: (player.queue.currentIndex ?? -1) + 1)
+            move(from: source, to: destination, base: base)
         }
     }
 
