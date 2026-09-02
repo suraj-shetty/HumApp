@@ -19,7 +19,6 @@ struct HomeView: View {
                         madeForYou
                     }
                 }
-                .padding(.bottom, Metrics.scrollBottomInset)
             }
             .scrollIndicators(.hidden)
             .background(Palette.deepOnyx)

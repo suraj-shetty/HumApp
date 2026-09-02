@@ -27,7 +27,6 @@ struct DetailView: View {
                 trackList
             }
             .padding(.horizontal, Metrics.gutter)
-            .padding(.bottom, Metrics.scrollBottomInset)
         }
         .scrollIndicators(.hidden)
         .background(Palette.deepOnyx)

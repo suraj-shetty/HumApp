@@ -373,7 +373,23 @@ The old copy blamed the network for a subscription gap. `HomeViewModel` now asks
 
 Confirmed on device, and the fix doubles as the diagnosis — the explanation only renders when the subscription check comes back non-active.
 
-**Still unaudited:** Library, album detail, Now Playing, Queue, Search, Settings. They need a person to navigate while captures run.
+**Finding 3 — `scrollBottomInset` double-counted the chrome.** Every scrolling screen added a hand-rolled 190pt of bottom padding to clear the tab bar and player bar. On iOS 26 both already contribute to the safe area and SwiftUI insets scrolling content for them, so the two clearances stacked and left a screen-deep dead gap under the last row of every list — visible the moment a real album was short enough to scroll to the end.
+
+The padding is gone from all four screens; the constant survives as `chromeClearance` for the toast, which floats in an overlay and genuinely needs it. Verified before and after in the Simulator: the last row now sits just above the player bar, nothing clipped, no gap.
+
+### Verified on device with real content
+
+- **The accessory-identity fix holds.** Frames before and after tapping Play on a real album show the same detail screen, the bar updating and the row turning amber — no pop, no reload.
+- **Artwork loads** in hero, row thumb and player bar from genuine `Artwork.url` endpoints.
+- **`metaLine` reads correctly** — "ALBUM · 2014 · 1 TRACK", singular included.
+- Long real titles wrap to two lines in the header without truncating.
+
+### Open findings, not yet fixed
+
+1. **The detail title appears twice** — truncated in the nav bar ("Say My Name (feat. Zyra) - Sin…") and again in full below it. Prototype behaviour, but with real Apple Music titles, which are long and often carry " - Single", it reads as repetition. Suggest dropping the nav title and letting the header carry it.
+2. **Fixed hero art on small phones.** `artDetailHero` 342pt + 2×24pt gutters needs 390pt; an iPhone SE at 375pt would clip it. No SE simulator is installed, so this is arithmetic, not observation. Needs a scope decision on small phones.
+
+**Still unaudited:** Now Playing, Queue, Search, Settings, and the Library grid. They need a person to navigate while captures run.
 
 ### Carried into Phase 6
 

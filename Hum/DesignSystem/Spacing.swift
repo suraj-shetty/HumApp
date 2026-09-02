@@ -22,7 +22,13 @@ enum Metrics {
     static let playerBarBottomOffset: CGFloat = 104
     /// Bottom padding for every scroll view, so content clears both chrome
     /// elements rather than sliding under them.
-    static let scrollBottomInset: CGFloat = 190
+    /// Clearance for a toast floating above the tab bar and its accessory.
+    ///
+    /// **Not** for scroll content: `TabView`'s bottom accessory and the tab
+    /// bar both contribute to the safe area, and SwiftUI already insets
+    /// scrolling content for them. Adding this on top stacked two clearances
+    /// and left a screen-deep dead gap under the last row of every list.
+    static let chromeClearance: CGFloat = 190
 
     // MARK: - Rows
 

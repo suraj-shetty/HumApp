@@ -56,7 +56,6 @@ struct LibraryView: View {
                 }
                 .padding(.horizontal, Metrics.gutter)
                 .padding(.top, 8)
-                .padding(.bottom, Metrics.scrollBottomInset)
             }
             .scrollIndicators(.hidden)
             .background(Palette.deepOnyx)

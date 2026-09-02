@@ -96,7 +96,6 @@ struct SearchView: View {
                             }
                         }
                         .padding(.horizontal, Metrics.gutter)
-                        .padding(.bottom, Metrics.scrollBottomInset)
                     }
                     .scrollIndicators(.hidden)
 

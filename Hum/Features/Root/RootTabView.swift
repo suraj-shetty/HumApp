@@ -109,7 +109,7 @@ struct RootTabView: View {
         .overlay(alignment: .bottom) {
             if let toast = player.toast {
                 ToastView(message: toast)
-                    .padding(.bottom, Metrics.scrollBottomInset)
+                    .padding(.bottom, Metrics.chromeClearance)
                     .transition(.opacity.combined(with: .offset(y: 8)))
             }
         }
