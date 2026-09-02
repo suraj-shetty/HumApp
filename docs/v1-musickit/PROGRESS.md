@@ -419,6 +419,19 @@ Two changes:
 
 **Not reproducible locally** — the Simulator runs preview services, where a drag was always smooth, which is itself the evidence that the defect lived in the adapter rather than the view. Needs device confirmation.
 
+**Finding 6 — the reorder desynced the player from the screen, found by reading MusicKit's own log.** After the hang was fixed the drag completed, but the device log carried a MusicKit `<ERROR>` every time:
+
+```
+Inserting entries at the beginning of the queue because previous entry
+(… transientItem: Song(… "Don't Wait" …)) is unexpectedly transient
+```
+
+Assigning `queue.entries` wholesale is not a reorder to MusicKit — it reads as a removal plus an insertion. The queue Hum builds is *transient* by construction, since it is cued from `Song`s that have not played yet, so the insertion falls back to the head of the queue and a dragged row can end up somewhere other than where the Queue screen shows it. A silent desync, and precisely what the Phase 5 gate asks about.
+
+`reorderInPlace` now moves entries within the live collection when the desired order is a permutation of the current one — the operation MusicKit expects — and falls back to a rebuild only when the membership genuinely changed.
+
+**On method:** the first two attempts at this bug were reasoned from the code and both were wrong about the mechanism. What settled it was `pymobiledevice3 syslog live -pn Hum`, which surfaces MusicKit's own diagnostics. Worth reaching for early on any adapter-layer defect. Note that the app's own `NSLog` output does **not** appear in that stream — only framework logs do — so instrumenting Hum itself was wasted effort.
+
 ### Open findings, not yet fixed
 
 0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
@@ -467,6 +480,19 @@ Two changes:
 2. **Song resolution moved off the main actor** (`nonisolated static fetchSongs`). Those are network round trips and had no business blocking the UI. A reorder of already-cued tracks resolves entirely from the in-memory map and never reaches them at all.
 
 **Not reproducible locally** — the Simulator runs preview services, where a drag was always smooth, which is itself the evidence that the defect lived in the adapter rather than the view. Needs device confirmation.
+
+**Finding 6 — the reorder desynced the player from the screen, found by reading MusicKit's own log.** After the hang was fixed the drag completed, but the device log carried a MusicKit `<ERROR>` every time:
+
+```
+Inserting entries at the beginning of the queue because previous entry
+(… transientItem: Song(… "Don't Wait" …)) is unexpectedly transient
+```
+
+Assigning `queue.entries` wholesale is not a reorder to MusicKit — it reads as a removal plus an insertion. The queue Hum builds is *transient* by construction, since it is cued from `Song`s that have not played yet, so the insertion falls back to the head of the queue and a dragged row can end up somewhere other than where the Queue screen shows it. A silent desync, and precisely what the Phase 5 gate asks about.
+
+`reorderInPlace` now moves entries within the live collection when the desired order is a permutation of the current one — the operation MusicKit expects — and falls back to a rebuild only when the membership genuinely changed.
+
+**On method:** the first two attempts at this bug were reasoned from the code and both were wrong about the mechanism. What settled it was `pymobiledevice3 syslog live -pn Hum`, which surfaces MusicKit's own diagnostics. Worth reaching for early on any adapter-layer defect. Note that the app's own `NSLog` output does **not** appear in that stream — only framework logs do — so instrumenting Hum itself was wasted effort.
 
 ### Open findings, not yet fixed
 

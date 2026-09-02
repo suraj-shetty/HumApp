@@ -204,6 +204,10 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             pool[id, default: []].append(entry)
         }
 
+        // A drag only ever permutes what is already cued, and MusicKit has a
+        // dedicated operation for that. Take it when it applies.
+        if reorderInPlace(to: cued.map(\.track.id)) { return }
+
         let entries = cued.map { cued -> ApplicationMusicPlayer.Queue.Entry in
             if var existing = pool[cued.track.id], !existing.isEmpty {
                 let entry = existing.removeFirst()
@@ -218,6 +222,36 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         // Array — assigning through its initializer replaces the queue's
         // contents without tearing down the queue object itself.
         player.queue.entries = ApplicationMusicPlayer.Queue.Entries(entries)
+    }
+
+    /// Reorders the entries the player already holds, in place, when the
+    /// desired order is a permutation of the current one. Returns `false` when
+    /// it is not — a removal or an added track — leaving the caller to rebuild.
+    ///
+    /// Assigning `queue.entries` wholesale is *not* a reorder to MusicKit: it
+    /// reads as a removal plus an insertion, and its own log says what that
+    /// costs — "Inserting entries at the beginning of the queue because
+    /// previous entry is unexpectedly transient". The queue Hum builds is
+    /// transient by construction, since it is cued from `Song`s that have not
+    /// played yet, so a dragged row could silently end up somewhere other than
+    /// where the Queue screen shows it. Moving within the live collection is
+    /// the operation MusicKit expects, and the only one that keeps playback
+    /// order and the screen agreeing.
+    private func reorderInPlace(to desired: [String]) -> Bool {
+        var current = player.queue.entries.map { $0.item?.id.rawValue ?? "" }
+        guard current.count == desired.count, current.sorted() == desired.sorted() else {
+            return false
+        }
+
+        // Selection sort: a single drag resolves in one move.
+        for target in desired.indices where current[target] != desired[target] {
+            guard let from = current[(target + 1)...].firstIndex(of: desired[target]) else {
+                return false
+            }
+            player.queue.entries.move(fromOffsets: IndexSet(integer: from), toOffset: target)
+            current.insert(current.remove(at: from), at: target)
+        }
+        return true
     }
 
     /// Shuffle and repeat are the *player's* modes, not a reordering Hum
