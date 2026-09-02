@@ -51,8 +51,9 @@ struct SectionHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .overline()
-                .foregroundStyle(Palette.textSecondary.opacity(0.85))
+                .font(HumFont.sectionTitle)
+                .kerning(-0.2)
+                .foregroundStyle(Palette.textPrimary)
             Spacer(minLength: 8)
             if let trailing {
                 Text(trailing)

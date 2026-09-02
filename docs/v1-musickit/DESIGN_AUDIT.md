@@ -344,12 +344,38 @@ first change in this audit to affect every screen at once.
 Two divergences surfaced during the row measurement and are recorded rather than
 silently fixed:
 
-1. **Section headers are wrong at a glance.** The design renders "Recently
-   played" as **19px, weight 300, white, sentence case, -0.2 tracking**. The app
-   renders "RECENTLY PLAYED" as an uppercase grey overline with wide tracking.
-   This is one of the largest single differences on the Home screen, and it
-   affects every section header in the app.
+1. ~~Section headers~~ — **fixed, see §12.**
 2. **Shelf cards are 160×160 at radius 10**; the app uses 148.
 
 Next components in order: section header, shelf card, Now Playing transport,
 Connect screen.
+
+
+---
+
+## 12. Section header · **DONE**
+
+Measured consistently across three screens — "Recently played", "Made for you",
+"Downloaded":
+
+| | Design | Was |
+|---|---|---|
+| Size | **19** | 11 |
+| Weight | **300 Light** | 400 Regular |
+| Colour | **white** | white 56% |
+| Case | **sentence** | UPPERCASE |
+| Tracking | **-0.2** | +1.4 |
+
+Every attribute was wrong, which is why this read as a different screen rather
+than a mis-sized one. `HumFont.sectionTitle` added; `SectionHeader` no longer
+uses `overline()`.
+
+**The overline style itself is not wrong — it was applied to the wrong thing.**
+The design does use an 11pt tracked overline, for the Home greeting and the
+detail meta line. Section headers were simply never it.
+
+### Measured alongside, not yet applied
+
+The Home **greeting** ("Wednesday night") measures **16 / 400 / white** in the
+design. The app draws it as an 11.5pt uppercase tracked overline in grey — so
+the same mistake as the section header, in the element directly above it.

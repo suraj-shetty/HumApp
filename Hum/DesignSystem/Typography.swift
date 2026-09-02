@@ -64,6 +64,15 @@ enum HumFont {
         .system(size: size, weight: .regular)
     }
 
+    /// Section headers — "Recently played", "Made for you", "Downloaded".
+    ///
+    /// Measured at 19 / Light / white / sentence case, with -0.2 tracking. The
+    /// app had been drawing these as uppercase, tracked, grey overlines, which
+    /// was the single largest difference on the Home screen. The overline style
+    /// is real, but it belongs to the greeting and the detail meta line, not to
+    /// section headers.
+    static let sectionTitle = Font.system(size: 19, weight: .light)
+
     /// Ultra Light and Light fail at accessibility sizes. Rather than letting
     /// them stretch, step the weight up as the text scales.
     static func weight(
