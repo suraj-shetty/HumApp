@@ -38,10 +38,16 @@ struct QueueView: View {
                         }
                     } header: {
                         if !player.upNext.isEmpty {
-                            SectionHeader(
-                                title: "Up next",
-                                trailing: player.sourceLabel.isEmpty ? nil : player.sourceLabel
-                            )
+                            // Not a `SectionHeader`. The design labels this an
+                            // uppercase overline naming the source — "NEXT FROM
+                            // LATE KITCHEN" — where Home's section headers are
+                            // 19pt sentence case. Same words, different role.
+                            Text(upNextLabel)
+                                .font(.system(size: 11.5))
+                                .textCase(.uppercase)
+                                .kerning(1.5)
+                                .foregroundStyle(Palette.textPrimary.opacity(0.62))
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             .listRowInsets(
                                 .init(
                                     top: 12,
@@ -59,11 +65,13 @@ struct QueueView: View {
                 .environment(\.defaultMinListRowHeight, Metrics.tapTarget)
             }
             .background(Palette.deepOnyx)
-            .navigationTitle("Queue")
+            .navigationTitle("Up Next")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Now Playing", systemImage: HumIcon.back) { dismiss() }
+                    // "Done", not a back chevron: the design treats the queue
+                    // as a sheet you finish with, not a page you came from.
+                    Button("Done") { dismiss() }
                         .tint(Palette.honeyAmber)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -86,7 +94,7 @@ struct QueueView: View {
             )
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Playing now")
+                Text("Now playing")
                     .overline(size: 11, tracking: 1.5)
                     .foregroundStyle(Palette.honeyAmber)
                 Text(track.title)
@@ -130,7 +138,7 @@ struct QueueView: View {
 
         return ForEach(Array(player.upNext.enumerated()), id: \.offset) { offset, track in
             let index = base + offset
-            TrackRow(track: track, showsDuration: false) {
+            TrackRow(track: track) {
                 player.jump(to: index)
             }
             .listRowInsets(.horizontalGutter)
@@ -151,6 +159,12 @@ struct QueueView: View {
         .onMove { source, destination in
             move(from: source, to: destination, base: base)
         }
+    }
+
+    /// "Next from Late Kitchen" — the design names the source in this label
+    /// rather than in a trailing accessory.
+    private var upNextLabel: String {
+        player.sourceLabel.isEmpty ? "Up next" : "Next from \(player.sourceLabel)"
     }
 
     /// Native drag-to-reorder. The reducer owns cursor validity, so this

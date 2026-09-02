@@ -555,3 +555,39 @@ not share one.**
 `HumFont.button` was moved 16 → 17 in §16 for Connect, and Detail's buttons
 shared it. They now carry their own 16/500 and 16/400, measured, so that token is
 back to serving Connect alone.
+
+
+---
+
+## 19. Queue · **DONE**
+
+| Part | Design | Was |
+|---|---|---|
+| Nav title | **"Up Next"** | "Queue" |
+| Leading action | **"Done"**, plain amber text | back chevron + "Now Playing" |
+| Now-playing overline | "Now playing", amber 90% | "Playing now" |
+| Up-next label | **"NEXT FROM <source>"** — 11.5 uppercase, tracked 1.5, white 62% | 19pt sentence-case section header, source in a trailing accessory |
+| Row duration | **shown** | suppressed (`showsDuration: false`) |
+| Row art, artist | 56, amber 80% | ✅ already, from §10 |
+
+### A correction to §12, and the sharpest lesson so far
+
+§12 changed `SectionHeader` to 19 / 300 / sentence case, which is right for Home
+and Library. The Queue's "Up next" is **not that component** — the design draws
+it as an uppercase tracked overline that *names the source in the label itself*.
+Applying the corrected section header here would have been a second error made
+by fixing the first.
+
+Three components now, all the same shape of mistake:
+
+- Home's section header was drawn as an overline → wrong.
+- The Queue's up-next label is an overline and was drawn as a section header → also wrong.
+- Detail's Play reused Connect's capsule → wrong.
+
+**The recurring error is not wrong values. It is a style applied to the wrong
+role.** The type ramp lists styles; it does not say which element wears which,
+and every screen where the build guessed that mapping diverged.
+
+The leading action changing from a back chevron to "Done" also reflects an
+intent: the design treats the queue as a sheet you finish with, not a page you
+navigated to.
