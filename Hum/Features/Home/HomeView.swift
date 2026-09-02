@@ -12,8 +12,12 @@ struct HomeView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     header
-                    shelf
-                    madeForYou
+                    if model?.needsSubscription == true {
+                        catalogUnavailable
+                    } else {
+                        shelf
+                        madeForYou
+                    }
                 }
                 .padding(.bottom, Metrics.scrollBottomInset)
             }
@@ -58,6 +62,23 @@ struct HomeView: View {
         .padding(.horizontal, Metrics.gutter)
         .padding(.top, 14)
         .padding(.bottom, 22)
+    }
+
+    /// Both shelves come from Apple Music's personalized catalog, so with no
+    /// subscription there is nothing to put in them. Stated plainly and once,
+    /// rather than as two "couldn't load" rows above an empty screen — and
+    /// pointing at the Library, which works perfectly well without one.
+    ///
+    /// Deliberately not a sales pitch: Hum gates nothing of its own and takes
+    /// nothing from a signup. Apple's own offer sheet is already where a play
+    /// intent goes when it needs a membership.
+    private var catalogUnavailable: some View {
+        EmptyStateView(
+            icon: HumIcon.musicNote,
+            headline: "Nothing to suggest yet",
+            message: "Recently played and Made for you come from Apple Music, which this account isn't subscribed to. Everything in your library still plays — it's in the Library tab."
+        )
+        .padding(.top, 40)
     }
 
     // MARK: - Recently played

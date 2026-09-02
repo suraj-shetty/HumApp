@@ -29,10 +29,18 @@ final class HomeViewModel {
     private(set) var recentlyPlayed: LoadState<[HumCollection]> = .idle
     private(set) var recommendations: LoadState<[HumTrack]> = .idle
 
+    /// Both Home shelves are *personalized catalog* endpoints, so both need an
+    /// active subscription. Without one they cannot answer — and reporting
+    /// that as "couldn't load" twice blames the network for a subscription
+    /// gap, which is what this screen did on a real non-subscriber account.
+    private(set) var needsSubscription = false
+
     private let catalog: MusicCatalogService
+    private let subscription: SubscriptionService
 
     init(environment: AppEnvironment) {
         self.catalog = environment.catalog
+        self.subscription = environment.subscription
     }
 
     /// Loads both shelves concurrently — they are independent requests, and
@@ -41,6 +49,17 @@ final class HomeViewModel {
         guard case .idle = recentlyPlayed else { return }
         recentlyPlayed = .loading
         recommendations = .loading
+
+        // Asked before the requests, not after they fail: a confirmed gap is
+        // an answer, so there is no reason to make two doomed round trips and
+        // then guess at why they came back empty.
+        guard case .active = await subscription.current else {
+            needsSubscription = true
+            recentlyPlayed = .loaded([])
+            recommendations = .loaded([])
+            return
+        }
+        needsSubscription = false
 
         async let recent = catalog.recentlyPlayed()
         async let recommended = catalog.recommendations()

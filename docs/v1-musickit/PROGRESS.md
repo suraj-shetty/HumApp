@@ -361,6 +361,20 @@ Also corrected while there: `artworkPixels` was 1536 for every mapping, includin
 
 **Not reproducible locally:** the preview fixtures carry no artwork URLs, so `AsyncImage` is never exercised in the Simulator. This fix was reasoned from the mechanism and needs device confirmation.
 
+### Phase 6 step 0 — design audit against real data (in progress)
+
+Device screenshots are captured with `pymobiledevice3 developer dvt screenshot`, which rides CoreDevice's existing tunnel and needs no root. **libimobiledevice cannot do this on iOS 17+** — `screenshotr` reports "Invalid service" because developer services moved to RemoteXPC, even though `devicectl` reports `ddiServicesAvailable: true`. Captures only; there is no touch injection, so navigating the app still needs a person.
+
+**Finding 1 — track lists identified by track id.** Fixed; see the commit above.
+
+**Finding 2 — Home was entirely dead on a non-subscriber account.** Both shelves rendered "Couldn't load…" above a screenful of black. Both are *personalized catalog* endpoints — `MusicRecentlyPlayedContainerRequest` and `MusicPersonalRecommendationsRequest` — so both require an active subscription and neither can answer without one.
+
+The old copy blamed the network for a subscription gap. `HomeViewModel` now asks `subscription.current` **before** the requests rather than guessing after they fail, and Home states it once, plainly, pointing at the Library, which works perfectly well without a subscription. Deliberately not a sales pitch: Hum gates nothing of its own and takes nothing from a signup, and Apple's own offer sheet is already where a play intent goes when it needs a membership.
+
+Confirmed on device, and the fix doubles as the diagnosis — the explanation only renders when the subscription check comes back non-active.
+
+**Still unaudited:** Library, album detail, Now Playing, Queue, Search, Settings. They need a person to navigate while captures run.
+
 ### Carried into Phase 6
 
 **A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.
