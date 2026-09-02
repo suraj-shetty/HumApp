@@ -166,7 +166,12 @@ struct HomeView: View {
 
 // MARK: - Pieces
 
-private struct ShelfCard: View {
+/// A collection card — 160 art, title, amber subtitle.
+///
+/// Shared with Library, whose grid draws the same card in the design. It was
+/// duplicated inline there, which is how the two drifted apart: the copy kept a
+/// 14.5 title and a grey subtitle after this one was corrected.
+struct ShelfCard: View {
     let collection: HumCollection
 
     var body: some View {

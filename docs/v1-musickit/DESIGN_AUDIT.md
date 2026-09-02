@@ -497,3 +497,30 @@ strongest argument in this document for transcribing rather than interpreting.
 **Note:** `HumFont.button` moved 16 → 17, which Detail's Play and Shuffle
 buttons also use. Their height is passed explicitly (50) so only the label size
 changed there; those buttons have not been measured against the design yet.
+
+
+---
+
+## 17. Library grid · **DONE**
+
+The design's Library card is **identical to the Home shelf card** — 160 × 208,
+art 160 at radius 10, title 15/400 white, subtitle 13/400 amber 80%. Cards sit at
+x = 21 and x = 195, so two columns of 160 with **14** between them.
+
+The app had **duplicated the card inline** in `LibraryView` rather than sharing
+one. That duplicate kept the old 14.5 title and grey subtitle after §14 corrected
+the original — the two drifted apart precisely because they were two. `ShelfCard`
+is now shared, and the grid's adaptive minimum moves 148 → 160.
+
+**A judgement, flagged:** the design's mock shows two fixed 160 cards on a 390
+frame, leaving 36 of trailing space rather than centring or filling. Hum uses
+`.adaptive(minimum: 160)`, so cards fill the row and grow on a wider screen. That
+keeps the measured minimum and gap but not the measured trailing margin, which
+reads more like an artefact of the mock than an intention. **If the asymmetry is
+deliberate, this is the line to change.**
+
+### Pattern worth naming
+
+Three components have now diverged because the same thing was drawn twice —
+Library's card against Home's, and Now Playing's transport against the player
+bar's. Where the design draws one component, the build should have one view.

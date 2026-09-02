@@ -43,8 +43,11 @@ struct LibraryView: View {
     @State private var model: LibraryViewModel?
     @State private var route: HumCollection?
 
+    // Two columns of 160 with 14 between them, measured off the design's
+    // Library screen. Adaptive rather than fixed so the same grid still works
+    // on a wider screen; the minimum is the design's card width.
     private let columns = [
-        GridItem(.adaptive(minimum: 148), spacing: Metrics.rowSpacing)
+        GridItem(.adaptive(minimum: Metrics.artShelf), spacing: Metrics.rowSpacing)
     ]
 
     var body: some View {
@@ -88,21 +91,7 @@ struct LibraryView: View {
             case .loaded(let collections):
                 ForEach(collections) { collection in
                     Button { route = collection } label: {
-                        VStack(alignment: .leading, spacing: 10) {
-                            ArtworkView(
-                                url: collection.artworkURL,
-                                size: Metrics.artShelf,
-                                label: collection.title
-                            )
-                            Text(collection.title)
-                                .font(.system(size: 14.5))
-                                .foregroundStyle(Palette.textPrimary)
-                                .lineLimit(1)
-                            Text(collection.subtitle)
-                                .font(.system(size: 13))
-                                .foregroundStyle(Palette.textTertiary)
-                                .lineLimit(1)
-                        }
+                        ShelfCard(collection: collection)
                     }
                     .buttonStyle(.pressable)
                 }
