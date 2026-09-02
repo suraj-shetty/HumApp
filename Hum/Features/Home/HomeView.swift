@@ -170,6 +170,9 @@ private struct ShelfCard: View {
     let collection: HumCollection
 
     var body: some View {
+        // Measured: 160 art at radius 10, a 10pt gap to the caption, then the
+        // title and subtitle 4 apart — 208 tall in total. The caption pair is
+        // its own stack because the two gaps differ.
         VStack(alignment: .leading, spacing: 10) {
             ArtworkView(
                 url: collection.artworkURL,
@@ -177,14 +180,17 @@ private struct ShelfCard: View {
                 cornerRadius: Metrics.radiusArt,
                 label: collection.title
             )
-            Text(collection.title)
-                .font(.system(size: 14.5))
-                .foregroundStyle(Palette.textPrimary)
-                .lineLimit(1)
-            Text(collection.subtitle)
-                .font(.system(size: 13))
-                .foregroundStyle(Palette.textTertiary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(collection.title)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Palette.textPrimary)
+                    .lineLimit(1)
+                Text(collection.subtitle)
+                    .font(.system(size: 13))
+                    // Amber at 80%, the same treatment the row artist carries.
+                    .foregroundStyle(Palette.honeyAmber.opacity(0.8))
+                    .lineLimit(1)
+            }
         }
         .frame(width: Metrics.artShelf, alignment: .leading)
         .accessibilityElement(children: .combine)

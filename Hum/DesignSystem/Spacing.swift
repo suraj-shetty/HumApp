@@ -52,7 +52,7 @@ enum Metrics {
 
     // MARK: - Artwork
 
-    static let artShelf: CGFloat = 148
+    static let artShelf: CGFloat = 160
     static let artDetailHero: CGFloat = 342
     static let artNowPlaying: CGFloat = 322
     static let artQueueHeader: CGFloat = 56

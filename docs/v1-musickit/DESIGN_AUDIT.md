@@ -345,7 +345,7 @@ Two divergences surfaced during the row measurement and are recorded rather than
 silently fixed:
 
 1. ~~Section headers~~ — **fixed, see §12.**
-2. **Shelf cards are 160×160 at radius 10**; the app uses 148.
+2. ~~Shelf cards~~ — **fixed, see §14.**
 
 Next components in order: section header, shelf card, Now Playing transport,
 Connect screen.
@@ -404,3 +404,36 @@ Home, this is the change to reverse.**
 
 The greeting copy also changed — the weekday is gone, because the design shows
 only the part of day.
+
+
+---
+
+## 14. Shelf card · **DONE**
+
+| Part | Design | Was |
+|---|---|---|
+| Art | **160**, radius 10 | 148, radius 10 |
+| Card height | 208 (160 + 10 + caption) | — |
+| Art → caption gap | 10 | 10 ✅ |
+| Title | **15** / 400 white | 14.5 |
+| Subtitle | 13 / 400, **amber 80%** | 13, grey 52% |
+| Title → subtitle gap | **4** | 10 |
+
+The caption pair is now its own stack, because the two gaps differ — 10 from the
+art, 4 between the lines. A single `VStack(spacing: 10)` cannot express that, and
+the even spacing is why the caption read as two loose labels rather than one
+block.
+
+**The amber subtitle is now the third place this colour appears** — row artist,
+player bar artist, shelf subtitle. It is the design's consistent treatment for
+the secondary line under a title, which the build had as grey everywhere.
+
+### Noted, not applied
+
+The design's card subtitle for a playlist reads **"24 songs"** — a count, not a
+curator. Hum shows `collection.subtitle`, which is the artist or curator. One
+sample is not enough to generalise, and changing it means changing what
+`HumCollection.subtitle` carries. Left alone.
+
+Library's grid still uses a 148pt adaptive minimum and its own card rendering;
+it is a separate component in the design and has not been audited yet.
