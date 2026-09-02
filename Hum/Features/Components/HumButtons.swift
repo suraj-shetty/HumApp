@@ -12,7 +12,7 @@ struct AmberCapsuleButton: View {
     let title: String
     var systemImage: String?
     var isLoading: Bool = false
-    var height: CGFloat = 56
+    var height: CGFloat = 58
     var action: () -> Void
 
     var body: some View {

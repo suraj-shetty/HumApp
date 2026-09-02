@@ -470,3 +470,30 @@ slider**, and a bottom utility row of **queue · AirPlay · shuffle** at 21pt wi
 
 Repeat is kept, though the design's utility row shows only shuffle — dropping it
 would remove a capability `QueueReducer` supports and the Queue screen exposes.
+
+
+---
+
+## 16. Connect · **DONE** — and mostly already right
+
+The first screen that was **close before the audit touched it**. It was built in
+Phase 4 by transcribing the prototype rather than inventing, and it shows:
+
+| Part | Design | Was |
+|---|---|---|
+| Title | 36 / weight 200 / -0.9 | ✅ already exact |
+| Body | 16 / 300 / white 66% | ✅ already exact |
+| Permission rows | 15.5 / 300 / white 82% | ✅ already exact |
+| Button fill | gradient `#E8A33D` 26% → 12% | ✅ already exact |
+| Button height | **58** | 56 |
+| Button width | **324** | 322 |
+| Button label | **17** / 400 | 16 |
+| Footnote | 12.5 / 400 / white **62%** | white 66% |
+
+Four deltas of 2pt, 2pt, 1pt and 4%. That is what a screen built *from* the
+design looks like, against screens built from a reading of it — and it is the
+strongest argument in this document for transcribing rather than interpreting.
+
+**Note:** `HumFont.button` moved 16 → 17, which Detail's Play and Shuffle
+buttons also use. Their height is passed explicitly (50) so only the label size
+changed there; those buttons have not been measured against the design yet.

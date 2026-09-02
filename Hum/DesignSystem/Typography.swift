@@ -42,7 +42,9 @@ enum HumFont {
     // MARK: - Body & rows
 
     static let bodyL = Font.system(size: 16, weight: .light)
-    static let button = Font.system(size: 16, weight: .regular)
+    /// 17, measured on the Connect button's label. Detail's Play and Shuffle
+    /// buttons have not been measured yet and share this token.
+    static let button = Font.system(size: 17, weight: .regular)
     static let rowTitle = Font.system(size: 16, weight: .regular)
     static let rowSubtitle = Font.system(size: 13.5, weight: .regular)
     static let caption = Font.system(size: 12.5, weight: .regular)

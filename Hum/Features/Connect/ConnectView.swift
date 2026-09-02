@@ -107,12 +107,12 @@ struct ConnectView: View {
                     isLoading: screen == .connecting,
                     action: { primaryAction.map(perform) }
                 )
-                .frame(maxWidth: 322)
+                .frame(maxWidth: 324)
             }
 
             Text(copy.footnote)
                 .font(HumFont.caption)
-                .foregroundStyle(Palette.textSecondary)
+                .foregroundStyle(Palette.textPrimary.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
                 .frame(maxWidth: 300)
