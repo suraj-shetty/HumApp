@@ -111,33 +111,64 @@ struct QueueView: View {
 
     // MARK: - Up next
 
-    private var upNextRows: some View {
-        // `upNext` is a suffix of `entries`, so a row's queue index is its
-        // offset past the cursor. Computed once here rather than per row.
-        let base = (player.queue.currentIndex ?? -1) + 1
+    /// One up-next row, carrying an identity that is both **stable across a
+    /// reorder** and **unique across repeats**. Neither half comes free:
+    ///
+    /// - Identifying by track id collapses two copies of the same song into a
+    ///   single SwiftUI identity: rows drop out and a swipe lands on the wrong
+    ///   one. A queue holds repeats routinely.
+    /// - Identifying by position makes every row change identity the moment
+    ///   anything moves, so `List` cannot animate a reorder — the dropped row
+    ///   overlaps its neighbour, the gap it left never opens, and the list
+    ///   appears to reload once the dust settles.
+    ///
+    /// Numbering each repeat gives a row the same identity before and after a
+    /// move, which is what `onMove` needs to animate. Two copies of one track
+    /// do swap identities when dragged past each other — and are pixel-identical
+    /// when they do, so there is nothing to see.
+    private struct UpNextRow: Identifiable {
+        let id: String
+        /// Index into the full queue, not into `upNext`.
+        let index: Int
+        let track: HumTrack
+    }
 
-        // By position, not by track id — a queue very often holds the same
-        // track twice, and duplicate identities break both rendering and
-        // which row a swipe acts on.
-        return ForEach(Array(player.upNext.enumerated()), id: \.offset) { offset, track in
-            let index = base + offset
-            TrackRow(track: track, showsDuration: false) {
-                player.jump(to: index)
+    private var upNextEntries: [UpNextRow] {
+        // `upNext` is a suffix of `entries`, so a row's queue index is its
+        // offset past the cursor.
+        let base = (player.queue.currentIndex ?? -1) + 1
+        var seen: [String: Int] = [:]
+
+        return player.upNext.enumerated().map { offset, track in
+            let occurrence = seen[track.id, default: 0]
+            seen[track.id] = occurrence + 1
+            return UpNextRow(
+                id: "\(track.id)#\(occurrence)",
+                index: base + offset,
+                track: track
+            )
+        }
+    }
+
+    private var upNextRows: some View {
+        ForEach(upNextEntries) { row in
+            TrackRow(track: row.track, showsDuration: false) {
+                player.jump(to: row.index)
             }
             .listRowInsets(.horizontalGutter)
             .listRowSeparatorTint(Palette.hairline)
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                 Button("Remove", systemImage: HumIcon.remove, role: .destructive) {
-                    player.remove(at: index)
+                    player.remove(at: row.index)
                 }
             }
             .accessibilityActions {
-                Button("Play now") { player.jump(to: index) }
-                Button("Remove from queue") { player.remove(at: index) }
+                Button("Play now") { player.jump(to: row.index) }
+                Button("Remove from queue") { player.remove(at: row.index) }
             }
         }
         .onMove { source, destination in
-            move(from: source, to: destination, base: base)
+            move(from: source, to: destination, base: (player.queue.currentIndex ?? -1) + 1)
         }
     }
 

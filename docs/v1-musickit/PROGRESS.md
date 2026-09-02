@@ -394,6 +394,20 @@ A library playlist ("Away") holding several singles, one of them added twice, ma
 - **`sourceLabel` works** — "UP NEXT · Away" names the playlist the session came from.
 - **Library playlists and playlist track loading work**, both previously unexercised.
 
+**Finding 4 — the reorder animation, a regression from Finding 1.** Reported from device: after dropping a dragged row the two rows overlapped for about a second, the gap the row left never opened, and the list then appeared to reload.
+
+Identifying rows by position fixed duplicates but broke moves: every row changes identity the moment anything moves, so `List` cannot see a reorder — only a wholesale content change. Neither half of the requirement comes free, and the queue needs both:
+
+| Identity | Duplicates | Reorder |
+|---|---|---|
+| `track.id` | ✗ rows collapse, swipes hit the wrong row | ✓ animates |
+| `offset` | ✓ distinct | ✗ no move animation |
+| **`track.id` + repeat number** | ✓ distinct | ✓ animates |
+
+Up-next rows now carry `"<track id>#<nth repeat>"`, which is the same before and after a move. Two copies of one track do swap identities when dragged past each other — and are pixel-identical when they do, so there is nothing to see. Only the Queue needs this; Home, Search and Detail never reorder, so position identity stays correct there.
+
+Verified in the Simulator: dragging the third row to first lands correctly and the list is settled in the frame immediately after release.
+
 ### Open findings, not yet fixed
 
 0. **The destructive swipe action renders in Honey Amber** — the same colour as Play. The design system is deliberately two-colour and already uses amber for warnings (the Home error triangle), so this is consistent rather than accidental; but using the affirmative accent for *Remove* removes the distinction between "yes" and "delete". A neutral treatment would separate them without introducing red into a system that has none. Design decision, deliberately not taken unilaterally.
@@ -417,6 +431,20 @@ A library playlist ("Away") holding several singles, one of them added twice, ma
 - **Swipe-to-remove acts on the swiped row**, with the reveal animating correctly.
 - **`sourceLabel` works** — "UP NEXT · Away" names the playlist the session came from.
 - **Library playlists and playlist track loading work**, both previously unexercised.
+
+**Finding 4 — the reorder animation, a regression from Finding 1.** Reported from device: after dropping a dragged row the two rows overlapped for about a second, the gap the row left never opened, and the list then appeared to reload.
+
+Identifying rows by position fixed duplicates but broke moves: every row changes identity the moment anything moves, so `List` cannot see a reorder — only a wholesale content change. Neither half of the requirement comes free, and the queue needs both:
+
+| Identity | Duplicates | Reorder |
+|---|---|---|
+| `track.id` | ✗ rows collapse, swipes hit the wrong row | ✓ animates |
+| `offset` | ✓ distinct | ✗ no move animation |
+| **`track.id` + repeat number** | ✓ distinct | ✓ animates |
+
+Up-next rows now carry `"<track id>#<nth repeat>"`, which is the same before and after a move. Two copies of one track do swap identities when dragged past each other — and are pixel-identical when they do, so there is nothing to see. Only the Queue needs this; Home, Search and Detail never reorder, so position identity stays correct there.
+
+Verified in the Simulator: dragging the third row to first lands correctly and the list is settled in the frame immediately after release.
 
 ### Open findings, not yet fixed
 
