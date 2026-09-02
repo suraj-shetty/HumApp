@@ -31,6 +31,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- iPad must support all four orientations unless the app requires full
+	     screen; declaring them here is the honest fix, since Hum has no reason
+	     to opt out of multitasking. iPhone keeps the three above — Face ID
+	     devices never use upside-down anyway. -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
 

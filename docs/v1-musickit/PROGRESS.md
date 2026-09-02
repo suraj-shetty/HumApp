@@ -575,6 +575,25 @@ Approaches not yet tried, for whoever picks this up: cueing the queue from `Play
 
 **Still unaudited:** Now Playing, Search, Settings.
 
+### Compliance sweep — passed
+
+Run against [ARCH §7](ARCHITECTURE.md#7-compliance-mapped-to-code):
+
+| Check | Result |
+|---|---|
+| `import StoreKit`, `SKProduct`, purchase/IAP symbols | ✅ none |
+| Ad code | ✅ none. Three text matches, all copy *stating* Hum has no ads, plus one comment about the superseded Feed.fm plan |
+| Export or share of MusicKit content (`UIActivityViewController`, `ShareLink`, `fileExporter`, `AVAssetExportSession`) | ✅ none |
+| On-disk persistence (`FileManager`, `UserDefaults`, `CoreData`, `SwiftData`, `write(to:)`) | ✅ **none anywhere in the app** — nothing is cached to disk. `ArtworkStore` is an `NSCache`, memory only, dropped under pressure |
+| Artwork rendered only alongside playback or library management | ✅ every `ArtworkView` call site is a track row, a collection card, a detail hero, the player bar or Now Playing |
+| Playback via standard first-party controls only | ✅ `PlaybackService`'s method list is closed and every entry maps to a standard `ApplicationMusicPlayer` control |
+
+### Zero-warning build — met
+
+The one remaining warning is gone: *"All interface orientations must be supported unless the app requires full screen."* iPad now declares all four orientations via `UISupportedInterfaceOrientations~ipad`, which is the honest fix — Hum has no reason to opt out of multitasking. iPhone keeps three; Face ID devices never use upside-down.
+
+Device and Simulator builds are both clean with `SWIFT_TREAT_WARNINGS_AS_ERRORS = YES`.
+
 ### Carried into Phase 6
 
 **A full design audit of every screen is owed.** The nine screens were built in Phase 4 against the prototype and have not been re-walked since real data started flowing through them — real titles are longer, real artwork is a different shape, and real library albums carry metadata the fixtures did not. Requested explicitly after the first device playback session; do it before the acceptance sweep, not after.
