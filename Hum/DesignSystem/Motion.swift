@@ -112,3 +112,49 @@ extension ButtonStyle where Self == PressableStyle {
         PressableStyle(scale: Motion.pressScaleTransport)
     }
 }
+
+/// `humShimmer` — a soft highlight band sweeping left to right, 1.4s,
+/// looping. The design applies it to every loading-skeleton bone (screens 09
+/// and 20); `RowSkeleton` and `ShelfSkeleton` drew flat, static fills before
+/// this.
+///
+/// Masked to the content it's applied to, rather than clipped to a fixed
+/// shape, so one modifier works on a `Capsule`, a `RoundedRectangle`, or
+/// anything else a skeleton bone happens to be.
+private struct ShimmerModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var animate = false
+
+    func body(content: Content) -> some View {
+        if reduceMotion {
+            // A static fill under Reduce Motion — the bone shape alone
+            // still says "loading" without a sweep.
+            content
+        } else {
+            content
+                .overlay {
+                    GeometryReader { geo in
+                        LinearGradient(
+                            colors: [.clear, Color.white.opacity(0.08), .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: geo.size.width)
+                        .offset(x: animate ? geo.size.width : -geo.size.width)
+                    }
+                }
+                .mask(content)
+                .onAppear {
+                    withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                        animate = true
+                    }
+                }
+        }
+    }
+}
+
+extension View {
+    func shimmering() -> some View {
+        modifier(ShimmerModifier())
+    }
+}

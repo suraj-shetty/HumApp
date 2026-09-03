@@ -228,6 +228,7 @@ struct ShelfSkeleton: View {
                         RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
                             .fill(Palette.artworkFill)
                             .frame(width: Metrics.artShelf, height: Metrics.artShelf)
+                            .shimmering()
                         Capsule().fill(Palette.artworkFill).frame(width: 110, height: 11)
                         Capsule().fill(Palette.artworkFill).frame(width: 72, height: 10)
                     }
@@ -253,6 +254,7 @@ struct RowSkeleton: View {
                     RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
                         .fill(Palette.artworkFill)
                         .frame(width: Metrics.artRow, height: Metrics.artRow)
+                        .shimmering()
                     VStack(alignment: .leading, spacing: 6) {
                         Capsule().fill(Palette.artworkFill).frame(width: 150, height: 11)
                         Capsule().fill(Palette.artworkFill).frame(width: 90, height: 10)
