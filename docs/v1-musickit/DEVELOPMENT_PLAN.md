@@ -116,22 +116,28 @@ Progress format from Phase 0 onward: `✅ [what was done] — [file(s) affected]
 
 ---
 
-## Phase 6 — Accessibility, compliance, acceptance sweep · *partly done*
+## Phase 6 — Accessibility, compliance, acceptance sweep · ✅ *closed*
 
 0. ~~Design audit against real MusicKit data~~ — **superseded by Phase 7.** The pass that was done found and fixed four real defects (see PROGRESS.md), but it audited the screens against *data*, not against the designs. The gap that matters turned out to be a different one.
-1. **Reduce Transparency on** — walk every screen; verify SwiftUI's solid fallback stays legible with amber-on-onyx. Fix contrast; do not hand-roll a parallel glass path.
-2. **Reduce Motion on** — level meter flat, `humRise` → crossfade.
-3. Dynamic Type through the accessibility sizes. The 200-weight display and the 10.5pt tab labels are the known failure cases.
-4. VoiceOver pass — decorative meter hidden, progress bar has value + seek action, artwork labelled with the album not "image".
+1. ⚠️ **Reduce Transparency** — *implemented, not walked.* The setting was read in `SettingsView` and acted on nowhere; every glass surface now substitutes `#1C1A17` at 96% with a 1px amber edge, per the design. **Legibility has never been judged by eye**, which is what the item actually asked for. Carried as a known gap.
+2. ✅ **Reduce Motion** — already correct from Phase 4 and re-confirmed: level meter freezes flat, `humRise` degrades to a crossfade, press scaling stops, `LevelMeter` is `accessibilityHidden`.
+3. ✅ **Dynamic Type** — the ramp was fixed-size and did not scale at all; found and fixed. `HumTextStyle` + `humFont(_:)` via `@ScaledMetric`, 58 call sites migrated, tracking and casing moved into the styles. Verified in the Simulator at AX-XL. *Known limitation:* shelf and Library card titles truncate at AX sizes, the cards being a fixed 160 wide; the design's AX3 screen shows list reflow and is silent on cards.
+4. ⚠️ **VoiceOver** — *static audit done, real walk not.* Every interactive element checked for a label, every decorative one for its hidden flag, every heading for its trait; the progress bar carries a value and a seek action. Driving VoiceOver itself needs a device in hand. Carried as a known gap.
 5. ✅ **Compliance sweep** — passed, evidence in PROGRESS.md.
 6. ✅ **Zero-warning build** with warnings-as-errors on.
-7. Walk the brief's Acceptance Criteria one by one, recording pass/fail **with evidence**.
+7. ✅ **Acceptance criteria walked**, one by one, with evidence recorded in PROGRESS.md.
 
-**Gate:** every acceptance box checked with evidence, or explicitly listed as not-met with a reason.
+**Gate:** ✅ **met** — every box is either checked with evidence or listed as not-met with a reason (PROGRESS.md, "Acceptance criteria — walked, with evidence").
+
+Four criteria met outright, two partly:
+- **Glass** — native on both bars and "content is never glass" is enforced as a *build error*, but the tab bar carries no amber tint: `TabView` offers no hook, and hand-building the bar is out of scope. Recorded as a divergence.
+- **Reduce Transparency** — implemented to spec, never verified by eye (item 1 above).
+
+**Blocked, not failed:** audible catalog playback and everything downstream of it — skip, seek, reorder under real audio, lock screen, Dynamic Island — is blocked on M-09, no Apple Music subscription on the test account. `.denied` and `.restricted` have never been observed on a device.
 
 ---
 
-## Phase 7 — Complete iPhone design audit · **NEXT**
+## Phase 7 — Complete iPhone design audit · **IN PROGRESS**
 
 *Added after the first device sessions. The implemented UI diverges from the designs substantially — not in ones and twos, but across screens. Everything before this built against a prototype read once, in Phase 4, and re-read only in fragments since.*
 
