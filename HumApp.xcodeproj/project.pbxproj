@@ -27,6 +27,7 @@
 		590B5F818A3CEF9F23D22504 /* HumIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E2C000CE338B84C7364907 /* HumIcons.swift */; };
 		5BA0093B6BE5520FB3B81F23 /* QueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E59E95295945D6DB192484 /* QueueView.swift */; };
 		5CD17B8F6D1A9A66E19ABC1C /* SystemAudioControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6A687CF3CFC0E020BE6AED /* SystemAudioControls.swift */; };
+		62E71F58CB9B887DE50F59B2 /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1930E801B01F0B5CDDE19DC /* PrivacyView.swift */; };
 		6488DC7D1E4B75781CE98BA0 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4B5298B55BEAA49822AC01 /* AuthViewModel.swift */; };
 		69EB77B465D292DB5AEF6BAD /* MusicKitLibraryAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A79831AF0059BDD39A8AEFE /* MusicKitLibraryAdapter.swift */; };
 		6A7716D602BF2F239140A1B2 /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0281C517D1566178F0F91F /* Motion.swift */; };
@@ -130,6 +131,7 @@
 		8DBEF1023DC2D547EF2E74EB /* ContentSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentSource.swift; sourceTree = "<group>"; };
 		94325A313FB1CC0FE850BD7F /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		99C2357D111851F94CA0F380 /* MusicKitSubscriptionAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicKitSubscriptionAdapter.swift; sourceTree = "<group>"; };
+		A1930E801B01F0B5CDDE19DC /* PrivacyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
 		A5FA5F0EDF3CCABE907CFE2C /* PlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackState.swift; sourceTree = "<group>"; };
 		A8A0E193FE51DFEE2B73E88E /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
 		A8E2C000CE338B84C7364907 /* HumIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumIcons.swift; sourceTree = "<group>"; };
@@ -372,6 +374,7 @@
 			isa = PBXGroup;
 			children = (
 				89BA15EE1D8994D0FB57EC20 /* SettingsView.swift */,
+				A1930E801B01F0B5CDDE19DC /* PrivacyView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -598,6 +601,7 @@
 				6CAA7604E5D67199EFDE6660 /* SplashView.swift in Sources */,
 				4DED42A0CA6027737DA98AB8 /* OnboardingView.swift in Sources */,
 				25A38D1D36649F0E69302794 /* LaunchFlowView.swift in Sources */,
+				62E71F58CB9B887DE50F59B2 /* PrivacyView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

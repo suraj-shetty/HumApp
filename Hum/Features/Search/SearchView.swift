@@ -71,6 +71,13 @@ struct RecentSearches: Equatable {
         RecentSearches(terms: UserDefaults.standard.stringArray(forKey: key) ?? [])
     }
 
+    /// Settings → Privacy's "Clear local data" (design screen 41). A plain
+    /// static write rather than requiring a loaded instance — Settings has
+    /// no reason to hold a live `RecentSearches` of its own just to empty it.
+    static func clearAll() {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
+
     mutating func record(_ term: String) {
         terms.removeAll { $0.caseInsensitiveCompare(term) == .orderedSame }
         terms.insert(term, at: 0)

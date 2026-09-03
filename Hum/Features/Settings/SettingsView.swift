@@ -81,6 +81,23 @@ struct SettingsView: View {
                     row("Reduce Transparency", reduceTransparency ? "On" : "Off")
                 }
 
+                settingsGroup("Privacy") {
+                    NavigationLink {
+                        PrivacyView()
+                    } label: {
+                        HStack {
+                            Text("Privacy")
+                                .humFont(16)
+                                .foregroundStyle(Palette.textPrimary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 14)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 settingsGroup(
                     "About",
                     // Stated plainly because the Connect screen promises it.
