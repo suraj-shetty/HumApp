@@ -59,6 +59,12 @@ enum Metrics {
     static let tabCapsulePadding: CGFloat = 7
     static let searchIsland: CGFloat = 64
 
+    /// Library filter chips and the grid they sit above, measured off screen 16.
+    static let chipHeight: CGFloat = 38
+    static let chipRadius: CGFloat = 19
+    static let chipSpacing: CGFloat = 8
+    static let libraryGridSpacing: CGFloat = 22
+
     // MARK: - Rows
 
     static let rowSpacing: CGFloat = 14

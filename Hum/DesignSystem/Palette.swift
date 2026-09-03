@@ -44,6 +44,11 @@ enum Palette {
     static let tabIconInactive = Color.white.opacity(0.68)
     /// The selected tab pill's fill — measured amber at 24%.
     static let tabSelection = Color(hex: 0xE8A33D, alpha: 0.24)
+    /// Library filter chips — measured amber 16% on a 45% amber border when
+    /// selected, flat `#161618` when not.
+    static let chipSelectedFill = Color(hex: 0xE8A33D, alpha: 0.16)
+    static let chipSelectedStroke = Color(hex: 0xE8A33D, alpha: 0.45)
+    static let chipFill = Color(hex: 0x161618)
 
     // MARK: - Hairlines
 
