@@ -15,11 +15,22 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Image(systemName: icon)
-                .humFont(34, weight: .light)
-                .foregroundStyle(Palette.honeyAmber.opacity(0.7))
-                // Decorative: the headline and message say everything it does.
-                .accessibilityHidden(true)
+            // A 96×96 amber-35% ring, icon at full strength — measured
+            // identically on every empty state this component stands in for
+            // except Home's own (screen 10), whose ring runs 112×112; close
+            // enough not to fork the component over, far enough to name
+            // (finding Q-13). It was missing altogether, and the icon itself
+            // was dimmed to 70% where every measured screen draws it solid.
+            ZStack {
+                Circle()
+                    .strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
+                    .frame(width: 96, height: 96)
+                Image(systemName: icon)
+                    .humFont(34, weight: .light)
+                    .foregroundStyle(Palette.honeyAmber)
+            }
+            // Decorative: the headline and message say everything it does.
+            .accessibilityHidden(true)
 
             Text(headline)
                 .humFont(HumTextStyle(size: 19, weight: .light, relativeTo: .title))
