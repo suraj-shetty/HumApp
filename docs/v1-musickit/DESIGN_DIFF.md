@@ -35,11 +35,13 @@ After Phase 7's component work, most of the ramp is already right. Verified matc
 ### D-1 · Detail carries a nav title the design does not have · ✅ **FIXED**
 `DetailView.swift:39` sets `.navigationTitle(collection.title)`. **The design's detail screen has no nav-bar title** — measured: the only title on screen 19 is the header at 26/300. This confirms the previously-logged "detail title appears twice" finding *with design evidence*, and settles it: the nav title goes.
 
-### D-2 · Now Playing title and artist are oversized · ✅ **FIXED**
+### D-2 · Now Playing title and artist are oversized · ✅ **FIXED** *(corrected — see note)*
 | | Design (screen 23) | `NowPlayingView.swift:187,191` |
 |---|---|---|
 | Track title | **27** / 300 / −0.4 | 30 / light / −0.5 |
 | Artist | **16** / 400 amber (full) | 18 |
+
+⚠️ **Correction.** The first pass applied this to `NowPlayingLandscapeLayout`, not the portrait layout the design specifies. Portrait was still 23/regular/−0.3 with a 17pt artist. Both now carry 27/300/−0.4 and 16 — portrait because the design says so, landscape because there is no landscape design and matching it is the sane default.
 
 ### D-3 · Settings has no Disconnect row · **decide, then fix**
 The design's Settings (screen 28) carries **"Disconnect Apple Music" at 15 / 400 in terracotta `#D2714A`** — the destructive action, in the error colour. The build has no such row.
@@ -76,9 +78,27 @@ Design: player capsule **362** wide, tab capsule **288** — different by intent
 
 ---
 
+### D-11 · Now Playing hero is the wrong shape entirely · ✅ **FIXED**
+
+Reported from device, then measured on screen 23. Three separate divergences in one region:
+
+| | Design (measured) | Was |
+|---|---|---|
+| Artwork | **262pt disc** (circle) | 322pt rounded square, radius 10 |
+| Progress | **ring around the artwork** — 3pt stroke, radius 152, from twelve o'clock, track white 9%, amber fill with a round cap, plus a **13pt amber knob** at the head | linear capsule bar below the hero |
+| Volume | slider **flanked by two speaker glyphs** — 16pt silent left, 18pt one-wave right, 14pt gaps, 260pt track | bare `MPVolumeView`, no icons |
+
+The ring is drawn as two `Circle` strokes plus a knob, in a 322pt box — the extra 18pt over the 304pt ring is what lets the knob overhang without clipping. Seeking became a **rotational** drag: the angle from the centre is the position. It engages only within 34pt of the ring band, so touches on the artwork disc stay inert rather than seeking.
+
+Timecodes moved out of the old scrubber into their own row and are `accessibilityHidden` — the ring is the one accessibility element, and it keeps the adjustable seek action.
+
+**Landscape keeps the linear bar.** There is no landscape design, and a ring around a side-by-side layout is not implied by anything measured. It did get the volume icons.
+
+---
+
 ## Step 3 progress
 
-Five fixed in one pass (D-1, D-2, D-5, D-6, D-7): clean device build, zero warnings, 72 tests passing, containment clean. **Not yet confirmed on device** — all five are visual and want eyes.
+Six fixed (D-1, D-2, D-5, D-6, D-7, D-11): clean device build, zero warnings, 72 tests passing, containment clean. **Not yet confirmed on device** — all five are visual and want eyes.
 
 Still open and needing decisions: **D-3** (Disconnect row), **D-4** (Settings groups), **D-9** (Browse grid). **D-10** recommended for acceptance rather than fixing. **D-8** needs its call sites checked.
 

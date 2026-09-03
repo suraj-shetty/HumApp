@@ -80,22 +80,24 @@ private struct NowPlayingPortraitLayout: View {
 
             Spacer(minLength: 12)
 
-            ArtworkView(
-                url: track.artworkURL,
-                size: Metrics.artNowPlaying,
-                cornerRadius: Metrics.radiusArt,
-                label: track.albumTitle ?? track.title
-            )
-            .shadow(color: .black.opacity(0.6), radius: 30, y: 26)
+            // The design's hero is a circular artwork with the progress track
+            // wrapped around it, not a rounded square above a linear bar.
+            ProgressRing {
+                CircularArtworkView(
+                    url: track.artworkURL,
+                    size: Metrics.artNowPlayingDisc,
+                    label: track.albumTitle ?? track.title
+                )
+                .shadow(color: .black.opacity(0.6), radius: 30, y: 26)
+            }
 
             Spacer(minLength: 20)
 
-            // Progress sits *above* the title in the design, not below it.
             VStack(spacing: 24) {
-                ProgressScrubber()
+                TimecodeRow()
                 titleRow
                 TransportControls(size: Metrics.transportPrimary)
-                VolumeSlider()
+                VolumeRow()
             }
             .padding(.horizontal, Metrics.heroGutter)
 
@@ -110,11 +112,11 @@ private struct NowPlayingPortraitLayout: View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 7) {
                 Text(track.title)
-                    .humFont(HumTextStyle(size: 23, weight: .regular, relativeTo: .title, tracking: -0.3))
+                    .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title, tracking: -0.4))
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(track.artist)
-                    .humFont(17)
+                    .humFont(16)
                     .foregroundStyle(Palette.honeyAmber)
                     .lineLimit(1)
             }
@@ -259,6 +261,139 @@ private struct NowPlayingBar: View {
             )
         }
         .padding(.horizontal, Metrics.navGutter)
+    }
+}
+
+/// The design's progress track: a ring wrapped around the artwork disc.
+///
+/// Measured off screen 23 — a 3pt circle of radius 152 inside a 322pt box,
+/// starting at twelve o'clock, with a 13pt amber knob riding the head. The
+/// artwork disc sits in the middle, which is why this takes the disc as
+/// content rather than drawing beside it.
+///
+/// Seeking is a standard first-party MusicKit control
+/// (`ApplicationMusicPlayer.playbackTime`) and is user-initiated, so it sits
+/// inside the compliance rule even though the brief's shorthand names only
+/// play/pause/skip (DECISIONS M-08).
+private struct ProgressRing<Content: View>: View {
+    @Environment(PlayerViewModel.self) private var player
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ViewBuilder var content: Content
+
+    @State private var dragFraction: Double?
+    /// True once a drag has started *on the ring*. Without this the gesture
+    /// would also claim touches on the artwork in the middle, and tapping the
+    /// album art would seek.
+    @State private var isScrubbing = false
+
+    private var fraction: Double { dragFraction ?? player.progress }
+    private var radius: CGFloat { Metrics.artNowPlayingRing / 2 }
+
+    var body: some View {
+        ZStack {
+            content
+
+            Circle()
+                .stroke(Color.white.opacity(0.09), lineWidth: Metrics.progressRingWidth)
+                .frame(width: Metrics.artNowPlayingRing, height: Metrics.artNowPlayingRing)
+
+            Circle()
+                .trim(from: 0, to: fraction)
+                .stroke(
+                    Palette.honeyAmber,
+                    style: StrokeStyle(lineWidth: Metrics.progressRingWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .frame(width: Metrics.artNowPlayingRing, height: Metrics.artNowPlayingRing)
+                // Animate the arc only. Animating the stack drags the knob's
+                // position and the timecodes along with it.
+                .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
+
+            Circle()
+                .fill(Palette.honeyAmber)
+                .frame(width: Metrics.progressKnob, height: Metrics.progressKnob)
+                .offset(knobOffset)
+        }
+        .frame(width: Metrics.artNowPlaying, height: Metrics.artNowPlaying)
+        .contentShape(.rect)
+        .gesture(scrub)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Playback position")
+        .accessibilityValue(
+            "\(player.elapsed.humSpokenDuration) of \(player.duration.humSpokenDuration)"
+        )
+        .accessibilityAdjustableAction { direction in
+            let step = 0.05
+            switch direction {
+            case .increment: player.seek(toFraction: min(player.progress + step, 1))
+            case .decrement: player.seek(toFraction: max(player.progress - step, 0))
+            @unknown default: break
+            }
+        }
+    }
+
+    private var knobOffset: CGSize {
+        let angle = fraction * 2 * .pi - .pi / 2
+        return CGSize(width: radius * cos(angle), height: radius * sin(angle))
+    }
+
+    /// A rotational drag: the angle from the centre *is* the position.
+    private var scrub: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let centre = Metrics.artNowPlaying / 2
+                let dx = value.location.x - centre
+                let dy = value.location.y - centre
+                if !isScrubbing {
+                    // Engage only on the ring band, so the artwork stays inert.
+                    let distance = sqrt(dx * dx + dy * dy)
+                    guard abs(distance - radius) < 34 else { return }
+                    isScrubbing = true
+                }
+                var angle = atan2(dy, dx) + .pi / 2
+                if angle < 0 { angle += 2 * .pi }
+                dragFraction = angle / (2 * .pi)
+            }
+            .onEnded { _ in
+                if isScrubbing, let target = dragFraction { player.seek(toFraction: target) }
+                isScrubbing = false
+                dragFraction = nil
+            }
+    }
+}
+
+/// Elapsed and remaining, flanking the hero. The ring carries the position, so
+/// these are labels only — the adjustable action lives on the ring.
+private struct TimecodeRow: View {
+    @Environment(PlayerViewModel.self) private var player
+
+    var body: some View {
+        HStack {
+            Text(player.elapsed.humTimestamp)
+            Spacer()
+            Text(player.remaining.humRemaining)
+        }
+        .humFont(HumTextStyle.timecode.size(12))
+        .foregroundStyle(Palette.textTertiary)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The system volume slider, flanked by the design's two speaker glyphs.
+///
+/// The icons are decoration — `MPVolumeView` carries its own accessibility, so
+/// labelling them again would give VoiceOver three stops for one control.
+private struct VolumeRow: View {
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: HumIcon.volumeLow)
+                .font(.system(size: 16))
+            VolumeRow()
+            Image(systemName: HumIcon.volumeHigh)
+                .font(.system(size: 18))
+        }
+        .foregroundStyle(Palette.iconInactive)
+        .accessibilityHidden(false)
     }
 }
 

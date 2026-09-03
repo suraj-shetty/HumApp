@@ -27,6 +27,10 @@ enum HumIcon {
     static let back = "chevron.left"
     static let queue = "list.bullet.indent"
     static let airplay = "airplayaudio"
+    /// The design flanks the volume slider with a silent speaker and a
+    /// one-wave speaker — measured 16pt left, 18pt right.
+    static let volumeLow = "speaker.fill"
+    static let volumeHigh = "speaker.wave.1.fill"
     static let share = "square.and.arrow.up"
     static let overflow = "ellipsis"
 

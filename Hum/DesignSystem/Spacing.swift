@@ -54,7 +54,14 @@ enum Metrics {
 
     static let artShelf: CGFloat = 160
     static let artDetailHero: CGFloat = 342
+    /// The Now Playing hero. Measured off the design: a 262pt artwork **disc**
+    /// centred inside a 304pt progress ring, both inside a 322pt box that
+    /// leaves room for the ring's 13pt knob to overhang.
     static let artNowPlaying: CGFloat = 322
+    static let artNowPlayingRing: CGFloat = 304
+    static let artNowPlayingDisc: CGFloat = 262
+    static let progressRingWidth: CGFloat = 3
+    static let progressKnob: CGFloat = 13
     static let artQueueHeader: CGFloat = 56
     static let artRow: CGFloat = 56
     static let artPlayerBar: CGFloat = 40
