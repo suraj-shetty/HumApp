@@ -20,7 +20,9 @@
 > - **Q-2** (Clear tint) — "Clear" is amber when enabled and a new `Palette.textDisabled` (white 25%) when the queue is empty, instead of the same grey in both states. `shots/18-AFTER-queue-card-fix.png`
 > - **NP-2, NP-6, NP-7, NP-8** (control placement) — all four settled as one change. Header trailing is now an overflow menu (Add to Library moved there from the title row, which is centred with nothing else in it); the bottom row now holds queue, shuffle, repeat and AirPlay, matching the design's row count. Repeat and AirPlay stay — they are real, tested controls the design simply doesn't draw here, and removing them was never asked for. Lyrics stays out — screen 34 is unbuilt, and a dead button is worse than no button. `shots/19-AFTER-nowplaying-control-placement.png`
 >
-> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With this round, **no known layout finding remains open on Now Playing or Queue** except the unaudited empty-queue state (design 27).
+> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the unaudited empty-queue state (design 27).
+>
+> **Also fixed, tooling rather than a finding:** the manual `AppEnvironment.live()` ⟷ `.preview()` edit every screenshot in this report required is retired. `HumApp.swift` now reads a `#if DEBUG`-gated launch argument instead — see B-1.
 >
 > Fixing C-3 made Now Playing and Queue reachable, and **§8 is their audit** — 22 further findings. Everything else below still stands.
 
@@ -66,11 +68,13 @@ Two findings from my initial report were wrong, and the design file settles both
 
 ## 3. Blockers and caveats
 
-### B-1 · Screenshots required a temporary source change, since reverted
+### B-1 · Screenshots required a temporary source change, since reverted — now resolved
 
-`HumApp.swift` wires `AppEnvironment.live()`, and MusicKit returns nothing in the Simulator (`DECISIONS M-09`), so every screen rendered empty. With your approval I switched line 18 to `AppEnvironment.preview()`, rebuilt, captured, then reverted.
+`HumApp.swift` wired `AppEnvironment.live()`, and MusicKit returns nothing in the Simulator (`DECISIONS M-09`), so every screen rendered empty. Every screenshot through this audit's addendum (§8 and the fix-verification shots) required switching that line to `AppEnvironment.preview()`, rebuilding, capturing, then reverting.
 
-**The tree is clean.** `Hum/HumApp.swift` sha is `09e20b95c24cc1a92c49269a90491642955a80db`, identical to the pre-audit baseline; `git status` shows only the untracked `design-audit/`. **No source file was modified.**
+**The tree stayed clean through all of it.** `Hum/HumApp.swift` was checked back to its baseline sha after every capture, verified by `git status` showing only the untracked `design-audit/`.
+
+**Resolved:** item 8 of §7 is done. `HumApp.swift` now resolves `.preview()` vs `.live()` from a `#if DEBUG`-gated launch argument — `xcrun simctl launch <device> <bundle-id> -HumUsePreviewServices YES` — so no future audit needs to touch this file at all. Verified both directions: the flag present renders the populated fixtures (`shots/20-AFTER-launch-argument-hook.png`); the flag absent falls back to `.live()` exactly as before. Debug and Release both build clean, so the flag cannot reach a Release binary.
 
 ### B-2 · States that could not be reached
 
@@ -432,7 +436,7 @@ Ordered by leverage. **This audit made no code changes; everything below is a pr
 5. **M-2, M-3, M-4** — the Search screen is the least-complete surface in the app.
 6. **m-1, m-2, m-5, m-6, m-8, m-10, m-12, m-13, m-15** — small, independent, mechanical.
 7. **M-8** — confirm with product which of the 20 undesigned-in-app screens are descoped.
-8. Add a launch-argument hook (e.g. `-HumUsePreviewServices`) so future audits need no source edit.
+8. ~~Add a launch-argument hook~~ — **done.** See B-1.
 
 ---
 
