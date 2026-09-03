@@ -9,12 +9,15 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **Five findings are fixed since this report was written.**
+> **Six findings are fixed since this report was written.**
 >
 > - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
 > - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
 > - **C-3** (Now Playing crash) — cause was **not** the `MPVolumeView` this report guessed at. `VolumeRow` rendered itself, overflowing the stack; it is not Simulator-specific. See §2.
 > - **M-1** (Detail hero) and **M-7** (Now Playing glow). `shots/13-`, `shots/14-`
+> - **NP-1** (play glyph contrast) — now `#0A0A0A` on `#E8A33D`, measured off the rendered pixels at **9.18:1**, up from 2.16:1. `shots/17-AFTER-play-glyph-contrast.png`
+>
+> With NP-1 fixed, **no known contrast failure remains** in the audited screens.
 >
 > Fixing C-3 made Now Playing and Queue reachable, and **§8 is their audit** — 22 further findings. Everything else below still stands.
 

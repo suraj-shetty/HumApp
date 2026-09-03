@@ -562,7 +562,11 @@ private struct TransportControls: View {
         Button(action: player.togglePlayPause) {
             Image(systemName: player.isPlaying ? HumIcon.pause : HumIcon.play)
                 .humFont(27, weight: .regular)
-                .foregroundStyle(Palette.textPrimary)
+                // Onyx on amber, as the design draws it. White here measured
+                // 2.16:1 — under the 3:1 floor for graphical objects, on the
+                // primary control of the app's centrepiece. Onyx is 9.18:1.
+                // `AlbumActionButton` already reads this way on the same fill.
+                .foregroundStyle(Palette.deepOnyx)
                 .frame(width: size, height: size)
                 // Solid Honey Amber with an amber glow, as measured. The build
                 // had a translucent 30%→13% wash and a white border, which read
