@@ -80,20 +80,25 @@ struct RootTabView: View {
     /// The design's bottom chrome: the player capsule, then the tab row, as a
     /// single column so both align on the same 362pt edges.
     private var bottomChrome: some View {
-        VStack(spacing: Metrics.chromeGap) {
-            if let track = player.currentTrack {
-                PlayerBar(
-                    track: track,
-                    isPlaying: player.isPlaying,
-                    onTap: { isShowingNowPlaying = true },
-                    onPlayPause: player.togglePlayPause,
-                    onNext: player.skipToNext
-                )
-                .frame(height: Metrics.chromeHeight)
-                .transition(.opacity.combined(with: .offset(y: 10)))
-            }
+        // One container for both surfaces: adjacent glass has to share one, or
+        // the player capsule and the tab row refract each other along the gap
+        // between them.
+        ChromeGlassContainer(spacing: Metrics.chromeGap) {
+            VStack(spacing: Metrics.chromeGap) {
+                if let track = player.currentTrack {
+                    PlayerBar(
+                        track: track,
+                        isPlaying: player.isPlaying,
+                        onTap: { isShowingNowPlaying = true },
+                        onPlayPause: player.togglePlayPause,
+                        onNext: player.skipToNext
+                    )
+                    .frame(height: Metrics.chromeHeight)
+                    .transition(.opacity.combined(with: .offset(y: 10)))
+                }
 
-            HumTabBar(selection: $selection)
+                HumTabBar(selection: $selection)
+            }
         }
         .padding(.horizontal, Metrics.chromeInset)
         .padding(.bottom, Metrics.chromeBottom)

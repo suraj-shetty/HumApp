@@ -23,10 +23,30 @@ import SwiftUI
 /// legible is a Phase 6 device check.
 enum GlassSurface {
 
-    // The player bar's material and its morph into Now Playing are supplied by
-    // `TabView`'s `tabViewBottomAccessory` — the system's own mini-player slot
-    // — so neither needs an explicit glass call or a shared namespace here.
-    // What remains below is used by surfaces the system does not place for us.
+    // Every chrome surface in Hum is placed by hand, so every one of them asks
+    // for its material here. That was not always true: the player bar once sat
+    // in `TabView`'s `tabViewBottomAccessory`, which supplied a material of its
+    // own. It no longer does (D-10), and for a while nothing replaced it — the
+    // bar and the tab bar were drawing an amber tint over bare content.
+}
+
+/// Groups adjacent chrome glass into one material.
+///
+/// Two glass surfaces that touch must share a container, or each refracts the
+/// other and the pair reads as mud rather than as one pane. The player bar and
+/// the tab bar sit `Metrics.chromeGap` apart, which is well inside the range
+/// where that matters.
+///
+/// This wraps `GlassEffectContainer` rather than letting call sites reach for
+/// it directly, so the whole glass vocabulary stays in this file — the same
+/// reason `.glassEffect()` is confined here.
+struct ChromeGlassContainer<Content: View>: View {
+    var spacing: CGFloat
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        GlassEffectContainer(spacing: spacing) { content }
+    }
 }
 
 // MARK: - Amber Glass

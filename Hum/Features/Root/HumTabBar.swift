@@ -48,6 +48,13 @@ struct HumTabBar: View {
         // on the artboard while staying right on a wider phone.
         .frame(maxWidth: .infinity)
         .frame(height: Metrics.chromeHeight)
+        // Material first, then the design's amber tint over it. Both must name
+        // the same shape or the tint clips against a different edge than the
+        // material refracts along.
+        .chromeGlass(
+            in: RoundedRectangle(cornerRadius: Metrics.tabCapsuleRadius, style: .continuous),
+            tint: nil
+        )
         .amberGlass(
             in: RoundedRectangle(cornerRadius: Metrics.tabCapsuleRadius, style: .continuous),
             shadow: false
@@ -109,6 +116,7 @@ struct HumTabBar: View {
                     selection == .search ? Palette.honeyAmber : Palette.textPrimary
                 )
                 .frame(width: Metrics.searchIsland, height: Metrics.searchIsland)
+                .chromeGlass(in: Circle(), tint: nil)
                 .amberGlass(in: Circle(), shadow: false)
                 .contentShape(Circle())
         }

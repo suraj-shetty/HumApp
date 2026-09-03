@@ -2,15 +2,18 @@ import SwiftUI
 
 /// The mini player. **Chrome — glass.**
 ///
-/// The glass is supplied by `TabView`'s `tabViewBottomAccessory` slot, which is
-/// the system's own mini-player placement on iOS 26. Nothing here calls
-/// `.glassEffect()`, and that is deliberate on two counts: the design system
-/// says the tab bar's material is native and must not be hand-built, and
-/// applying our own glass *inside* a slot that already provides it would stack
-/// glass on glass — the exact failure the boundary rules exist to prevent.
+/// The material is requested explicitly, via `GlassSurface`. It used to come
+/// from `TabView`'s `tabViewBottomAccessory` slot, and this file's doc said so
+/// for a while after that stopped being true: when the bar moved out of the
+/// accessory into `RootTabView`'s hand-built `safeAreaInset` (D-10), the slot's
+/// material went with it and nothing replaced it. The bar rendered as an amber
+/// tint over bare content — list rows read straight through it.
 ///
-/// The system also owns the collapse/expand geometry between this accessory and
-/// the tab bar, so no explicit `glassEffectID` is needed here.
+/// So the order below is load-bearing: `chromeGlass` supplies the material,
+/// `amberGlass` lays the design's tint over it. The tint alone is not glass.
+///
+/// `RootTabView` wraps this and the tab bar in one `GlassEffectContainer`,
+/// which is what keeps two adjacent glass surfaces from refracting each other.
 struct PlayerBar: View {
     let track: HumTrack
     let isPlaying: Bool
@@ -66,8 +69,9 @@ struct PlayerBar: View {
         }
         .padding(.horizontal, 11)
         .padding(.vertical, 9)
-        // The accessory slot supplies the material; this is the design's amber
-        // tint laid over it. No shadow — the slot casts its own.
+        // Material, then the design's amber tint over it. No shadow here — the
+        // container casts one for the whole chrome stack.
+        .chromeGlass(in: Capsule(style: .continuous), tint: nil)
         .amberGlass(in: Capsule(style: .continuous), shadow: false)
         .contentShape(.rect)
         .onTapGesture(perform: onTap)
