@@ -92,6 +92,17 @@ enum Palette {
         endPoint: .bottomTrailing
     )
 
+    // MARK: - Browse tiles
+    //
+    // Search's genre grid (screen 12), six flat fills, one per tile.
+
+    static let browseAmbient = Color(hex: 0x26211C)
+    static let browseJazz = Color(hex: 0x1C2124)
+    static let browseClassical = Color(hex: 0x242028)
+    static let browseFolk = Color(hex: 0x1E1E20)
+    static let browseElectronic = Color(hex: 0x211C26)
+    static let browseSoul = Color(hex: 0x1C2420)
+
     // MARK: - Amber fills
     //
     // The accent is used at four strengths, deliberately. Chrome gets it as a

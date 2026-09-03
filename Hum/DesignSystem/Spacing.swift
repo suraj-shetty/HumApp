@@ -65,6 +65,11 @@ enum Metrics {
     static let chipSpacing: CGFloat = 8
     static let libraryGridSpacing: CGFloat = 22
 
+    /// Search's Browse genre grid — two columns, measured off screen 12.
+    static let browseGridSpacing: CGFloat = 12
+    static let browseTileHeight: CGFloat = 96
+    static let browseTileRadius: CGFloat = 12
+
     // MARK: - Rows
 
     static let rowSpacing: CGFloat = 14

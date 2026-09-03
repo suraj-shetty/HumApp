@@ -71,11 +71,9 @@ struct SearchView: View {
             Group {
                 switch model?.results ?? .idle {
                 case .idle:
-                    EmptyStateView(
-                        icon: HumIcon.search,
-                        headline: "Search Apple Music",
-                        message: "Find songs, albums, and artists from the catalog and your library."
-                    )
+                    BrowseGridView { genre in
+                        query = genre
+                    }
 
                 case .loading:
                     RowSkeleton(count: 6)
@@ -91,19 +89,34 @@ struct SearchView: View {
 
                 case .loaded(let tracks):
                     ScrollView {
-                        LazyVStack(spacing: 0) {
-                            // Identified by position, not by track id: results
-                            // can repeat a song, and duplicate SwiftUI
-                            // identities make rows drop out and taps land on
-                            // the wrong one.
-                            ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                                TrackRow(
-                                    track: track,
-                                    isCurrent: player.currentTrack?.id == track.id
-                                ) {
-                                    player.play(tracks, startingAt: index, source: "Search")
+                        LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                            // Design 13 also draws an "ALBUMS" section — this
+                            // app's catalog search returns tracks only, so
+                            // there is no second group to head. "TOP RESULTS"
+                            // is the one label that's true regardless.
+                            Section {
+                                // Identified by position, not by track id: results
+                                // can repeat a song, and duplicate SwiftUI
+                                // identities make rows drop out and taps land on
+                                // the wrong one.
+                                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
+                                    TrackRow(
+                                        track: track,
+                                        isCurrent: player.currentTrack?.id == track.id
+                                    ) {
+                                        player.play(tracks, startingAt: index, source: "Search")
+                                    }
+                                    if index < tracks.count - 1 { RowDivider() }
                                 }
-                                if index < tracks.count - 1 { RowDivider() }
+                            } header: {
+                                Text("Top Results")
+                                    .humFont(11.5, weight: .semibold)
+                                    .tracking(1.2)
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(Palette.textMuted)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 8)
+                                    .background(Palette.deepOnyx)
                             }
                         }
                         .padding(.horizontal, Metrics.gutter)
@@ -150,5 +163,60 @@ struct SearchView: View {
                 model?.search()
             }
         }
+    }
+}
+
+/// Search's default, no-query state — design screen 12's "Browse" grid,
+/// finding M-3. It was a plain magnifier-and-caption empty state; the design
+/// gives Search a real entry point instead of asking for a query first.
+///
+/// Genre in, search term out: tapping a tile searches its name. There's no
+/// separate genre-browse endpoint in `MusicCatalogService` to page through
+/// instead, and a tile that led nowhere would be worse than none.
+private struct BrowseGridView: View {
+    let onSelect: (String) -> Void
+
+    private let genres: [(name: String, fill: Color)] = [
+        ("Ambient", Palette.browseAmbient),
+        ("Jazz", Palette.browseJazz),
+        ("Classical", Palette.browseClassical),
+        ("Folk", Palette.browseFolk),
+        ("Electronic", Palette.browseElectronic),
+        ("Soul", Palette.browseSoul),
+    ]
+
+    private let columns = [
+        GridItem(.flexible(), spacing: Metrics.browseGridSpacing),
+        GridItem(.flexible(), spacing: Metrics.browseGridSpacing),
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Browse")
+                    .humFont(20, weight: .light)
+                    .foregroundStyle(Palette.textPrimary)
+
+                LazyVGrid(columns: columns, spacing: Metrics.browseGridSpacing) {
+                    ForEach(genres, id: \.name) { genre in
+                        Button {
+                            onSelect(genre.name)
+                        } label: {
+                            Text(genre.name)
+                                .humFont(16, weight: .light)
+                                .foregroundStyle(Palette.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .bottomLeading)
+                                .padding(14)
+                                .frame(height: Metrics.browseTileHeight)
+                                .background(genre.fill, in: RoundedRectangle(cornerRadius: Metrics.browseTileRadius))
+                        }
+                        .buttonStyle(.pressable)
+                    }
+                }
+            }
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.top, 8)
+        }
+        .scrollIndicators(.hidden)
     }
 }
