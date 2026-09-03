@@ -86,7 +86,14 @@ enum Metrics {
     // MARK: - Artwork
 
     static let artShelf: CGFloat = 160
-    static let artDetailHero: CGFloat = 342
+    /// The detail hero — playlist and album alike. Measured 206 square, inset
+    /// and centred inside the block's 24pt padding. It was 342 here and drawn
+    /// full-bleed in the view, so neither the constant nor the screen matched
+    /// the design; both are corrected together.
+    ///
+    /// Artist detail is the one hero the design *does* run edge to edge, as a
+    /// 330pt band. That screen isn't built yet.
+    static let artDetailHero: CGFloat = 206
     /// The Now Playing hero. Measured off the design: a 262pt artwork **disc**
     /// centred inside a 304pt progress ring, both inside a 322pt box that
     /// leaves room for the ring's 13pt knob to overhang.
@@ -110,6 +117,10 @@ enum Metrics {
     /// its own rendering disagree; the rendering wins for visual values, as
     /// settled in DESIGN_AUDIT §9.
     static let radiusArtRow: CGFloat = 8
+    /// The detail hero measures 14 — the same law losing to the same rendering,
+    /// one size up. Kept as its own name rather than rounded to `radiusArt` so
+    /// the divergence stays visible instead of being quietly averaged away.
+    static let radiusArtHero: CGFloat = 14
     /// Cards — shelf tiles and grid cells.
     static let radiusCard: CGFloat = 18
 }

@@ -88,7 +88,17 @@ private struct NowPlayingPortraitLayout: View {
                     size: Metrics.artNowPlayingDisc,
                     label: track.albumTitle ?? track.title
                 )
-                .shadow(color: .black.opacity(0.6), radius: 30, y: 26)
+                // `0 0 68px 6px rgba(232,163,61,.22)` — an amber bloom centred
+                // on the disc, not a drop shadow. This was a black shadow
+                // offset 26pt down, which read as a card sitting on the screen
+                // rather than as a lit disc, and it is the one thing carrying
+                // the warmth on the app's centrepiece.
+                //
+                // CSS blur halves into a SwiftUI radius. The 6px spread has no
+                // SwiftUI equivalent and is left off rather than faked by
+                // inflating the radius, which would spread the glow thinner
+                // instead of denser.
+                .shadow(color: Palette.honeyAmber.opacity(0.22), radius: 34)
             }
 
             Spacer(minLength: 20)

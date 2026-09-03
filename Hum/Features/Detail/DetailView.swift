@@ -12,19 +12,22 @@ struct DetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Full-bleed and square-cornered, as measured: the design runs
-                // the hero edge to edge at the screen's full width, not as a
-                // centred rounded card.
-                GeometryReader { proxy in
-                    ArtworkView(
-                        url: collection.artworkURL,
-                        size: proxy.size.width,
-                        cornerRadius: 0,
-                        label: collection.title
-                    )
-                }
-                .aspectRatio(1, contentMode: .fit)
+            // The hero block's 16pt gap. The design measures the artwork at 206
+            // square, inset and centred — not full-bleed, which is what this
+            // screen drew and what the comment here used to claim was measured.
+            // Only Artist detail runs a hero edge to edge, and that screen does
+            // not exist yet.
+            VStack(spacing: 16) {
+                ArtworkView(
+                    url: collection.artworkURL,
+                    size: Metrics.artDetailHero,
+                    cornerRadius: Metrics.radiusArtHero,
+                    label: collection.title
+                )
+                // `0 18px 44px rgba(0,0,0,.6)`. CSS blur halves into a SwiftUI
+                // radius, the same conversion `AmberGlassModifier` uses.
+                .shadow(color: .black.opacity(0.6), radius: 22, y: 18)
+                .padding(.top, 26)
 
                 VStack(spacing: 20) {
                     metadata
