@@ -9,7 +9,7 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **17 findings, across 10 changes, are fixed since this report was written.**
+> **20 findings, across 11 changes, are fixed since this report was written.**
 >
 > - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
 > - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
@@ -24,8 +24,9 @@
 >
 > - **Q-12** (Queue empty-state button) — `EmptyStateView`'s action button now uses a new `AmberOutlineButton` (border only, no fill, amber label — screen 27's actual recipe) instead of the misleadingly-named `OutlineCapsuleButton`, which filled and labelled in white. `OutlineCapsuleButton` itself is untouched — it still serves `SubscriptionGapView`'s "Continue Without It", where **SG-4 remains open**: the two screens that used to share this one component wanted two different treatments, which is why a second component exists now rather than one shared fix. Built to screen 27's own height (48) too, closing that half of Q-14 as a side effect of building the button correctly; Q-14's headline-size delta is untouched. `shots/30-AFTER-queue-empty-Q12.png`
 > - **Q-13** (empty-state icon ring) — every screen `EmptyStateView` backs (Home, Search, Library, Queue, Now Playing's "Nothing playing") now draws the design's 96×96 amber-35% ring around a full-strength icon, instead of no ring and an icon dimmed to 70%. Measured off screen 27 (Queue) and confirmed identical on screens 14 (Search) and 17 (Library); Home's own screen (10) rings at 112×112, 16pt larger — close enough not to fork the shared component over, named here rather than silently rounded away. Regression-checked on Search's empty state, which shares the component but passes no action button. `shots/31-AFTER-queue-empty-Q13.png`
+> - **SG-2, SG-3, SG-4** (subscription gap icon halo, headline, secondary action) — `SubscriptionGapView` now draws screen 06's own 112×112 amber-ringed icon halo around a 46pt glyph (was a bare 38pt glyph, no ring), the app's established 200-weight/30px headline mapping (was 27px `.light`), and a plain-text "Continue Without It" (was a bordered `OutlineCapsuleButton`) — the same plain-text recipe `ConnectView`'s own "Try again" uses. `OutlineCapsuleButton` had no callers left after this and is removed, along with the `amberOutlineFill`/`amberOutlineStroke` tokens it alone used. Verified via Search → tapping a catalog track with subscription forced to `.gap(canBecomeSubscriber: false)`.
 >
-> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the icon halo (Q-13) and headline size (part of Q-14), both still open. With CT-1/CT-2, **no known Major finding remains open in the Connect/subscription-gap family** — SG-2, SG-3 and SG-4 are still open, since that pass only touched `ConnectView`.
+> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except headline size (part of Q-14, still open). With CT-1/CT-2 and now SG-2/SG-3/SG-4, **no known Major finding remains open in the Connect/subscription-gap family.**
 >
 > **Also fixed, tooling rather than a finding:** the manual `AppEnvironment.live()` ⟷ `.preview()` edit every screenshot in this report required is retired. `HumApp.swift` now reads a `#if DEBUG`-gated launch argument instead — see B-1.
 >
