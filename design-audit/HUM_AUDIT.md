@@ -33,16 +33,16 @@
 | Metric | Count |
 |---|---|
 | Screens in app nav graph | 11 |
-| Fully audited (screenshot + code + design) | 8 |
-| Audited from code + design only (capture blocked) | 3 |
+| Fully audited (screenshot + code + design) | 10 |
+| Audited from code + design only (timing- or OS-blocked, not source-blocked) | 1 |
 | Screens in the design | 42 |
-| **Total issues** | **50** |
+| **Total issues** | **57** |
 
 | Severity | Count | IDs |
 |---|---|---|
 | **Critical** | 3 | C-1 … C-3 |
-| **Major** | 13 | M-1 … M-9 · NP-1, NP-2 · Q-1, Q-2 |
-| **Minor** | 34 | m-1 … m-16 · NP-3 … NP-11 · Q-3 … Q-11 |
+| **Major** | 17 | M-1 … M-9 · NP-1, NP-2 · Q-1, Q-2 · CT-1, CT-2 · SG-2, SG-4 |
+| **Minor** | 37 | m-1 … m-16 · NP-3 … NP-11 · Q-3 … Q-11 · CT-3, CT-4 · SG-3 |
 
 §5 covers the first pass; **§8 covers Now Playing and Queue**, audited later once C-3 was fixed.
 
@@ -81,8 +81,8 @@ Two findings from my initial report were wrong, and the design file settles both
 | State | Why |
 |---|---|
 | ~~Now Playing · Queue~~ | Was blocked by the C-3 crash (`05-`/`07-CRASH-after-tapping-playerbar.png`). **Now resolved and audited — see §8.** |
-| Connect — 4 states | Preview services grant authorization immediately; no hook to force a state |
-| Subscription gap · Toast | Require a gated play intent unreachable with preview services |
+| ~~Connect — 4 states~~ · ~~Subscription gap~~ | Was blocked by preview services granting authorization immediately with no way to force a state. **Now resolved and audited — see §9**, using the `-HumPreviewAuthState` / `-HumPreviewSubscriptionState` launch arguments added for this. One sub-state (`.connecting`, the mid-request spinner) resolves in 1.2s, faster than the capture tool's round-trip — verified from code instead of a screenshot; not a design gap. |
+| Toast | Still unreached — needs a gated play intent to fail differently from the two `SubscriptionGapView` paths already captured. |
 | Reduce Transparency ON | `simctl` toggle did not take (`10-…-DID-NOT-APPLY.png`); the app's own Settings screen still read `Off`. **Fallback path untested** — reported as neither passing nor failing. |
 | Dynamic Type AX3 · smallest/largest device | Not exercised. The design specifies a full AX3 reflow (screen 38) — worth a dedicated pass. |
 
@@ -107,8 +107,12 @@ The design has **42 screens**; the app implements 11. Every app screen has a des
 | Bottom chrome | `Root/HumTabBar.swift`, `Components/PlayerBar.swift` | ✅ `06-home-playerbar.png` | `Dock.dc.html` |
 | Now Playing | `NowPlaying/NowPlayingView.swift` | ✅ `15-nowplaying.png` | 23 |
 | Queue | `Queue/QueueView.swift` | ✅ `16-queue.png` (empty state 27 unverified) | 26, 27 |
-| Connect (4 states) | `Connect/ConnectView.swift` | ❌ unreachable | 04, 05, 06, 07 |
-| Subscription gap | `Connect/SubscriptionGapView.swift` | ❌ unreachable | 05 |
+| Connect — invitation | `Connect/ConnectView.swift` | ✅ `21-connect-invitation.png` | 04 |
+| Connect — connecting | `Connect/ConnectView.swift` | ⚠️ verified from code, not captured | 04 (spinner variant) |
+| Connect — denied | `Connect/ConnectView.swift` | ✅ `23-connect-denied.png` | 06 (closest analog — see §9) |
+| Connect — restricted | `Connect/ConnectView.swift` | ✅ `24-connect-restricted.png` | 06 (closest analog — see §9) |
+| Subscription gap — no offer | `Connect/SubscriptionGapView.swift` | ✅ `25-subscription-gap.png` | no direct screen — see §9 |
+| Subscription gap — check failed | `Connect/SubscriptionGapView.swift` | ✅ `26-subscription-unavailable.png` | no direct screen — see §9 |
 
 ### Designed, no counterpart in the nav graph → **M-8**
 
@@ -504,11 +508,70 @@ Worth recording, because it is most of both screens. Now Playing's entire hero g
 
 ---
 
-## 9. Provenance
+## 9. Addendum — Connect and the Subscription Gap
+
+Added after extending the launch-argument hook (`3730122`) with two more flags built specifically to unblock this: `-HumPreviewAuthState <case>` and `-HumPreviewSubscriptionState <case>`, forcing the exact `AuthState` / `SubscriptionState` each screen needs. Captured against design screens **04–07** — with one mapping correction below that changes what "the design" for this family actually means.
+
+Screenshots: `shots/21-connect-invitation.png`, `23-connect-denied.png`, `24-connect-restricted.png`, `25-subscription-gap.png`, `26-subscription-unavailable.png`. **8 new findings: 4 Major, 3 Minor, plus one unscored note (SG-1).**
+
+### 9.1 A mapping correction before the findings
+
+Design screen **05** ("Not subscribed") reads "You're signed in, but there's no subscription," with a **"Try Apple Music free"** primary CTA. That copy and action don't belong to `SubscriptionGapView` — they describe `.gap(canBecomeSubscriber: true)`, and `SubscriptionReducer.resolve` sends that case straight to `presentSubscriptionOffer`, Apple's own native `MusicSubscriptionOffer` sheet (wired in `RootTabView.swift`). `SubscriptionGapView`'s own doc comment already says as much: "`.gap(canBecomeSubscriber: true)` never reaches this view." **Screen 05 is that system sheet's design intent, not a screen this app draws.** Apple owns that sheet's exact pixels, so there's nothing to audit there beyond confirming the routing is correct — which I did, functionally, in §9.3.
+
+What I captured instead — `.gap(canBecomeSubscriber: false)` and `.unavailable` — has **no numbered design screen at all**. `SubscriptionGapView.swift` already says so: "Designed by inference (DECISIONS M-06) from the Connect layout." I audited it against its closest analog, screen **06** (Authorization denied), which the view's own structure clearly borrows from — icon, headline, body, primary CTA, plain-text secondary, in that order.
+
+### 9.2 Connect — invitation, denied, restricted
+
+**What matches exactly**, worth recording before the deltas: the permission-row text (15.5px/300/`rgba(255,255,255,.82)`), the body copy color (white 66%), every hairline divider (`Palette.hairlineStrong` = white 9%, matching all three of the design's `rgba(255,255,255,.09)` row borders), the footnote (12.5px/white 62%), the `HumMark` logo at 52×52, and the invitation heading (36px, tracking −0.9). The `.restrictedNoRecourse` screen correctly renders **no primary button** — `AuthReducer.primaryAction` returns `nil` there by design, and the screenshot confirms it: a plain gap where a dead Settings link would otherwise sit.
+
+| ID | Severity | Category | Expected (design) | Actual | Delta | Location |
+|---|---|---|---|---|---|---|
+| **CT-1** | **Major** | Layout / Component states | Denied and restricted each get a **distinct** centered layout — screen 06: a 112×112 icon halo (terracotta `rgba(210,113,74,.38)` border), a 44px padlock, and a "Where to look" info card (`#141416`, radius 16) in place of the permission-row list | Both states reuse the **invitation's own layout** verbatim — left-aligned title, the same three generic library/play/lock permission rows, no halo, no info card, no terracotta anywhere | entire layout family swapped for the wrong one | `ConnectView.swift` (one `body` for all four `screen` cases) |
+| **CT-2** | **Major** | Liquid Glass / materials | Primary CTA is a **floating glass capsule** — `backdrop-filter: blur(24px) saturate(180%)` under the amber `.26→.12` gradient, on all of screens 04–07 | `AmberCapsuleButton` paints the gradient only; no material | blur absent | `HumButtons.swift:37` (`Palette.amberButton`, no `.glassEffect`) |
+| **CT-3** | Minor | Layout | Content block top padding **56px** | `.padding(.top, 72)` | +16 pt | `ConnectView.swift:62` |
+| **CT-4** | Minor | Iconography | Permission-row icons **22×22**, stroke-width 1.4 | Rendered at `humFont(17, …)` — a 17pt glyph in a 24pt frame | −5 pt | `ConnectView.swift:196` |
+
+**CT-1's caveat, stated plainly:** `ConnectView.swift:12-14` already discloses this — "The `.denied` and `.restricted` variants have no design and are built by inference from that layout (DECISIONS M-06)." That was true when it was written. It no longer is: screen 06 exists in the recovered design and draws something else entirely. This is reported as a finding because the audit's job is to compare against the design regardless of why the gap exists, not because anyone hid it.
+
+**CT-2 sits in real tension with `ARCHITECTURE.md §6`**, which lists "paywall body" under content that must stay opaque. But the design's floating-glass CTA recipe (`.26/.12` gradient, `blur(24px)`, `rgba(255,255,255,.2)` border, that exact shadow) appears identically on screens 04, 05, 06, and 07's disabled "Connecting…" state — it reads as the design system's standard *primary-action* treatment on content screens, not as "the screen is chrome." Whether the architecture rule should carve out floating CTAs, or the design's floating-glass buttons should be simplified to match the rule, is a call for whoever owns that document — not one this audit makes for them. Flagged, not resolved.
+
+### 9.3 Subscription gap
+
+| ID | Severity | Category | Expected (closest analog — screen 06) | Actual | Delta | Location |
+|---|---|---|---|---|---|---|
+| **SG-1** | *(note, unscored)* | Coverage | Screen 05's "Try Apple Music free" copy and CTA belong to `.gap(canBecomeSubscriber: true)` | That case never reaches this view — it goes to Apple's native offer sheet, correctly, per `SubscriptionReducer.resolve` | — routing verified correct | `RootTabView.swift` (`.subscriptionOffer`) |
+| **SG-2** | **Major** | Iconography | 112×112 icon halo — `border: 1px solid rgba(232,163,61,.35)` (amber, since this isn't an error) around a 46px glyph | Bare 38pt SF Symbol, `Palette.honeyAmber.opacity(0.8)`, no ring at all | halo entirely absent | `SubscriptionGapView.swift:28` |
+| **SG-3** | Minor | Typography | Headline 30px / weight 200 (→ `.ultraLight`, the app's own established mapping for CSS 200 elsewhere) | `HumTextStyle(size: 27, weight: .light, …)` | −3 pt, **and** a weight-mapping inconsistent with the app's own convention | `SubscriptionGapView.swift:34` |
+| **SG-4** | **Major** | Component states | The secondary action ("Continue without it" / "Try again," both screens 05 and 06) is **plain text** — no fill, no border, white 62% | `OutlineCapsuleButton` — a bordered, amber-outline capsule | wrong component family, not just a color slip | `SubscriptionGapView.swift:58` |
+
+**SG-4 is systemic, not local to this screen.** `OutlineCapsuleButton` is Hum's one secondary-action component, used consistently everywhere a secondary action appears. The design, across this entire screen family, draws secondary actions as unstyled text links instead. That's either a deliberate simplification for visual consistency across the app, or a divergence nobody has revisited since `OutlineCapsuleButton` was built — the report can't tell which from the code alone.
+
+**The play-intent gate itself works.** I verified the routing functionally, not just by reading the reducer: with subscription forced to `.gap(canBecomeSubscriber: false)`, Home correctly hides its catalog shelves entirely (the same `catalogUnavailable` empty state normally shown with no subscription at all) — so I reached a catalog track through Search instead, where browsing isn't gated, only playback is. Tapping a result correctly opened the gap sheet reading "Apple Music Needed," with only "Continue Without It" (no retry — correct, this isn't a failed check). Forcing `.unavailable` produced "Couldn't Check," this time with both "Try Again" and "Continue Without It" — matching `SubscriptionGapView.swift:52`'s `if let onRetry` exactly. `.gap(canBecomeSubscriber: true)` was not separately re-tested against the live offer sheet — see SG-1.
+
+**Not captured:** the connection-failed toast, design screen 07. Its spec models a *network* failure mid-`request()` — a terracotta toast reading "Can't reach Apple Music," retry action, the invitation screen dimmed to 55% behind it, spinner still running. `MusicAuthorizationService.request() async -> AuthState` is non-throwing, and `MusicAuthorization.request()` is a local system permission sheet, not a network call — there is no failure mode in the current protocol for this screen to represent. This may be a screen the design imagined for a networked OAuth-style flow that doesn't describe how `MusicAuthorization` actually works, rather than a build gap. Worth a product conversation before anyone builds toward it.
+
+### 9.4 Check tables
+
+| Category | Connect (invitation/denied/restricted) | Subscription gap |
+|---|---|---|
+| Layout & spacing | ⚠️ CT-3 | ✅ matches its closest analog on the measures that transfer |
+| Typography | ✅ exact on invitation; not applicable to denied/restricted's borrowed layout | ⚠️ SG-3 |
+| Color | ✅ every color checked matches exactly | ✅ body/secondary colors match; icon tint correct (amber, not terracotta — this isn't an error state) |
+| Liquid Glass / materials | ❌ **CT-2** | ❌ same gap, not re-scored — see CT-2 |
+| Iconography & imagery | ⚠️ CT-4 | ❌ **SG-2** |
+| Component states | ❌ **CT-1** | ❌ **SG-4**; routing verified correct (SG-1) |
+| Responsiveness | 🚫 not exercised | 🚫 not exercised |
+| Accessibility | ✅ permission rows combine into one VoiceOver element each | ✅ icon/headline/body combine into one element |
+| Motion | ✅ `ConnectSpinner` holds still under Reduce Motion, button copy still reads "Connecting…" | 🚫 not applicable — no motion in this view |
+
+---
+
+## 10. Provenance
 
 - **Screenshots:** captured with `xcrun simctl io … screenshot` on iPhone 17 Pro / iOS 26.5 and referenced throughout as `shots/…`. **Not committed** — they are ~14 MB of PNGs and were left out of the repo deliberately, so the `design-audit/shots/` paths cited above resolve only in the working tree they were captured in.
 - **Design values:** extracted from inline CSS in `designs/Hum-All-Platforms.html`, unpacked from its bundler manifest (gzip+base64) into `01-iPhone-Screens-and-UI-System.dc.html` (42 screens) plus `Dock`, `TrackRow`, `ArtPill`, `StatusBar` components. Every number is quoted from a style attribute, not measured off a raster.
 - **Contrast:** WCAG 2.1 relative luminance, alpha-composited over `#0A0A0A`.
 - **Alpha census:** regex count of every `rgba(255,255,255,α)` and `rgba(232,163,61,α)` in the design source.
 - **Token usage:** `grep` across `Hum/`, excluding declarations.
-- **Source tree:** unmodified — verified by sha and `git status` (B-1).
+- **Launch arguments:** `-HumPreviewAuthState` and `-HumPreviewSubscriptionState`, added to `HumApp.swift` alongside the existing `-HumUsePreviewServices` for this addendum — see §9. Debug-only, `#if DEBUG`-gated, same as the flag they extend.
+- **Source tree:** every screenshot before §9 required no source edit (B-1). §9's two new launch-argument flags are a genuine, intentional change to `HumApp.swift`, not a capture-then-revert — committed as tooling, the same as `-HumUsePreviewServices` itself.

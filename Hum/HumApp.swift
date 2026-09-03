@@ -17,9 +17,24 @@ import SwiftUI
 /// `xcrun simctl launch <device> <bundle-id> -HumUsePreviewServices YES` —
 /// without hand-editing this file for every screenshot and reverting it
 /// afterward, which is what every capture in `design-audit/` required until
-/// now. `#if DEBUG` keeps the flag out of Release builds entirely: it cannot
-/// be triggered by anything short of a debug install under Xcode or
-/// `simctl`, never a real user's device.
+/// now.
+///
+/// Two more flags, only meaningful alongside the one above, force the two
+/// states that flag alone cannot reach — Connect's four screens and the
+/// subscription gap both need a specific `AuthState` / `SubscriptionState`,
+/// not just "some preview data":
+///
+/// - `-HumPreviewAuthState <case>` — `notDetermined`, `requesting`,
+///   `denied`, or `restricted`. Unset stays `.authorized`, `.preview()`'s own
+///   default, so the flag above still behaves exactly as before this existed.
+/// - `-HumPreviewSubscriptionState <case>` — `gap` or `unavailable`. Unset
+///   stays `.active`. `.gap(canBecomeSubscriber: true)` is deliberately not
+///   offered: it routes straight to Apple's own offer sheet and was never
+///   `SubscriptionGapView`'s to reach.
+///
+/// `#if DEBUG` keeps all three out of Release builds entirely: they cannot be
+/// triggered by anything short of a debug install under Xcode or `simctl`,
+/// never a real user's device.
 @main
 struct HumApp: App {
     private let environment: AppEnvironment
@@ -34,12 +49,36 @@ struct HumApp: App {
     @MainActor
     private static func resolveEnvironment() -> AppEnvironment {
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "HumUsePreviewServices") {
-            return .preview()
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "HumUsePreviewServices") {
+            return .preview(
+                auth: previewAuthState(defaults),
+                subscription: previewSubscriptionState(defaults)
+            )
         }
         #endif
         return .live()
     }
+
+    #if DEBUG
+    private static func previewAuthState(_ defaults: UserDefaults) -> AuthState {
+        switch defaults.string(forKey: "HumPreviewAuthState") {
+        case "notDetermined": .notDetermined
+        case "requesting": .requesting
+        case "denied": .denied
+        case "restricted": .restricted
+        default: .authorized
+        }
+    }
+
+    private static func previewSubscriptionState(_ defaults: UserDefaults) -> SubscriptionState {
+        switch defaults.string(forKey: "HumPreviewSubscriptionState") {
+        case "gap": .gap(canBecomeSubscriber: false)
+        case "unavailable": .unavailable(reason: "Forced via -HumPreviewSubscriptionState")
+        default: .active
+        }
+    }
+    #endif
 
     var body: some Scene {
         WindowGroup {
