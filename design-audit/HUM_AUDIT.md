@@ -9,7 +9,7 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **Eight findings are fixed since this report was written.**
+> **13 findings, across 7 changes, are fixed since this report was written.**
 >
 > - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
 > - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
@@ -18,8 +18,9 @@
 > - **NP-1** (play glyph contrast) — now `#0A0A0A` on `#E8A33D`, measured off the rendered pixels at **9.18:1**, up from 2.16:1. `shots/17-AFTER-play-glyph-contrast.png`
 > - **Q-1** (Queue card) — the now-playing block now carries the design's `#141416` card fill (new `Palette.surfaceCard` token), 14pt radius and inset margins, instead of a bare full-width row.
 > - **Q-2** (Clear tint) — "Clear" is amber when enabled and a new `Palette.textDisabled` (white 25%) when the queue is empty, instead of the same grey in both states. `shots/18-AFTER-queue-card-fix.png`
+> - **NP-2, NP-6, NP-7, NP-8** (control placement) — all four settled as one change. Header trailing is now an overflow menu (Add to Library moved there from the title row, which is centred with nothing else in it); the bottom row now holds queue, shuffle, repeat and AirPlay, matching the design's row count. Repeat and AirPlay stay — they are real, tested controls the design simply doesn't draw here, and removing them was never asked for. Lyrics stays out — screen 34 is unbuilt, and a dead button is worse than no button. `shots/19-AFTER-nowplaying-control-placement.png`
 >
-> With NP-1 fixed, **no known contrast failure remains** in the audited screens.
+> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With this round, **no known layout finding remains open on Now Playing or Queue** except the unaudited empty-queue state (design 27).
 >
 > Fixing C-3 made Now Playing and Queue reachable, and **§8 is their audit** — 22 further findings. Everything else below still stands.
 

@@ -76,7 +76,7 @@ private struct NowPlayingPortraitLayout: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            NowPlayingBar(onClose: onClose, onQueue: onQueue)
+            NowPlayingBar(track: track, onClose: onClose)
 
             Spacer(minLength: 12)
 
@@ -106,62 +106,68 @@ private struct NowPlayingPortraitLayout: View {
             VStack(spacing: 24) {
                 TimecodeRow()
                 titleRow
-                TransportControls(size: Metrics.transportPrimary)
+                TransportControls(size: Metrics.transportPrimary, showsSecondaryControls: false)
                 VolumeRow()
             }
             .padding(.horizontal, Metrics.heroGutter)
 
             Spacer(minLength: 16)
 
-            footer
+            bottomActionRow
         }
         .padding(.bottom, 8)
     }
 
+    // Centred, title and artist alone — as measured (screen 23). It carried
+    // a trailing Add to Library button, left-aligned around it; the design
+    // draws neither the alignment nor the control here (NP-2). The action
+    // moved to the header's overflow menu rather than disappearing.
     private var titleRow: some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text(track.title)
-                    .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title, tracking: -0.4))
-                    .foregroundStyle(Palette.textPrimary)
-                    .lineLimit(1)
-                Text(track.artist)
-                    .humFont(16)
-                    .foregroundStyle(Palette.honeyAmber)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            AddToLibraryButton(track: track)
+        VStack(spacing: 7) {
+            Text(track.title)
+                .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title, tracking: -0.4))
+                .foregroundStyle(Palette.textPrimary)
+                .lineLimit(1)
+            Text(track.artist)
+                .humFont(16)
+                .foregroundStyle(Palette.honeyAmber)
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private var footer: some View {
-        // The design's utility row. Two changes beyond styling:
-        //
-        // - AirPlay was a decorative glyph with `accessibilityHidden(true)` and
-        //   no action — a control that looked tappable and was not. It is now
-        //   the system route picker.
-        // - The share glyph is gone. It did nothing, and sharing MusicKit
-        //   content is a compliance line Hum does not cross (DESIGN_AUDIT §3).
+    // The design's bottom action row: queue, lyrics, shuffle, 56pt apart
+    // (screen 23). Lyrics is screen 34 and unbuilt, so it is left out rather
+    // than wired to nothing (NP-7) — a dead button is worse than no button.
+    //
+    // Repeat and AirPlay are not in the design here, but they are real,
+    // tested controls (`cycleRepeat`, the system route picker) that used to
+    // live in the transport block and the old footer respectively. Matching
+    // the design's placement was the ask, not deleting what it does not
+    // draw, so both join this row rather than losing their only home. Four
+    // real controls no longer fit the design's fixed 56pt gap, so this
+    // distributes them evenly instead (NP-8: two rows below the transport —
+    // volume, then this — where the app drew three).
+    //
+    // "Up next · N" is gone: the queue icon alone is the design's queue
+    // affordance, and the count was the app's own addition on top of it.
+    private var bottomActionRow: some View {
         HStack {
             Spacer()
-
-            Button(action: onQueue) {
-                Text("Up next · \(player.upNext.count)")
-                    .humFont(HumTextStyle(size: 13, relativeTo: .caption2, tracking: 1.4, uppercase: true))
-                    .foregroundStyle(Palette.textSecondary.opacity(0.9))
-                    .frame(height: Metrics.tapTarget)
-                    .padding(.horizontal, 12)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.pressable)
-
+            IconButton(
+                systemName: HumIcon.queue,
+                size: 21,
+                tint: Palette.textPrimary.opacity(0.66),
+                label: "Show queue",
+                action: onQueue
+            )
             Spacer()
-
+            ShuffleButton()
+            Spacer()
+            RepeatButton()
+            Spacer()
             RoutePickerButton()
                 .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-
             Spacer()
         }
         .padding(.horizontal, Metrics.heroGutter)
@@ -241,8 +247,8 @@ private struct NowPlayingLandscapeLayout: View {
 // MARK: - Shared pieces
 
 private struct NowPlayingBar: View {
+    let track: HumTrack
     let onClose: () -> Void
-    let onQueue: () -> Void
 
     @Environment(PlayerViewModel.self) private var player
 
@@ -262,15 +268,37 @@ private struct NowPlayingBar: View {
                 .foregroundStyle(Palette.textMuted)
                 .lineLimit(1)
             Spacer()
-            IconButton(
-                systemName: HumIcon.queue,
-                size: 21,
-                tint: Palette.textSecondary,
-                label: "Show queue",
-                action: onQueue
-            )
+            // The design's trailing header control is an overflow glyph, not
+            // the queue shortcut this used to be — queue now lives in the
+            // bottom action row below, where the design actually draws it
+            // (NP-6). Add to Library moves here from the title row for the
+            // same reason: the design keeps that row to title and artist
+            // alone (NP-2). `DetailView` already puts secondary actions
+            // behind this glyph, so this follows the app's own precedent
+            // rather than inventing a new one.
+            overflowMenu
         }
         .padding(.horizontal, Metrics.navGutter)
+    }
+
+    private var overflowMenu: some View {
+        let added = player.isInLibrary(track)
+        return Menu {
+            Button(
+                added ? "In Your Library" : "Add to Library",
+                systemImage: added ? HumIcon.inLibrary : HumIcon.addToLibrary
+            ) {
+                player.addToLibrary(track)
+            }
+            .disabled(added)
+        } label: {
+            Image(systemName: HumIcon.overflow)
+                .humFont(21, weight: .regular)
+                .foregroundStyle(Palette.textSecondary)
+                .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
+                .contentShape(.rect)
+        }
+        .accessibilityLabel("More options")
     }
 }
 
@@ -482,14 +510,17 @@ private struct ProgressScrubber: View {
 private struct TransportControls: View {
     var size: CGFloat
     var alignment: HorizontalAlignment = .center
+    /// Landscape has no separate bottom action row to hold shuffle and
+    /// repeat, so it still gets them here, directly under the transport row.
+    /// Portrait does have one now (`bottomActionRow`, screen 23's actual
+    /// placement for shuffle) and passes `false` so they are not drawn twice.
+    var showsSecondaryControls: Bool = true
 
     @Environment(PlayerViewModel.self) private var player
 
     var body: some View {
         // Measured from the design: three controls only — previous, play,
         // next — 26pt glyphs either side of a 78pt disc, 34 apart and centred.
-        // Shuffle and repeat are not in this row; the design puts shuffle in a
-        // secondary utility row below, and `secondaryControls` follows it.
         VStack(spacing: 26) {
             HStack(spacing: alignment == .leading ? 26 : 34) {
                 if alignment == .leading { Spacer(minLength: 0) }
@@ -519,43 +550,14 @@ private struct TransportControls: View {
                 if alignment == .leading { Spacer(minLength: 0) }
             }
 
-            secondaryControls
+            if showsSecondaryControls {
+                HStack(spacing: 56) {
+                    ShuffleButton()
+                    RepeatButton()
+                }
+            }
         }
         .frame(maxWidth: alignment == .leading ? nil : .infinity)
-    }
-
-    /// Shuffle and repeat, at the design's secondary weight: 21pt glyphs, 56
-    /// apart, white at 66% until active, then amber.
-    private var secondaryControls: some View {
-        HStack(spacing: 56) {
-            IconButton(
-                systemName: HumIcon.shuffle,
-                size: 21,
-                tint: player.queue.shuffleEnabled
-                    ? Palette.honeyAmber
-                    : Palette.textPrimary.opacity(0.66),
-                label: player.queue.shuffleEnabled ? "Shuffle on" : "Shuffle off",
-                action: player.toggleShuffle
-            )
-
-            IconButton(
-                systemName: player.queue.repeatMode == .one ? HumIcon.repeatOne : HumIcon.repeatAll,
-                size: 21,
-                tint: player.queue.repeatMode == .off
-                    ? Palette.textPrimary.opacity(0.66)
-                    : Palette.honeyAmber,
-                label: repeatLabel,
-                action: player.cycleRepeat
-            )
-        }
-    }
-
-    private var repeatLabel: String {
-        switch player.queue.repeatMode {
-        case .off: "Repeat off"
-        case .all: "Repeat all"
-        case .one: "Repeat one"
-        }
     }
 
     private var playButton: some View {
@@ -579,20 +581,47 @@ private struct TransportControls: View {
     }
 }
 
-private struct AddToLibraryButton: View {
-    let track: HumTrack
+/// 21pt, white at 66% until active, then amber — the design's secondary
+/// weight. Its own type so both `TransportControls` (landscape) and the
+/// portrait `bottomActionRow` can place it without duplicating the toggle.
+private struct ShuffleButton: View {
     @Environment(PlayerViewModel.self) private var player
 
     var body: some View {
-        let added = player.isInLibrary(track)
-        return IconButton(
-            systemName: added ? HumIcon.inLibrary : HumIcon.addToLibrary,
-            size: 23,
-            weight: .light,
-            tint: added ? Palette.honeyAmber : Palette.textSecondary,
-            label: added ? "In your library" : "Add to library",
-            action: { player.addToLibrary(track) }
+        IconButton(
+            systemName: HumIcon.shuffle,
+            size: 21,
+            tint: player.queue.shuffleEnabled
+                ? Palette.honeyAmber
+                : Palette.textPrimary.opacity(0.66),
+            label: player.queue.shuffleEnabled ? "Shuffle on" : "Shuffle off",
+            action: player.toggleShuffle
         )
-        .disabled(added)
+    }
+}
+
+/// Not in the design (screen 23 draws shuffle only), but real and tested —
+/// see `bottomActionRow`'s comment for why it still gets a home.
+private struct RepeatButton: View {
+    @Environment(PlayerViewModel.self) private var player
+
+    var body: some View {
+        IconButton(
+            systemName: player.queue.repeatMode == .one ? HumIcon.repeatOne : HumIcon.repeatAll,
+            size: 21,
+            tint: player.queue.repeatMode == .off
+                ? Palette.textPrimary.opacity(0.66)
+                : Palette.honeyAmber,
+            label: repeatLabel,
+            action: player.cycleRepeat
+        )
+    }
+
+    private var repeatLabel: String {
+        switch player.queue.repeatMode {
+        case .off: "Repeat off"
+        case .all: "Repeat all"
+        case .one: "Repeat one"
+        }
     }
 }
