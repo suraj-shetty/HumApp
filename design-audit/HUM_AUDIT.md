@@ -9,7 +9,7 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **16 findings, across 9 changes, are fixed since this report was written.**
+> **17 findings, across 10 changes, are fixed since this report was written.**
 >
 > - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
 > - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
@@ -23,6 +23,7 @@
 > - **CT-1, CT-2** (Connect denied/restricted layout, floating-CTA glass) — the denied and restricted screens now render screen 06's own layout (terracotta icon halo, centred heading, and — denied only — a "Where to look" info card) instead of reusing the invitation's; `.deniedRecoverable` also gains the "Try again" secondary action the design draws, wired to a real re-check rather than left decorative. `AmberCapsuleButton` (Connect's CTA, the subscription gap's retry) now carries real glass via a new, narrowly-scoped `floatingActionGlass`, resolving `DECISIONS M-07` the way it was left open to be resolved — see §9 and `DECISIONS.md`. `shots/27-`, `28-AFTER-connect-*-CT1.png`
 >
 > - **Q-12** (Queue empty-state button) — `EmptyStateView`'s action button now uses a new `AmberOutlineButton` (border only, no fill, amber label — screen 27's actual recipe) instead of the misleadingly-named `OutlineCapsuleButton`, which filled and labelled in white. `OutlineCapsuleButton` itself is untouched — it still serves `SubscriptionGapView`'s "Continue Without It", where **SG-4 remains open**: the two screens that used to share this one component wanted two different treatments, which is why a second component exists now rather than one shared fix. Built to screen 27's own height (48) too, closing that half of Q-14 as a side effect of building the button correctly; Q-14's headline-size delta is untouched. `shots/30-AFTER-queue-empty-Q12.png`
+> - **Q-13** (empty-state icon ring) — every screen `EmptyStateView` backs (Home, Search, Library, Queue, Now Playing's "Nothing playing") now draws the design's 96×96 amber-35% ring around a full-strength icon, instead of no ring and an icon dimmed to 70%. Measured off screen 27 (Queue) and confirmed identical on screens 14 (Search) and 17 (Library); Home's own screen (10) rings at 112×112, 16pt larger — close enough not to fork the shared component over, named here rather than silently rounded away. Regression-checked on Search's empty state, which shares the component but passes no action button. `shots/31-AFTER-queue-empty-Q13.png`
 >
 > With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the icon halo (Q-13) and headline size (part of Q-14), both still open. With CT-1/CT-2, **no known Major finding remains open in the Connect/subscription-gap family** — SG-2, SG-3 and SG-4 are still open, since that pass only touched `ConnectView`.
 >
