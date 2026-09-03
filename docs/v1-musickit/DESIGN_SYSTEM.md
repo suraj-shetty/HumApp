@@ -26,8 +26,7 @@
 |---|---|---|
 | `textPrimary` | `#FFFFFF` | Titles, track names |
 | `textSecondary` | `rgba(255,255,255,.66)` | Body copy |
-| `textTertiary` | `rgba(255,255,255,.52)` | Artist sublines, metadata |
-| `textQuaternary` | `rgba(255,255,255,.40)` | Durations, timestamps |
+| `textMuted` | `rgba(255,255,255,.62)` | Durations, timecodes, tracked overlines, captions, metadata |
 | `iconInactive` | `rgba(255,255,255,.60)` | Inactive tab, inactive shuffle/repeat |
 
 **Amber alphas** (the accent is used at four strengths, deliberately):
@@ -41,7 +40,11 @@
 | Play button fill (76pt) | `linear(180°, rgba(232,163,61,.30) → rgba(232,163,61,.13))` |
 | Secondary/outline button | `rgba(232,163,61,.16)` fill, `rgba(232,163,61,.40)` border |
 
-**Contrast check owed in Phase 6:** `#E8A33D` on `#0A0A0A` is ~9.6:1 — passes comfortably. The risk cases are `textQuaternary` (`.40` white ≈ 3.4:1 — **fails AA for body text**, acceptable only for the non-essential duration labels it's used on, and worth revisiting) and amber text sitting over the brightest part of the radial wash.
+**Contrast:** `#E8A33D` on `#0A0A0A` measures **9.18:1** — passes AA and AAA. `textMuted` on the same ground is `#A2A2A2`, **7.76:1** — also passes both.
+
+The ramp previously carried a `textTertiary` at 52% and a `textQuaternary` at 40%. Both were removed: neither value appears in the design (52% occurs zero times in the prototype, 40% once), and the 40% step measured 3.77:1, failing AA on every duration in the app. `textMuted` is the design's actual value for that role.
+
+The remaining contrast risk is amber text over the brightest part of the radial wash — still owed a check, since it depends on the album artwork.
 
 ---
 

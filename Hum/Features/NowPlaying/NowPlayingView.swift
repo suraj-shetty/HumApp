@@ -184,7 +184,7 @@ private struct NowPlayingLandscapeLayout: View {
                 VStack(alignment: .leading, spacing: 9) {
                     Text(player.sourceLabel.isEmpty ? "Now playing" : "Playing from \(player.sourceLabel)")
                         .humFont(HumTextStyle(size: 11.5, relativeTo: .caption2, tracking: 1.6, uppercase: true))
-                        .foregroundStyle(Palette.textQuaternary)
+                        .foregroundStyle(Palette.textMuted)
                     Text(track.title)
                         .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title, tracking: -0.4))
                         .foregroundStyle(Palette.textPrimary)
@@ -249,7 +249,7 @@ private struct NowPlayingBar: View {
             Spacer()
             Text(player.sourceLabel)
                 .humFont(HumTextStyle(size: 11.5, relativeTo: .caption2, tracking: 1.6, uppercase: true))
-                .foregroundStyle(Palette.textTertiary)
+                .foregroundStyle(Palette.textMuted)
                 .lineLimit(1)
             Spacer()
             IconButton(
@@ -374,7 +374,7 @@ private struct TimecodeRow: View {
             Text(player.remaining.humRemaining)
         }
         .humFont(HumTextStyle.timecode.size(12))
-        .foregroundStyle(Palette.textTertiary)
+        .foregroundStyle(Palette.textMuted)
         .accessibilityHidden(true)
     }
 }
@@ -447,7 +447,7 @@ private struct ProgressScrubber: View {
                 Text(player.remaining.humRemaining)
             }
             .humFont(HumTextStyle.timecode.size(12))
-            .foregroundStyle(Palette.textTertiary)
+            .foregroundStyle(Palette.textMuted)
         }
         // One accessibility element for the whole control, with a real value
         // and an adjustable action — a bare progress bar tells VoiceOver

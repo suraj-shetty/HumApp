@@ -33,11 +33,20 @@ enum Palette {
 
     static let textPrimary = Color.white
     static let textSecondary = Color.white.opacity(0.66)
-    static let textTertiary = Color.white.opacity(0.52)
-    /// Durations and timestamps only. At ~3.4:1 this does not meet AA for body
-    /// text; it is acceptable on non-essential numerics and is flagged for the
-    /// Phase 6 contrast pass.
-    static let textQuaternary = Color.white.opacity(0.40)
+    /// The design's workhorse dim text — durations, timecodes, tracked
+    /// overlines, captions, metadata. By a wide margin the most-used colour in
+    /// the prototype (133 occurrences of `rgba(255,255,255,.62)`; the next
+    /// step up, `.66`, appears 24 times).
+    ///
+    /// It replaces a `textTertiary` at 52% and a `textQuaternary` at 40%, and
+    /// the reason it replaces them is that **neither value exists in the
+    /// design** — 52% occurs zero times and 40% once. They were transcription
+    /// drift, not a tier.
+    ///
+    /// It also fixes the app's only contrast failure. At `#A2A2A2` on Deep
+    /// Onyx this is **7.76:1** and passes AA and AAA; the 40% it supersedes
+    /// measured 3.77:1 and failed AA on every duration in the app.
+    static let textMuted = Color.white.opacity(0.62)
     static let iconInactive = Color.white.opacity(0.60)
     /// The tab bar's unselected glyph — measured white 68%, brighter than the
     /// general inactive icon because it sits on glass rather than on onyx.

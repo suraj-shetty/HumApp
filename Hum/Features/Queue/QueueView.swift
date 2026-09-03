@@ -102,7 +102,7 @@ struct QueueView: View {
                     .lineLimit(1)
                 Text(track.artist)
                     .humFont(.rowSubtitle)
-                    .foregroundStyle(Palette.textTertiary)
+                    .foregroundStyle(Palette.textMuted)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

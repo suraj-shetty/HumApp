@@ -59,7 +59,7 @@ struct SectionHeader: View {
             if let trailing {
                 Text(trailing)
                     .humFont(.caption)
-                    .foregroundStyle(Palette.textQuaternary)
+                    .foregroundStyle(Palette.textMuted)
             }
         }
         .accessibilityAddTraits(.isHeader)

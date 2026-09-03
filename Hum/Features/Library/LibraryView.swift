@@ -140,7 +140,7 @@ struct LibraryView: View {
             case .loaded(let collections) where collections.isEmpty:
                 Text("Nothing here yet.")
                     .humFont(.rowSubtitle)
-                    .foregroundStyle(Palette.textTertiary)
+                    .foregroundStyle(Palette.textMuted)
 
             case .loaded(let collections):
                 ForEach(collections) { collection in

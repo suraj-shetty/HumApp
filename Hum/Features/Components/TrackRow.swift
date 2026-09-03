@@ -55,7 +55,7 @@ struct TrackRow: View {
                 if showsDuration, track.duration > 0, !isAccessibilitySize {
                     Text(track.duration.humTimestamp)
                         .humFont(.timecode)
-                        .foregroundStyle(Palette.textQuaternary)
+                        .foregroundStyle(Palette.textMuted)
                 }
             }
             .padding(.vertical, rowPadding)
@@ -84,7 +84,7 @@ struct TrackRow: View {
         case .index(let number):
             Text("\(number)")
                 .humFont(HumTextStyle.timecode.size(14))
-                .foregroundStyle(isCurrent ? Palette.honeyAmber : Palette.textQuaternary)
+                .foregroundStyle(isCurrent ? Palette.honeyAmber : Palette.textMuted)
                 .frame(width: 18, alignment: .leading)
         }
     }
