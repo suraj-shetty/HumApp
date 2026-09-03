@@ -45,6 +45,11 @@ enum HumIcon {
     static let dragHandle = "line.3.horizontal"
     static let remove = "xmark"
 
+    // Search
+    /// Clears the search field. Filled rather than bare, matching the design's
+    /// ✕-on-a-disc clear chip — a bare glyph reads as decoration at this size.
+    static let clearField = "xmark.circle.fill"
+
     // States
     static let musicNote = "music.note"
     static let person = "person.crop.circle"

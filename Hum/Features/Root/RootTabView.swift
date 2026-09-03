@@ -23,6 +23,13 @@ struct RootTabView: View {
     @Environment(PlayerViewModel.self) private var player
     @State private var selection: HumTab = .home
     @State private var isShowingNowPlaying = false
+    /// The query lives here, not in `SearchView`, because the field that edits
+    /// it is in the chrome and the results that answer it are in the tab. The
+    /// one place both can see is their parent.
+    @State private var searchQuery = ""
+    /// Where Cancel returns to. Search is entered from whichever tab you were
+    /// on, and dumping you back on Home from Library would lose your place.
+    @State private var tabBeforeSearch: HumTab = .home
 
     enum HumTab: Hashable {
         case home, search, library
@@ -41,10 +48,13 @@ struct RootTabView: View {
             }
 
             Tab(value: HumTab.search) {
-                SearchView().toolbar(.hidden, for: .tabBar)
+                SearchView(query: $searchQuery).toolbar(.hidden, for: .tabBar)
             }
         }
         .tint(Palette.honeyAmber)
+        .onChange(of: selection) { old, new in
+            if old != .search { tabBeforeSearch = old }
+        }
         // `safeAreaInset` rather than an overlay: the chrome must push the
         // scroll content up, or track rows sit behind the glass.
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -97,7 +107,14 @@ struct RootTabView: View {
                     .transition(.opacity.combined(with: .offset(y: 10)))
                 }
 
-                HumTabBar(selection: $selection)
+                HumTabBar(
+                    selection: $selection,
+                    searchText: $searchQuery,
+                    onCancelSearch: {
+                        searchQuery = ""
+                        selection = tabBeforeSearch
+                    }
+                )
             }
         }
         .padding(.horizontal, Metrics.chromeInset)

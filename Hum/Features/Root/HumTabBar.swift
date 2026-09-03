@@ -3,6 +3,13 @@ import SwiftUI
 /// The design's bottom tab bar: a 288pt glass capsule holding two pills, with
 /// the search control as its own 64pt circular island beside it.
 ///
+/// **Search expands in place.** Tapping the island collapses the two pills and
+/// grows it into a full-width field with a Cancel beside it — the iOS 26 search
+/// -tab behaviour `DESIGN_SYSTEM.md` specified via `Tab(role: .search)`, which
+/// D-10 gave up when this bar was hand-built. The design board draws its search
+/// field at the top of the Search screen instead (screens 12–14, 33), so this
+/// is a departure from the board and a return to the documented behaviour.
+///
 /// **Hand-built, deliberately.** The native `TabView` bar was used until the
 /// design was measured properly, and two of its behaviours cannot be reached
 /// through it at all:
@@ -22,18 +29,47 @@ import SwiftUI
 /// `glassEffect(` in that one file, so this stays inside the architecture.
 struct HumTabBar: View {
     @Binding var selection: RootTabView.HumTab
+    @Binding var searchText: String
+    /// Where Cancel goes back to. The bar cannot work this out itself — the
+    /// two pills are gone by the time there is anything to cancel.
+    var onCancelSearch: () -> Void
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The selected pill is one moving view, not a fill that appears and
     /// disappears on two — that is what makes it travel between tabs instead
     /// of blinking from one to the other.
     @Namespace private var pillNamespace
+    @FocusState private var isFieldFocused: Bool
+
+    private var isSearching: Bool { selection == .search }
 
     var body: some View {
         HStack(spacing: Metrics.chromeGap) {
-            capsule
-            searchIsland
+            // The pills leave and the island takes the width they vacate. One
+            // `if` drives both halves, so they cannot disagree about which
+            // state the bar is in mid-animation.
+            if !isSearching {
+                capsule
+                    .transition(
+                        .opacity.combined(with: .scale(scale: 0.9, anchor: .leading))
+                    )
+            }
+
+            searchControl
+
+            if isSearching {
+                cancelButton
+                    .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .trailing)))
+            }
         }
         .frame(maxWidth: .infinity)
+        .animation(Motion.reduced(Motion.tabSelection, when: reduceMotion), value: isSearching)
+        // Focus follows the state rather than the tap, so arriving at Search
+        // any other way — a restored selection, a programmatic jump — still
+        // opens the keyboard.
+        .onChange(of: isSearching) { _, searching in
+            isFieldFocused = searching
+        }
     }
 
     private var capsule: some View {
@@ -106,22 +142,88 @@ struct HumTabBar: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    private var searchIsland: some View {
-        Button {
-            selection = .search
-        } label: {
+    /// The island, and the field it becomes.
+    ///
+    /// One view across both states rather than two swapped views: the glass has
+    /// to be continuous through the morph, and a `Capsule` at 64 × 64 already
+    /// draws the circle the collapsed state wants, so the shape never changes —
+    /// only the width it is asked to fill.
+    ///
+    /// It is deliberately not a `Button`. A `TextField` inside a button label
+    /// never sees the tap that should put the caret in it.
+    private var searchControl: some View {
+        HStack(spacing: 10) {
             Image(systemName: HumIcon.search)
                 .font(.system(size: 23, weight: .regular))
-                .foregroundStyle(
-                    selection == .search ? Palette.honeyAmber : Palette.textPrimary
-                )
-                .frame(width: Metrics.searchIsland, height: Metrics.searchIsland)
-                .chromeGlass(in: Circle(), tint: nil)
-                .amberGlass(in: Circle(), shadow: false)
-                .contentShape(Circle())
+                .foregroundStyle(isSearching ? Palette.honeyAmber : Palette.textPrimary)
+                .accessibilityHidden(true)
+
+            if isSearching {
+                TextField("Songs, albums, artists", text: $searchText)
+                    .focused($isFieldFocused)
+                    .humFont(16)
+                    .foregroundStyle(Palette.textPrimary)
+                    .tint(Palette.honeyAmber)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .accessibilityLabel("Search Apple Music")
+                    .transition(.opacity)
+
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                        isFieldFocused = true
+                    } label: {
+                        Image(systemName: HumIcon.clearField)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(Palette.textMuted)
+                            .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear search")
+                    .transition(.opacity)
+                }
+            }
+        }
+        .padding(.horizontal, isSearching ? 18 : 0)
+        .frame(maxWidth: isSearching ? .infinity : Metrics.searchIsland)
+        .frame(height: Metrics.searchIsland)
+        .chromeGlass(in: Capsule(style: .continuous), tint: nil)
+        .amberGlass(in: Capsule(style: .continuous), shadow: false)
+        .contentShape(Capsule(style: .continuous))
+        .onTapGesture {
+            if isSearching {
+                isFieldFocused = true
+            } else {
+                withAnimation(Motion.reduced(Motion.tabSelection, when: reduceMotion)) {
+                    selection = .search
+                }
+            }
+        }
+        // Only the collapsed island is a button. Once it is a field, UIKit's
+        // own text-field semantics are the correct ones and replacing them
+        // with "Search, button" would be a downgrade.
+        .accessibilityElement(children: isSearching ? .contain : .ignore)
+        .accessibilityLabel(isSearching ? "" : "Search")
+        .accessibilityAddTraits(isSearching ? [] : .isButton)
+    }
+
+    private var cancelButton: some View {
+        Button {
+            isFieldFocused = false
+            withAnimation(Motion.reduced(Motion.tabSelection, when: reduceMotion)) {
+                onCancelSearch()
+            }
+        } label: {
+            Text("Cancel")
+                .humFont(16)
+                .foregroundStyle(Palette.honeyAmber)
+                .fixedSize()
+                .frame(minWidth: 44, minHeight: Metrics.tapTarget)
+                .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Search")
-        .accessibilityAddTraits(selection == .search ? [.isButton, .isSelected] : .isButton)
     }
 }

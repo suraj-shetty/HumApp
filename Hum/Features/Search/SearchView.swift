@@ -45,12 +45,23 @@ final class SearchViewModel {
     }
 }
 
-/// Search. **Opaque content.** The tab itself is `Tab(role: .search)`, so the
-/// system renders the chrome.
+/// Search. **Opaque content.**
 ///
-/// Designed by inference — the prototype has a Search tab but draws no screen
-/// (DECISIONS M-06). Built to the Home/track-row idiom.
+/// This screen no longer owns its search field. The field is in the bottom
+/// chrome, which is where the search tab expands to on iOS 26 — so the query
+/// arrives as a binding from `RootTabView` and this view only answers it.
+///
+/// That also settles a divergence the audit raised: `.searchable` put the
+/// system field *above* the 32/200 display title, inverting the design's
+/// order. With the field in the chrome, the title is back on top.
+///
+/// The design draws its search field at the top of the screen rather than in
+/// the dock (screens 12–14, 33). Moving it to the chrome is a deliberate
+/// departure, and it is the behaviour `DESIGN_SYSTEM.md` originally specified
+/// via `Tab(role: .search)` before D-10 hand-built the bar.
 struct SearchView: View {
+    @Binding var query: String
+
     @Environment(\.appEnvironment) private var environment
     @Environment(PlayerViewModel.self) private var player
     @State private var model: SearchViewModel?
@@ -126,17 +137,18 @@ struct SearchView: View {
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .searchable(
-            text: Binding(
-                get: { model?.term ?? "" },
-                set: { model?.term = $0 }
-            ),
-            prompt: "Songs, albums, artists"
-        )
-        .onSubmit(of: .search) { model?.search() }
-        .onChange(of: model?.term ?? "") { _, _ in model?.search() }
+        .onChange(of: query) { _, term in
+            model?.term = term
+            model?.search()
+        }
         .task {
             if model == nil { model = SearchViewModel(environment: environment) }
+            // The tab can be entered with a query already typed — the field is
+            // in the chrome and outlives this view's lifetime.
+            if !query.isEmpty, model?.term != query {
+                model?.term = query
+                model?.search()
+            }
         }
     }
 }
