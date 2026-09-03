@@ -26,6 +26,12 @@ enum Palette {
     /// The same value as `artworkFill`; kept as its own name because one is a
     /// control's ground and the other is missing artwork.
     static let surfaceRaised = Color(hex: 0x1E1E20)
+    /// `#141416` — the card fill under a block of content: Settings' grouped
+    /// rows, Queue's now-playing card, the "Where to look" card on the denied
+    /// screen. 22 occurrences in the design, always at this exact value —
+    /// distinct from `surfaceRaised`, which is a control's ground, not a
+    /// content card's.
+    static let surfaceCard = Color(hex: 0x141416)
 
     // MARK: - Text ramp
     //
@@ -48,6 +54,10 @@ enum Palette {
     /// measured 3.77:1 and failed AA on every duration in the app.
     static let textMuted = Color.white.opacity(0.62)
     static let iconInactive = Color.white.opacity(0.60)
+    /// A disabled toolbar action's label — measured on Queue's "Clear" when
+    /// the queue is empty. Not part of the four-step text ramp above: that
+    /// ramp is for content at rest, this is one control's disabled state.
+    static let textDisabled = Color.white.opacity(0.25)
     /// The tab bar's unselected glyph — measured white 68%, brighter than the
     /// general inactive icon because it sits on glass rather than on onyx.
     static let tabIconInactive = Color.white.opacity(0.68)

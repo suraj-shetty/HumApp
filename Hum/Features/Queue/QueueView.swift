@@ -74,8 +74,12 @@ struct QueueView: View {
                         .tint(Palette.honeyAmber)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    // Amber when it does something, not just when it exists —
+                    // the design's disabled Clear is white 25%, and tinting
+                    // both states the same grey made an enabled control read
+                    // as though it couldn't be tapped.
                     Button("Clear") { player.clearUpNext() }
-                        .tint(Palette.textSecondary)
+                        .tint(player.upNext.isEmpty ? Palette.textDisabled : Palette.honeyAmber)
                         .disabled(player.upNext.isEmpty)
                 }
             }
@@ -109,9 +113,16 @@ struct QueueView: View {
 
             LevelMeter(isAnimating: player.isPlaying)
         }
+        .padding(14)
+        // The design draws this as a card, not a bare row: `margin 0 20 8,
+        // padding 14, radius 14, fill #141416`. It was rendering as plain
+        // content flush against the screen edge — no fill, no radius, no
+        // inset — which is why it read as a row rather than the one card on
+        // this screen.
+        .background(Palette.surfaceCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .padding(.horizontal, Metrics.gutter)
         .padding(.top, 6)
-        .padding(.bottom, 20)
+        .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Playing now: \(track.title) by \(track.artist)")
     }
