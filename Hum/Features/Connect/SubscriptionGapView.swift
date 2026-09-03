@@ -24,14 +24,19 @@ struct SubscriptionGapView: View {
             Spacer(minLength: 0)
 
             VStack(spacing: 22) {
-                Image(systemName: icon)
-                    .humFont(38, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber.opacity(0.8))
-                    .accessibilityHidden(true)
+                ZStack {
+                    Circle()
+                        .strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
+                        .frame(width: 112, height: 112)
+                    Image(systemName: icon)
+                        .humFont(46, weight: .light)
+                        .foregroundStyle(Palette.honeyAmber.opacity(0.8))
+                }
+                .accessibilityHidden(true)
 
                 VStack(spacing: 14) {
                     Text(title)
-                        .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title))
+                        .humFont(HumTextStyle(size: 30, weight: .ultraLight, relativeTo: .title))
                         .foregroundStyle(Palette.textPrimary)
 
                     Text(message)
@@ -55,7 +60,15 @@ struct SubscriptionGapView: View {
                         dismiss()
                     }
                 }
-                OutlineCapsuleButton(title: "Continue Without It") { dismiss() }
+                // Plain text, not a bordered capsule — design screens 05/06
+                // draw both secondary actions here as unstyled links, the
+                // same recipe `ConnectView`'s own "Try again" uses. Was
+                // `OutlineCapsuleButton` (audit finding SG-4).
+                Button("Continue Without It") { dismiss() }
+                    .buttonStyle(.plain)
+                    .humFont(16)
+                    .foregroundStyle(Palette.textSecondary)
+                    .frame(height: Metrics.tapTarget)
             }
             .padding(.bottom, 8)
         }
