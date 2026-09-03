@@ -258,7 +258,10 @@ private struct NowPlayingBar: View {
                 systemName: HumIcon.collapse,
                 size: 22,
                 weight: .regular,
-                tint: Palette.textSecondary,
+                // `rgba(255,255,255,.7)` — 4 points brighter than
+                // `Palette.textSecondary`'s 66%. One-off rather than a new
+                // ramp step for a difference this small (NP-9).
+                tint: Color.white.opacity(0.7),
                 label: "Close player",
                 action: onClose
             )
@@ -278,7 +281,12 @@ private struct NowPlayingBar: View {
             // rather than inventing a new one.
             overflowMenu
         }
-        .padding(.horizontal, Metrics.navGutter)
+        // `8px 24px 0` (screen 23) — its own inset rather than the shared
+        // `Metrics.navGutter` (18), which `ConnectView` and
+        // `SubscriptionGapView` also read; widening it there was never asked
+        // for (NP-4).
+        .padding(.top, 8)
+        .padding(.horizontal, 24)
     }
 
     private var overflowMenu: some View {
@@ -332,7 +340,10 @@ private struct ProgressRing<Content: View>: View {
             content
 
             Circle()
-                .stroke(Color.white.opacity(0.09), lineWidth: Metrics.progressRingWidth)
+                // Same value as the hardcoded white 9% this replaces
+                // (`Palette.hairlineStrong`) — the number was already right,
+                // it just bypassed the token (NP-10).
+                .stroke(Palette.hairlineStrong, lineWidth: Metrics.progressRingWidth)
                 .frame(width: Metrics.artNowPlayingRing, height: Metrics.artNowPlayingRing)
 
             Circle()
@@ -350,6 +361,11 @@ private struct ProgressRing<Content: View>: View {
             Circle()
                 .fill(Palette.honeyAmber)
                 .frame(width: Metrics.progressKnob, height: Metrics.progressKnob)
+                // `0 0 14px 3px rgba(232,163,61,.7)` — a flat amber dot before
+                // this (NP-3). CSS blur halves into a SwiftUI radius, the same
+                // conversion used throughout this file; the 3px spread has no
+                // SwiftUI equivalent and is folded into the radius instead.
+                .shadow(color: Palette.honeyAmber.opacity(0.7), radius: 8.5)
                 .offset(knobOffset)
         }
         .frame(width: Metrics.artNowPlaying, height: Metrics.artNowPlaying)
@@ -413,6 +429,11 @@ private struct TimecodeRow: View {
         }
         .humFont(HumTextStyle.timecode.size(12))
         .foregroundStyle(Palette.textMuted)
+        // Screen 23 insets this row 46pt, 12 more than the 34pt
+        // `Metrics.heroGutter` the surrounding block already applies to
+        // everything else in it (NP-5) — this row's own extra margin, not a
+        // change to that shared gutter.
+        .padding(.horizontal, 12)
         .accessibilityHidden(true)
     }
 }
