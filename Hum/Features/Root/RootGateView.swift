@@ -17,9 +17,11 @@ struct RootGateView: View {
 
             if let auth {
                 if let screen = auth.screen {
-                    ConnectView(screen: screen) {
-                        Task { await auth.connect() }
-                    }
+                    ConnectView(
+                        screen: screen,
+                        onPrimaryAction: { Task { await auth.connect() } },
+                        onRefresh: { Task { await auth.refresh() } }
+                    )
                     .transition(.opacity)
                 } else {
                     RootTabView()

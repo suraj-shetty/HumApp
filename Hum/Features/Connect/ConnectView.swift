@@ -1,23 +1,42 @@
 import SwiftUI
 
-/// The first thing a listener sees. **Opaque content — no glass.**
+/// The first thing a listener sees. **Opaque content**, except its one CTA
+/// capsule — see `AmberCapsuleButton`.
 ///
-/// One layout, four states. `AuthReducer` decides which; this file only picks
-/// copy, which is why the `.restricted` case reads as a missing button rather
-/// than as a special screen: `primaryAction` returns `nil` there and the button
-/// simply is not built.
+/// Two layouts, four states. `.invitation` and `.connecting` share the
+/// permission-list layout — DECISIONS M-06's original inference, and still
+/// correct for these two; nothing in the recovered design contradicts it.
+/// `.deniedRecoverable` and `.restrictedNoRecourse` share a second, centred
+/// layout — icon halo, headline, body, and (only where the design draws one)
+/// an info card — matching design screen 06. Both used to render through the
+/// invitation's own layout, left-aligned with the same generic permission
+/// rows, until the design QA audit found screen 06 and confirmed the two had
+/// drifted (`design-audit/HUM_AUDIT.md` §9, CT-1). M-06's "no design exists
+/// for these" no longer holds for `.deniedRecoverable` — it does for
+/// `.restrictedNoRecourse`, which borrows screen 06's structure but keeps its
+/// own already-considered copy, since nothing in the design covers it.
 ///
-/// Transcribed from the prototype's Connect screen — the ambient amber wash,
-/// the 52pt mark, the 36pt Ultra Light two-line title, three hairline-separated
-/// permission rows, and the pinned capsule with its footnote. The `.denied` and
-/// `.restricted` variants have no design and are built by inference from that
-/// layout (DECISIONS M-06).
+/// `.restrictedNoRecourse` still reads as a missing button rather than a
+/// special screen for one reason: `primaryAction` returns `nil` there and the
+/// button simply is not built. That is `AuthReducer`'s own reasoning, not
+/// something screen 06 shows — it has no equivalent state to measure against.
 struct ConnectView: View {
     let screen: ConnectScreen
     let onPrimaryAction: () -> Void
+    /// Re-checks authorization without prompting. Only `.deniedRecoverable`'s
+    /// "Try again" calls it — a convenience for "I already flipped the switch
+    /// in Settings." `RootGateView` already does this automatically on
+    /// foreground, but the design draws the button, and a listener watching
+    /// their own screen shouldn't have to background-and-return to see it
+    /// update. Defaults to a no-op so the `#Preview`s below don't need one.
+    var onRefresh: () -> Void = {}
 
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var isInfoLayout: Bool {
+        screen == .deniedRecoverable || screen == .restrictedNoRecourse
+    }
 
     private var primaryAction: ConnectPrimaryAction? {
         AuthReducer.primaryAction(for: screen)
@@ -26,45 +45,109 @@ struct ConnectView: View {
     var body: some View {
         ZStack {
             Palette.deepOnyx.ignoresSafeArea()
-            ambientWash
+            // Screen 06 is a flat #0A0A0A, same as the invitation's own
+            // screen 04 — the wash is invitation-only either way, so this
+            // just keeps the info layout from carrying one design never draws
+            // for it.
+            if !isInfoLayout { ambientWash }
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 34) {
-                    HumMark()
-                        .frame(width: 52, height: 52)
-                        .accessibilityHidden(true)
-
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text(copy.title)
-                            .humFont(HumTextStyle(size: 36, weight: .ultraLight, relativeTo: .title, tracking: -0.9))
-                            .lineSpacing(3)
-                            .foregroundStyle(Palette.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(copy.body)
-                            .humFont(.bodyL)
-                            .lineSpacing(4)
-                            .foregroundStyle(Palette.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .accessibilityElement(children: .combine)
-
-                    permissions
-
-                    if screen == .connecting {
-                        ConnectSpinner(isAnimating: !reduceMotion)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 8)
-                            .accessibilityLabel("Waiting for Apple Music")
-                    }
+                if isInfoLayout {
+                    infoContent
+                } else {
+                    invitationContent
                 }
-                .padding(.horizontal, Metrics.heroGutter)
-                .padding(.top, 72)
-                .padding(.bottom, 40)
             }
             .scrollBounceBehavior(.basedOnSize)
         }
         .safeAreaInset(edge: .bottom) { footer }
+    }
+
+    // MARK: - Invitation layout (.invitation, .connecting)
+
+    private var invitationContent: some View {
+        VStack(alignment: .leading, spacing: 34) {
+            HumMark()
+                .frame(width: 52, height: 52)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text(copy.title)
+                    .humFont(HumTextStyle(size: 36, weight: .ultraLight, relativeTo: .title, tracking: -0.9))
+                    .lineSpacing(3)
+                    .foregroundStyle(Palette.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(copy.body)
+                    .humFont(.bodyL)
+                    .lineSpacing(4)
+                    .foregroundStyle(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+
+            permissions
+
+            if screen == .connecting {
+                ConnectSpinner(isAnimating: !reduceMotion)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
+                    .accessibilityLabel("Waiting for Apple Music")
+            }
+        }
+        .padding(.horizontal, Metrics.heroGutter)
+        .padding(.top, 72)
+        .padding(.bottom, 40)
+    }
+
+    // MARK: - Info layout (.deniedRecoverable, .restrictedNoRecourse)
+
+    /// Screen 06: a centred icon halo, headline, body, and — only where
+    /// `ConnectCopy` supplies one — an info card. Measured top padding is
+    /// 130, not the invitation layout's 72; the two screens simply differ.
+    private var infoContent: some View {
+        VStack(spacing: 30) {
+            iconHalo
+
+            Text(copy.title)
+                .humFont(HumTextStyle(size: 30, weight: .ultraLight, relativeTo: .title, tracking: -0.6))
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Palette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(copy.body)
+                .humFont(HumTextStyle(size: 15.5, weight: .light))
+                .lineSpacing(6)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Palette.textSecondary)
+                .frame(maxWidth: 302)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let card = copy.infoCard {
+                InfoCard(eyebrow: card.eyebrow, value: card.value)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Metrics.heroGutter)
+        .padding(.top, 130)
+        .padding(.bottom, 40)
+    }
+
+    /// 112×112, a 1px ring around a 44pt padlock. Terracotta, not amber —
+    /// amber means "informational" everywhere else in this file; this state
+    /// means "blocked."
+    private var iconHalo: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(Palette.terracotta.opacity(0.38), lineWidth: 1)
+            Image(systemName: "lock")
+                .humFont(44, weight: .light)
+                .foregroundStyle(Palette.terracotta)
+        }
+        .frame(width: 112, height: 112)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Pieces
@@ -110,13 +193,28 @@ struct ConnectView: View {
                 .frame(maxWidth: 324)
             }
 
-            Text(copy.footnote)
-                .humFont(.caption)
-                .foregroundStyle(Palette.textPrimary.opacity(0.62))
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-                .frame(maxWidth: 300)
-                .fixedSize(horizontal: false, vertical: true)
+            if let secondaryTitle = copy.secondaryButtonTitle {
+                // Plain text, not `AmberCapsuleButton`'s bordered sibling —
+                // screen 06 draws "Try again" as an unstyled link, the same
+                // way `SubscriptionGapView` draws its own secondary action
+                // (that screen's mismatch is audit finding SG-4, not fixed
+                // here — a different view, out of scope for this pass).
+                Button(secondaryTitle, action: onRefresh)
+                    .buttonStyle(.plain)
+                    .humFont(16)
+                    .foregroundStyle(Palette.textSecondary)
+                    .frame(height: Metrics.tapTarget)
+            }
+
+            if let footnote = copy.footnote {
+                Text(footnote)
+                    .humFont(.caption)
+                    .foregroundStyle(Palette.textPrimary.opacity(0.62))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+                    .frame(maxWidth: 300)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.horizontal, Metrics.heroGutter)
         .padding(.top, 20)
@@ -149,7 +247,9 @@ private struct ConnectCopy {
     let title: String
     let body: String
     let buttonTitle: String
-    let footnote: String
+    let footnote: String?
+    let secondaryButtonTitle: String?
+    let infoCard: (eyebrow: String, value: String)?
 
     static let permissions: [(icon: String, text: String)] = [
         (HumIcon.library, "Read your library, playlists and recently played"),
@@ -164,21 +264,30 @@ private struct ConnectCopy {
             body = "Hum needs your permission to play your Apple Music library. Nothing leaves your device."
             buttonTitle = screen == .connecting ? "Connecting…" : "Connect Apple Music"
             footnote = "Opens Apple's authorization prompt. You can revoke access any time in Settings."
+            secondaryButtonTitle = nil
+            infoCard = nil
 
         case .deniedRecoverable:
-            title = "Access\nNot Granted"
-            body = "Hum can't reach your music without permission. iOS only asks once, so this has to be turned back on in Settings."
+            // Screen 06, measured verbatim (design-audit/HUM_AUDIT.md §9).
+            title = "Access to Apple Music\nis turned off"
+            body = "Without it Hum can't show your library, search the catalog or play anything. Turn access back on in iOS Settings and Hum picks up where it left off."
             buttonTitle = "Open Settings"
-            footnote = "Settings › Hum › Media & Apple Music. Come back here once it's on."
+            footnote = nil
+            secondaryButtonTitle = "Try again"
+            infoCard = (eyebrow: "Where to look", value: "Settings → Hum → Media & Apple Music")
 
         case .restrictedNoRecourse:
             title = "Access\nRestricted"
             // No button here on purpose: under Screen Time or a management
             // profile the switch is absent or won't move, and a button that
-            // resolves nothing is worse than none at all.
+            // resolves nothing is worse than none at all. No design screen
+            // covers this state — it borrows screen 06's layout but keeps
+            // its own already-considered copy, since nothing measures it.
             body = "Media access is restricted on this device — usually by Screen Time or a device management profile. Neither Hum nor Settings can change it from here."
             buttonTitle = ""
             footnote = "Whoever manages this device's restrictions can allow Media & Apple Music."
+            secondaryButtonTitle = nil
+            infoCard = nil
         }
     }
 }
@@ -207,6 +316,38 @@ private struct PermissionRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 19)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Screen 06's "Where to look" pattern — a small key/value card, drawn only
+/// where `ConnectCopy.infoCard` supplies one.
+private struct InfoCard: View {
+    let eyebrow: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(eyebrow)
+                .humFont(HumTextStyle(size: 11, relativeTo: .caption2, tracking: 1.4, uppercase: true))
+                .foregroundStyle(Palette.textMuted)
+            Text(value)
+                .humFont(14.5, weight: .light)
+                .foregroundStyle(Palette.textPrimary.opacity(0.78))
+                .lineSpacing(3)
+        }
+        .frame(maxWidth: 322, alignment: .leading)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        // `#141416` at radius 16. Queue's now-playing card measures the same
+        // fill at radius 14 — a literal here rather than reusing that card's
+        // radius, since the two aren't the same component and 16 is what
+        // this one actually measures.
+        .background(Palette.surfaceCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
         .accessibilityElement(children: .combine)
     }
 }
@@ -275,6 +416,10 @@ struct HumMark: View {
 
 #Preview("Invitation") {
     ConnectView(screen: .invitation, onPrimaryAction: {})
+}
+
+#Preview("Denied") {
+    ConnectView(screen: .deniedRecoverable, onPrimaryAction: {})
 }
 
 #Preview("Restricted") {
