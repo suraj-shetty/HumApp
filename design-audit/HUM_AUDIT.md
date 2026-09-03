@@ -9,7 +9,7 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **13 findings, across 7 changes, are fixed since this report was written.**
+> **15 findings, across 8 changes, are fixed since this report was written.**
 >
 > - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
 > - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
@@ -20,7 +20,9 @@
 > - **Q-2** (Clear tint) — "Clear" is amber when enabled and a new `Palette.textDisabled` (white 25%) when the queue is empty, instead of the same grey in both states. `shots/18-AFTER-queue-card-fix.png`
 > - **NP-2, NP-6, NP-7, NP-8** (control placement) — all four settled as one change. Header trailing is now an overflow menu (Add to Library moved there from the title row, which is centred with nothing else in it); the bottom row now holds queue, shuffle, repeat and AirPlay, matching the design's row count. Repeat and AirPlay stay — they are real, tested controls the design simply doesn't draw here, and removing them was never asked for. Lyrics stays out — screen 34 is unbuilt, and a dead button is worse than no button. `shots/19-AFTER-nowplaying-control-placement.png`
 >
-> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the unaudited empty-queue state (design 27).
+> - **CT-1, CT-2** (Connect denied/restricted layout, floating-CTA glass) — the denied and restricted screens now render screen 06's own layout (terracotta icon halo, centred heading, and — denied only — a "Where to look" info card) instead of reusing the invitation's; `.deniedRecoverable` also gains the "Try again" secondary action the design draws, wired to a real re-check rather than left decorative. `AmberCapsuleButton` (Connect's CTA, the subscription gap's retry) now carries real glass via a new, narrowly-scoped `floatingActionGlass`, resolving `DECISIONS M-07` the way it was left open to be resolved — see §9 and `DECISIONS.md`. `shots/27-`, `28-AFTER-connect-*-CT1.png`
+>
+> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the unaudited empty-queue state (design 27). With CT-1/CT-2, **no known Major finding remains open in the Connect/subscription-gap family** — SG-2, SG-3 and SG-4 (the same halo/type/secondary-button gaps, on `SubscriptionGapView` specifically) are still open, since this pass only touched `ConnectView`.
 >
 > **Also fixed, tooling rather than a finding:** the manual `AppEnvironment.live()` ⟷ `.preview()` edit every screenshot in this report required is retired. `HumApp.swift` now reads a `#if DEBUG`-gated launch argument instead — see B-1.
 >
