@@ -53,20 +53,52 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     /// merely janky".
     private var isMirroring = false
 
-    private var cancellables: Set<AnyCancellable> = []
+    private var stateObserver: AnyCancellable?
+    private var queueObserver: AnyCancellable?
     private var ticker: Task<Void, Never>?
 
     init() {
         (snapshots, continuation) = AsyncStream.makeStream()
 
-        // `objectWillChange` fires *before* the value settles, so the republish
-        // is deferred by one main-actor hop rather than read inline.
-        for publisher in [player.state.objectWillChange, player.queue.objectWillChange] {
-            publisher
-                .sink { [weak self] _ in
-                    Task { @MainActor in self?.publish() }
-                }
-                .store(in: &cancellables)
+        stateObserver = Self.republish(player.state.objectWillChange) { [weak self] in
+            self?.publish()
+        }
+        observeQueue()
+    }
+
+    /// `player.state` lives as long as the player, so it is subscribed once.
+    /// `player.queue` does not: cueing assigns a **new** `Queue` object, and a
+    /// subscription to the old one keeps firing for an object nothing plays
+    /// from. That is why the UI never followed an automatic track advance —
+    /// advancing changes only `queue.currentEntry`, `playbackStatus` stays
+    /// `.playing`, so the state observer has nothing to say and the queue
+    /// observer was attached to a queue thrown away at the first `play()`.
+    /// Explicit skip masked it by calling `publish()` itself.
+    ///
+    /// Every replacement of `player.queue` must therefore go through
+    /// `setQueue(_:)`, which rebinds this.
+    private func observeQueue() {
+        queueObserver = Self.republish(player.queue.objectWillChange) { [weak self] in
+            self?.publish()
+        }
+    }
+
+    private func setQueue(_ newQueue: ApplicationMusicPlayer.Queue) {
+        player.queue = newQueue
+        observeQueue()
+    }
+
+    /// `objectWillChange` fires *before* the value settles, so the republish is
+    /// deferred by one main-actor hop rather than read inline.
+    /// Generic over the publisher because MusicKit type-erases these to
+    /// `AnyPublisher<Void, Never>` rather than exposing an
+    /// `ObservableObjectPublisher`.
+    private nonisolated static func republish<P: Publisher>(
+        _ publisher: P,
+        _ body: @escaping @Sendable @MainActor () -> Void
+    ) -> AnyCancellable where P.Output == Void, P.Failure == Never {
+        publisher.sink { _ in
+            Task { @MainActor in body() }
         }
     }
 
@@ -95,10 +127,10 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             let start = cued.firstIndex { $0.track.id == requestedID } ?? 0
 
             isMirroring = true
-            player.queue = ApplicationMusicPlayer.Queue(
+            setQueue(ApplicationMusicPlayer.Queue(
                 for: cued.map(\.song),
                 startingAt: cued[start].song
-            )
+            ))
             isMirroring = false
             queue = QueueReducer.reduce(queue, .setQueue(cued.map(\.track), startingAt: start))
             applyModes()
@@ -184,7 +216,7 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             // The queue ran out, or every entry was removed. Stop rather than
             // leave the player holding a cursor into nothing.
             player.stop()
-            player.queue = ApplicationMusicPlayer.Queue()
+            setQueue(ApplicationMusicPlayer.Queue())
             songs.removeAll()
             publish()
             return
@@ -357,10 +389,23 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     /// player Hum does.
     private func syncCursor() {
         guard let playingID = player.queue.currentEntry?.item?.id.rawValue else { return }
-        guard let index = queue.entries.firstIndex(where: { $0.id == playingID }),
-              index != queue.currentIndex
-        else { return }
+        guard let index = indexOfTrack(playingID), index != queue.currentIndex else { return }
         queue.currentIndex = index
+    }
+
+    /// A queue can hold the same track more than once — a playlist with a
+    /// repeated single is ordinary — so a plain `firstIndex` would snap the
+    /// cursor back to the first copy every time playback advanced into a later
+    /// one, and the UI would sit still. Searching from the cursor forward
+    /// resolves an advance to the copy actually sounding; the wrap-around
+    /// search after it covers a jump backwards.
+    private func indexOfTrack(_ trackID: String) -> Int? {
+        let entries = queue.entries
+        if let cursor = queue.currentIndex, entries.indices.contains(cursor),
+           let ahead = entries[cursor...].firstIndex(where: { $0.id == trackID }) {
+            return ahead
+        }
+        return entries.firstIndex(where: { $0.id == trackID })
     }
 
     /// `playbackTime` has no change notification, so progress is polled.

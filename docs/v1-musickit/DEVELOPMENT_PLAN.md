@@ -175,7 +175,7 @@ Per `03-iPad-and-Watch-Screens`. A new target, a new extension, and a `WatchConn
 ## Phase 10 — Handoff
 1. `README.md` — setup, MusicKit capability, the device+subscription requirement, how to run tests.
 2. Fold spike findings and any defaults-taken-under-silence back into [DECISIONS.md](DECISIONS.md) as resolved.
-3. Known-gaps list — including the two open defects carried from Phase 5 (drag-to-reorder hangs during playback; the UI does not follow automatic track advance).
+3. Known-gaps list — including the open defect carried from Phase 5 (drag-to-reorder hangs during playback). The stale-player defect is fixed; carry it only if device confirmation has not happened by then.
 
 *Deliberately last: a handoff written before the platforms exist would need rewriting for each of them.*
 
@@ -198,7 +198,7 @@ Per `03-iPad-and-Watch-Screens`. A new target, a new extension, and a `WatchConn
 | iOS 26 glass APIs shift in a point release | Low | Medium | All glass funnels through one file |
 | **Implemented UI diverges from the designs across screens** | **Certain — observed** | **High** — the app does not look like the thing that was designed | Phase 7, a full audit against all three design sources rather than fragments |
 | **Drag-to-reorder hangs during playback** | **Certain — observed** | High | Open defect, six failed attempts, recorded in PROGRESS.md with the untried approaches |
-| **UI does not follow automatic track advance** | **Certain — observed** | **High** — the player shows the wrong song on every screen | Open defect, logged in PROGRESS.md with two unverified candidate mechanisms |
+| **UI does not follow automatic track advance** | **Was certain — observed** | **High** — the player showed the wrong song on every screen | **Fixed**: the queue observer was bound to a `Queue` object discarded at the first `play()`. See PROGRESS.md. Awaiting device confirmation |
 | Apple Watch adds a target, an extension and a connectivity decision | **Certain** | Medium | Phase 9 gets its own architecture pass before any code |
 
 ---
