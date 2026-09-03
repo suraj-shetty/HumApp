@@ -23,6 +23,13 @@ final class DetailViewModel {
         }
     }
 
+    /// Design screen 37's "Reload" — `load()` only ever runs once from
+    /// `.idle`, so a retry has to reopen that door itself.
+    func retry() async {
+        tracks = .idle
+        await load()
+    }
+
     /// Album rows show a track number; playlist and artist rows show artwork,
     /// because their tracks come from different albums and a running index
     /// would be meaningless.

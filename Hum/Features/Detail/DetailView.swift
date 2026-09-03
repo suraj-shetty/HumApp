@@ -127,11 +127,11 @@ struct DetailView: View {
             RowSkeleton(count: 5)
 
         case .loaded(let tracks) where tracks.isEmpty:
-            EmptyStateView(
-                icon: HumIcon.musicNote,
-                headline: "No tracks",
-                message: "There's nothing to play here yet."
-            )
+            // Design screen 36. No "Add songs" action: that needs a
+            // playlist-mutation capability `MusicLibraryService` doesn't
+            // expose (the same gap recorded against M-6 and the track
+            // context menu's missing "Add to Playlist…").
+            EmptyPlaylistView(collection: collection)
 
         case .loaded(let tracks):
             LazyVStack(spacing: 0) {
@@ -153,7 +153,10 @@ struct DetailView: View {
             }
 
         case .failed(let message):
-            InlineError(message: message)
+            // Design screen 37.
+            DetailLoadErrorView(message: message) {
+                Task { await model?.retry() }
+            }
         }
     }
 
@@ -210,5 +213,94 @@ private struct DetailActionButton: View {
         }
         .buttonStyle(.pressable)
         .accessibilityLabel(title)
+    }
+}
+
+/// Design screen 36 — a playlist with no tracks. Distinct from the generic
+/// "No tracks" `EmptyStateView` other screens use: this one names the
+/// playlist and explains where songs would come from, not just that there
+/// aren't any.
+private struct EmptyPlaylistView: View {
+    let collection: HumCollection
+
+    var body: some View {
+        VStack(spacing: 16) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.16), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .background(Palette.surfaceCard, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(width: 160, height: 160)
+                .overlay {
+                    Image(systemName: HumIcon.musicNote)
+                        .humFont(38, weight: .light)
+                        .foregroundStyle(Palette.honeyAmber.opacity(0.7))
+                }
+
+            VStack(spacing: 6) {
+                Text(collection.title)
+                    .humFont(22, weight: .light)
+                    .foregroundStyle(Palette.textPrimary)
+                Text("Your playlist · empty for now")
+                    .humFont(13.5)
+                    .foregroundStyle(Palette.honeyAmber.opacity(0.8))
+            }
+
+            Text("Songs you add from anywhere in Hum land here. Adding to this playlist also updates it in Apple Music.")
+                .humFont(14.5, weight: .light)
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Palette.textSecondary)
+                .padding(.horizontal, 30)
+                .padding(.top, 4)
+        }
+        .padding(.top, 26)
+        // This state has too little else on the page to trip SwiftUI's own
+        // chrome-clearance inset the way a full track list does — given
+        // explicitly so the content isn't left sitting under the floating
+        // tab bar.
+        .padding(.bottom, Metrics.chromeClearance)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Design screen 37 — Detail's own failed-to-load state, replacing the
+/// generic inline `InlineError` row other screens still use. A load failure
+/// is the centrepiece of this screen when it happens — there is nothing
+/// else to show — so it gets the design's full treatment: an icon halo,
+/// headline, body copy, and a real retry.
+private struct DetailLoadErrorView: View {
+    let message: String
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .strokeBorder(Palette.terracotta.opacity(0.38), lineWidth: 1)
+                    .frame(width: 112, height: 112)
+                Image(systemName: "rectangle.slash")
+                    .humFont(36, weight: .light)
+                    .foregroundStyle(Palette.terracottaLift)
+            }
+            .accessibilityHidden(true)
+
+            Text("This didn't load")
+                .humFont(23, weight: .light)
+                .foregroundStyle(Palette.textPrimary)
+
+            Text(message)
+                .humFont(15, weight: .light)
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Palette.textSecondary)
+
+            AmberOutlineButton(title: "Reload", action: onRetry)
+                .padding(.top, 4)
+        }
+        .padding(.horizontal, 46)
+        .padding(.top, 60)
+        // Same reasoning as `EmptyPlaylistView`'s own bottom padding above.
+        .padding(.bottom, Metrics.chromeClearance)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
