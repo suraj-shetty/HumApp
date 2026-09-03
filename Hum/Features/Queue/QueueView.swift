@@ -42,14 +42,37 @@ struct QueueView: View {
                             // uppercase overline naming the source — "NEXT FROM
                             // LATE KITCHEN" — where Home's section headers are
                             // 19pt sentence case. Same words, different role.
-                            Text(upNextLabel)
-                                .humFont(.groupLabel)
-                                .foregroundStyle(Palette.textPrimary.opacity(0.62))
-                                .accessibilityAddTraits(.isHeader)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            HStack {
+                                Text(upNextLabel)
+                                    .humFont(.groupLabel)
+                                    // The design's own value for this overline,
+                                    // not the app's general secondary-text
+                                    // token — the two happen to match, but
+                                    // reading the token bypassed that (Q-10).
+                                    .foregroundStyle(Palette.textMuted)
+                                    .accessibilityAddTraits(.isHeader)
+                                Spacer()
+                                // The design draws a shuffle glyph on this row's
+                                // trailing edge (Q-7); shuffling the *up-next*
+                                // slice is exactly `PlayerViewModel.toggleShuffle`
+                                // already does for the queue as a whole.
+                                // Visually 18pt per the design; the 44pt tap
+                                // target `IconButton` enforces everywhere else
+                                // is kept rather than shrunk to match.
+                                IconButton(
+                                    systemName: HumIcon.shuffle,
+                                    size: 15,
+                                    tint: Palette.textMuted,
+                                    label: "Shuffle up next",
+                                    action: player.toggleShuffle
+                                )
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .listRowInsets(
                                 .init(
-                                    top: 12,
+                                    // Design 26: 16px top, 8px bottom (Q-9) —
+                                    // this row's own top inset was 12.
+                                    top: 16,
                                     leading: Metrics.gutter,
                                     bottom: 8,
                                     trailing: Metrics.gutter
@@ -62,6 +85,18 @@ struct QueueView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .environment(\.defaultMinListRowHeight, Metrics.tapTarget)
+                // Design 26's 120pt fade at the scroll edge, signalling more
+                // rows below without a hard cut (Q-8). Overlaid rather than
+                // inset into the list so it never eats tap targets.
+                .overlay(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [Palette.deepOnyx.opacity(0), Palette.deepOnyx],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 120)
+                    .allowsHitTesting(false)
+                }
             }
             .background(Palette.deepOnyx)
             .navigationTitle("Up Next")
@@ -93,21 +128,22 @@ struct QueueView: View {
             ArtworkView(
                 url: track.artworkURL,
                 size: Metrics.artQueueHeader,
-                cornerRadius: Metrics.radiusArt
+                cornerRadius: Metrics.radiusArtQueueHeader
             )
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Now playing")
                     .humFont(HumTextStyle(size: 11, relativeTo: .caption2, tracking: 1.5, uppercase: true))
-                    .foregroundStyle(Palette.honeyAmber)
+                    // `rgba(232,163,61,.9)`, not full-strength honeyAmber (Q-4).
+                    .foregroundStyle(Palette.honeyAmber.opacity(0.9))
                 Text(track.title)
                     .humFont(16)
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
-                Text(track.artist)
-                    .humFont(.rowSubtitle)
-                    .foregroundStyle(Palette.textMuted)
-                    .lineLimit(1)
+                // The design's card is label + title + meter — no artist line
+                // (Q-5). The artist is already carried in the "Now playing"
+                // overline's accessibility label below; this row drops the
+                // extra line rather than the information.
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

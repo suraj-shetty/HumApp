@@ -107,7 +107,11 @@ enum Metrics {
     static let artNowPlayingDisc: CGFloat = 262
     static let progressRingWidth: CGFloat = 3
     static let progressKnob: CGFloat = 13
-    static let artQueueHeader: CGFloat = 56
+    /// Screen 26 measures this at 52, radius 8 — its own corner radius
+    /// (queried at the call site, not `Metrics.radiusArt`'s shared 10, which
+    /// every other art frame in the app reads) (Q-3).
+    static let artQueueHeader: CGFloat = 52
+    static let radiusArtQueueHeader: CGFloat = 8
     static let artRow: CGFloat = 56
     static let artPlayerBar: CGFloat = 40
 

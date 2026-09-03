@@ -53,22 +53,30 @@ enum Motion {
 struct LevelMeter: View {
     var isAnimating: Bool = true
     var barCount: Int = 3
-    var height: CGFloat = 20
+    /// Container height 16, not 20 — measured off the "Playing now" card
+    /// (Q-11).
+    var height: CGFloat = 16
     var tint: Color = Palette.honeyAmber
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animating = false
 
+    /// The design's three bars rest at three different heights — 7, 14, 10 —
+    /// not one uniform scale (Q-11).
+    private static let restHeights: [CGFloat] = [7, 14, 10]
+
     private var shouldAnimate: Bool { isAnimating && !reduceMotion }
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 3) {
+        // 2.5pt bars, 2.5pt gap — was 3 and 3 (Q-11).
+        HStack(alignment: .bottom, spacing: 2.5) {
             ForEach(0..<barCount, id: \.self) { index in
+                let rest = Self.restHeights[index % Self.restHeights.count] / height
                 Capsule(style: .continuous)
                     .fill(tint)
-                    .frame(width: 3)
+                    .frame(width: 2.5)
                     .scaleEffect(
-                        y: animating && shouldAnimate ? 1.0 : 0.35,
+                        y: animating && shouldAnimate ? 1.0 : rest,
                         anchor: .bottom
                     )
                     .animation(
