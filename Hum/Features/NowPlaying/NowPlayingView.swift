@@ -388,7 +388,7 @@ private struct VolumeRow: View {
         HStack(spacing: 14) {
             Image(systemName: HumIcon.volumeLow)
                 .font(.system(size: 16))
-            VolumeRow()
+            VolumeSlider()
             Image(systemName: HumIcon.volumeHigh)
                 .font(.system(size: 18))
         }
