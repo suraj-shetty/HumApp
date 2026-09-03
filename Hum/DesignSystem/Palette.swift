@@ -39,6 +39,11 @@ enum Palette {
     /// Phase 6 contrast pass.
     static let textQuaternary = Color.white.opacity(0.40)
     static let iconInactive = Color.white.opacity(0.60)
+    /// The tab bar's unselected glyph — measured white 68%, brighter than the
+    /// general inactive icon because it sits on glass rather than on onyx.
+    static let tabIconInactive = Color.white.opacity(0.68)
+    /// The selected tab pill's fill — measured amber at 24%.
+    static let tabSelection = Color(hex: 0xE8A33D, alpha: 0.24)
 
     // MARK: - Hairlines
 

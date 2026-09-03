@@ -3,53 +3,21 @@ import SwiftUI
 /// The app shell: three tabs, the floating player bar, and the Now Playing
 /// presentation.
 ///
-/// **Chrome-only glass.** The tab bar is the native `TabView` — not a
-/// hand-built capsule — and Search uses `Tab(role: .search)` so iOS 26 renders
-/// it as its own element with the correct accessibility semantics and
-/// scroll-minimize behaviour.
+/// **The bottom chrome is hand-built** — see `HumTabBar` for why, and for what
+/// that trade costs. `TabView` is kept underneath with its own bar hidden,
+/// rather than replaced with a switch over three views, because it is what
+/// preserves each tab's navigation stack and `.task` state across selection
+/// changes. Swapping it for a conditional would reintroduce the tear-down that
+/// once read on device as "tap play, get thrown back to the library".
 ///
-/// The player bar occupies `tabViewBottomAccessory`, iOS 26's own mini-player
-/// slot. That is what keeps it *above* the tab bar rather than on top of it,
-/// and it means the two adjacent glass surfaces share the system's container
-/// automatically — hand-rolling a second capsule would put two glass elements
-/// outside a shared container, the specific failure Apple's guidance names.
-private extension View {
-    /// Attaches the mini player to `TabView`'s bottom accessory slot.
-    ///
-    /// The modifier is applied **unconditionally** and hidden via
-    /// `isEnabled:`, and that matters far more than it looks. Wrapping the
-    /// modifier in an `if/else` gives the two branches different view types,
-    /// so the moment the first track arrives the `TabView`'s structural
-    /// identity changes and SwiftUI tears down every tab beneath it: open
-    /// detail screens pop to root and every `.task` re-runs. On device that
-    /// read as "tap play, get thrown back to the library, watch it reload".
-    ///
-    /// `isEnabled:` is what makes the stable form possible. The accessory
-    /// container draws its own glass capsule, so an empty content body still
-    /// leaves a blank pill floating above the tab bar — verified in the
-    /// Simulator, and the reason the conditional was reached for originally.
-    @ViewBuilder
-    func playerAccessory<C: View>(
-        track: HumTrack?,
-        @ViewBuilder content: (HumTrack) -> C
-    ) -> some View {
-        // `#available` is resolved once for the life of the process, so
-        // unlike a `track != nil` conditional it never flips a branch and
-        // never re-identifies the `TabView`.
-        if #available(iOS 26.1, *) {
-            tabViewBottomAccessory(isEnabled: track != nil) {
-                if let track { content(track) }
-            }
-        } else {
-            // 26.0 has no `isEnabled:`. Keep the stable shape and accept the
-            // blank pill before the first track: a cosmetic blemish on one
-            // point release beats tearing the tabs down on every listener.
-            tabViewBottomAccessory {
-                if let track { content(track) }
-            }
-        }
-    }
-}
+/// The player bar no longer uses `tabViewBottomAccessory`. That slot draws its
+/// own capsule at its own width, which is exactly the divergence reported from
+/// device: the tab bar widening to match the accessory above it. Placing both
+/// surfaces here is what lets the design's 362 / 288 + 64 geometry hold.
+///
+/// **Chrome-only glass** still holds: every glass surface below comes from
+/// `GlassSurface`, which the containment script keeps as the single file
+/// allowed to call `glassEffect(`.
 
 struct RootTabView: View {
     @Environment(PlayerViewModel.self) private var player
@@ -64,30 +32,23 @@ struct RootTabView: View {
         @Bindable var bindable = player
 
         return TabView(selection: $selection) {
-            Tab("Home", systemImage: HumIcon.home, value: HumTab.home) {
-                HomeView()
+            Tab(value: HumTab.home) {
+                HomeView().toolbar(.hidden, for: .tabBar)
             }
 
-            Tab("Library", systemImage: HumIcon.library, value: HumTab.library) {
-                LibraryView()
+            Tab(value: HumTab.library) {
+                LibraryView().toolbar(.hidden, for: .tabBar)
             }
 
-            // `role: .search` is load-bearing — it is what makes iOS render
-            // Search as a separate element rather than a fourth item in the
-            // capsule, matching the design without hand-building anything.
-            Tab(value: HumTab.search, role: .search) {
-                SearchView()
+            Tab(value: HumTab.search) {
+                SearchView().toolbar(.hidden, for: .tabBar)
             }
         }
         .tint(Palette.honeyAmber)
-        .playerAccessory(track: player.currentTrack) { track in
-            PlayerBar(
-                track: track,
-                isPlaying: player.isPlaying,
-                onTap: { isShowingNowPlaying = true },
-                onPlayPause: player.togglePlayPause,
-                onNext: player.skipToNext
-            )
+        // `safeAreaInset` rather than an overlay: the chrome must push the
+        // scroll content up, or track rows sit behind the glass.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            bottomChrome
         }
         .fullScreenCover(isPresented: $isShowingNowPlaying) {
             NowPlayingView()
@@ -114,6 +75,29 @@ struct RootTabView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: player.toast)
+    }
+
+    /// The design's bottom chrome: the player capsule, then the tab row, as a
+    /// single column so both align on the same 362pt edges.
+    private var bottomChrome: some View {
+        VStack(spacing: Metrics.chromeGap) {
+            if let track = player.currentTrack {
+                PlayerBar(
+                    track: track,
+                    isPlaying: player.isPlaying,
+                    onTap: { isShowingNowPlaying = true },
+                    onPlayPause: player.togglePlayPause,
+                    onNext: player.skipToNext
+                )
+                .frame(height: Metrics.chromeHeight)
+                .transition(.opacity.combined(with: .offset(y: 10)))
+            }
+
+            HumTabBar(selection: $selection)
+        }
+        .padding(.horizontal, Metrics.chromeInset)
+        .padding(.bottom, Metrics.chromeBottom)
+        .animation(.easeOut(duration: 0.22), value: player.currentTrack?.id)
     }
 
     /// A retry is only honest when the check *failed*. A confirmed "no

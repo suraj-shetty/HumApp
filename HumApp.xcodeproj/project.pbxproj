@@ -17,6 +17,7 @@
 		25212604BCD55337F7395DFF /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E821EFBCC1341015B733561 /* DetailView.swift */; };
 		2A261AB282EED63FBAD95D4F /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB835F41C36E619AEB29106E /* NowPlayingView.swift */; };
 		2C725A8E133F303E18249C62 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94325A313FB1CC0FE850BD7F /* HomeViewModel.swift */; };
+		318FA736EB4FA047B2A6D538 /* HumTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A7EF5843C5E64FB5191834 /* HumTabBar.swift */; };
 		341F35889AFA0F74DE8AC17F /* HumError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E73DED47CE5781BF7ED294 /* HumError.swift */; };
 		3F111AB5E5C3581B8D96741F /* MusicKitSubscriptionAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C2357D111851F94CA0F380 /* MusicKitSubscriptionAdapter.swift */; };
 		3FB6A6232D0EC54DD5617442 /* SubscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A128F48DEEAA6DFFF41F21C /* SubscriptionService.swift */; };
@@ -107,6 +108,7 @@
 		5297D21CBD08E76BE20E7825 /* SubscriptionReducerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionReducerTests.swift; sourceTree = "<group>"; };
 		531D331798C6591350665AAF /* HumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumApp.swift; sourceTree = "<group>"; };
 		5F43A793DAB7011A873AF437 /* TrackRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRow.swift; sourceTree = "<group>"; };
+		62A7EF5843C5E64FB5191834 /* HumTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumTabBar.swift; sourceTree = "<group>"; };
 		63027A09A8ACB0E86EF9F231 /* MusicLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibraryService.swift; sourceTree = "<group>"; };
 		6C907FCAAC79B68F2A33B1E4 /* MusicKitMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicKitMapping.swift; sourceTree = "<group>"; };
 		6CB6044460B408251BAC0396 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
@@ -326,6 +328,7 @@
 		B7921655C4EA1F01193E4DC3 /* Root */ = {
 			isa = PBXGroup;
 			children = (
+				62A7EF5843C5E64FB5191834 /* HumTabBar.swift */,
 				3168CC44A6D284987AC2E55C /* RootGateView.swift */,
 				6CB6044460B408251BAC0396 /* RootTabView.swift */,
 			);
@@ -542,6 +545,7 @@
 				D067410226E1093EE89493DE /* HumCollection.swift in Sources */,
 				341F35889AFA0F74DE8AC17F /* HumError.swift in Sources */,
 				590B5F818A3CEF9F23D22504 /* HumIcons.swift in Sources */,
+				318FA736EB4FA047B2A6D538 /* HumTabBar.swift in Sources */,
 				200E995AC023797346DC1DD3 /* HumTrack.swift in Sources */,
 				CBF3FE43457151CCC3042A5D /* LibraryView.swift in Sources */,
 				6A7716D602BF2F239140A1B2 /* Motion.swift in Sources */,

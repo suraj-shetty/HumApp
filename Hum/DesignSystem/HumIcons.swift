@@ -12,6 +12,7 @@ enum HumIcon {
     static let homeFilled = "house.fill"
     static let search = "magnifyingglass"
     static let library = "music.note.list"
+    static let libraryFilled = "music.note.list"
 
     // Transport
     static let play = "play.fill"

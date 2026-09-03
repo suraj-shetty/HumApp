@@ -32,6 +32,33 @@ enum Metrics {
     /// and left a screen-deep dead gap under the last row of every list.
     static let chromeClearance: CGFloat = 190
 
+    // MARK: - Bottom chrome
+    //
+    // Measured off the design's Home screen. The three surfaces are laid out
+    // as one column so the player capsule and the tab row line up on both
+    // edges: 288 + 10 + 64 = 362, the player capsule's exact width.
+
+    /// Both chrome capsules inset 14pt from each edge — the handoff's "safe
+    /// inset 14pt". 390 − 28 = 362.
+    static let chromeInset: CGFloat = 14
+    static let chromeWidth: CGFloat = 362
+    static let chromeHeight: CGFloat = 64
+    /// Between the player capsule and the tab row, and between the tab capsule
+    /// and the search island.
+    static let chromeGap: CGFloat = 10
+    /// Below the tab row. Handoff: "dock bottom 22pt".
+    static let chromeBottom: CGFloat = 22
+
+    static let playerCapsuleRadius: CGFloat = 26
+    static let tabCapsuleWidth: CGFloat = 288
+    static let tabCapsuleRadius: CGFloat = 28
+    static let tabPillWidth: CGFloat = 135
+    static let tabPillHeight: CGFloat = 50
+    static let tabPillRadius: CGFloat = 25
+    static let tabPillSpacing: CGFloat = 4
+    static let tabCapsulePadding: CGFloat = 7
+    static let searchIsland: CGFloat = 64
+
     // MARK: - Rows
 
     static let rowSpacing: CGFloat = 14
