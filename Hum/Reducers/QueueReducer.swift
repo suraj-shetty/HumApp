@@ -10,6 +10,11 @@ enum QueueAction: Sendable, Equatable {
     case previous
     case toggleShuffle
     case cycleRepeat
+    /// The track context menu's "Play Next" (screen 31) — inserts right
+    /// after the playing entry, ahead of whatever was already up next.
+    case playNext(HumTrack)
+    /// The track context menu's "Add to Queue" — appends to the end.
+    case appendToQueue(HumTrack)
 }
 
 /// Pure. Covers the brief's third named test criterion — queue state management.
@@ -67,6 +72,16 @@ struct QueueReducer: Sendable {
 
         case .cycleRepeat:
             next.repeatMode = next.repeatMode.next
+
+        case .playNext(let track):
+            // One past the cursor — the same position `QueueView`'s `base`
+            // already treats as "up next" starts. Nothing plays yet, and the
+            // insert still lands first: `(nil) + 1 == 0`.
+            let insertAt = (next.currentIndex ?? -1) + 1
+            next.entries.insert(track, at: min(insertAt, next.entries.count))
+
+        case .appendToQueue(let track):
+            next.entries.append(track)
         }
 
         return next

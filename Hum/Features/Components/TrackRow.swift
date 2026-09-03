@@ -15,6 +15,7 @@ struct TrackRow: View {
     }
 
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(PlayerViewModel.self) private var player
 
     let track: HumTrack
     var leading: Leading = .artwork
@@ -66,6 +67,39 @@ struct TrackRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(action == nil ? [] : .isButton)
+        .contextMenu { contextMenuContent }
+    }
+
+    /// Design screen 31's long-press menu. Four of its seven actions are
+    /// built: "Add to Playlist…", "Go to Album" and "Go to Artist" all need
+    /// a navigable collection `HumTrack` doesn't carry an id for — it has
+    /// only `albumTitle`, a display string, not a `HumCollection` reference
+    /// MusicKit could look up. Wiring them to a fabricated destination would
+    /// be worse than leaving them out (the same call this codebase already
+    /// made for Now Playing's lyrics button, NP-7).
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        Button("Play Next", systemImage: HumIcon.playNext) {
+            player.playNext(track)
+        }
+        Button("Add to Queue", systemImage: HumIcon.addToQueue) {
+            player.addToQueue(track)
+        }
+        let inLibrary = player.isInLibrary(track)
+        Button(
+            inLibrary ? "In Your Library" : "Add to Library",
+            systemImage: inLibrary ? HumIcon.inLibrary : HumIcon.addToLibrary
+        ) {
+            player.addToLibrary(track)
+        }
+        .disabled(inLibrary)
+        ShareLink(item: shareText) {
+            Label("Share", systemImage: HumIcon.share)
+        }
+    }
+
+    private var shareText: String {
+        "\(track.title) — \(track.artist)"
     }
 
     private var isAccessibilitySize: Bool { typeSize >= .accessibility1 }

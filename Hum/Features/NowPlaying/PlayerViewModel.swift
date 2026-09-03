@@ -241,6 +241,19 @@ final class PlayerViewModel {
     func toggleShuffle() { applyQueue(.toggleShuffle) }
     func cycleRepeat() { applyQueue(.cycleRepeat) }
 
+    /// The track context menu's "Play Next" / "Add to Queue" (design screen
+    /// 31). A neutral toast confirms each — there's no other feedback for a
+    /// queue change that doesn't touch what's currently playing.
+    func playNext(_ track: HumTrack) {
+        applyQueue(.playNext(track))
+        showToast("Playing next", kind: .neutral)
+    }
+
+    func addToQueue(_ track: HumTrack) {
+        applyQueue(.appendToQueue(track))
+        showToast("Added to queue", kind: .neutral)
+    }
+
     /// Replaces the queue wholesale — used by drag-to-reorder, where the new
     /// order is computed by the list rather than expressible as a single
     /// `QueueAction`. Still routed through the reducer so the cursor

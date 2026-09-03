@@ -44,6 +44,11 @@ enum HumIcon {
     // Queue
     static let dragHandle = "line.3.horizontal"
     static let remove = "xmark"
+    /// The track context menu's "Play Next" / "Add to Queue" (screen 31) —
+    /// the same pair of symbols Apple's own Music app uses for the same two
+    /// actions.
+    static let playNext = "text.line.first.and.arrowtriangle.forward"
+    static let addToQueue = "text.line.last.and.arrowtriangle.forward"
 
     // Search
     /// Clears the search field. Filled rather than bare, matching the design's

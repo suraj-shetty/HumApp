@@ -193,6 +193,32 @@ struct QueueReducerTests {
         #expect(state.repeatMode == .off)
     }
 
+    // MARK: - playNext / appendToQueue
+
+    @Test("Play Next inserts right after the cursor, ahead of what was already up next")
+    func playNextInsertsAfterCursor() {
+        let state = Self.queue(count: 3, at: 0)
+        let result = QueueReducer.reduce(state, .playNext(Self.track(9)))
+        #expect(result.entries.map(\.id) == ["t0", "t9", "t1", "t2"])
+        #expect(result.currentIndex == 0)
+    }
+
+    @Test("Play Next with no cursor inserts at the head")
+    func playNextWithNoCursorInsertsAtHead() {
+        let state = QueueState(entries: (0..<2).map(Self.track), currentIndex: nil)
+        let result = QueueReducer.reduce(state, .playNext(Self.track(9)))
+        #expect(result.entries.map(\.id) == ["t9", "t0", "t1"])
+        #expect(result.currentIndex == nil)
+    }
+
+    @Test("Add to Queue appends to the end, after whatever is already up next")
+    func appendToQueueAppendsAtEnd() {
+        let state = Self.queue(count: 3, at: 0)
+        let result = QueueReducer.reduce(state, .appendToQueue(Self.track(9)))
+        #expect(result.entries.map(\.id) == ["t0", "t1", "t2", "t9"])
+        #expect(result.currentIndex == 0)
+    }
+
     // MARK: - upNext
 
     @Test("Up-next lists only what follows the cursor")
@@ -216,6 +242,7 @@ struct QueueReducerTests {
             .jump(to: 0), .jump(to: 3), .jump(to: 99), .jump(to: -1),
             .remove(at: 0), .remove(at: 2), .remove(at: 99), .remove(at: -1),
             .clearUpNext, .next, .previous, .toggleShuffle, .cycleRepeat,
+            .playNext(Self.track(9)), .appendToQueue(Self.track(9)),
         ]
         let starts: [QueueState] = [
             QueueState(),
@@ -244,6 +271,7 @@ struct QueueReducerTests {
         let actions: [QueueAction] = [
             .next, .remove(at: 0), .previous, .clearUpNext, .cycleRepeat,
             .next, .jump(to: 1), .remove(at: 1), .toggleShuffle, .next,
+            .playNext(Self.track(9)), .appendToQueue(Self.track(9)),
         ]
 
         for step in 0..<200 {
