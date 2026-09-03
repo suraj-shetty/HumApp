@@ -6,6 +6,7 @@ import SwiftUI
 final class SearchViewModel {
     var term: String = ""
     private(set) var results: LoadState<[HumTrack]> = .idle
+    private(set) var recentSearches = RecentSearches.load()
 
     private let catalog: MusicCatalogService
     private var searchTask: Task<Void, Never>?
@@ -37,11 +38,58 @@ final class SearchViewModel {
                 // result overwriting a newer one is the classic search bug.
                 guard !Task.isCancelled else { return }
                 results = .loaded(found)
+                // Recorded on a completed fetch, not every keystroke — a
+                // recent search should be something the listener actually
+                // searched for, not whatever the debounce happened to catch.
+                recentSearches.record(query)
             } catch {
                 guard !Task.isCancelled else { return }
                 results = .failed("Search failed. Check your connection.")
             }
         }
+    }
+
+    func removeRecentSearch(_ term: String) {
+        recentSearches.remove(term)
+    }
+
+    func clearRecentSearches() {
+        recentSearches.clear()
+    }
+}
+
+/// Design screen 33's "Recent searches" list — up to 8 terms, most recent
+/// first, persisted locally (`Privacy` settings names this explicitly:
+/// "Stored locally, never sent anywhere").
+struct RecentSearches: Equatable {
+    private(set) var terms: [String]
+
+    private static let key = "HumRecentSearches"
+    private static let limit = 8
+
+    static func load() -> RecentSearches {
+        RecentSearches(terms: UserDefaults.standard.stringArray(forKey: key) ?? [])
+    }
+
+    mutating func record(_ term: String) {
+        terms.removeAll { $0.caseInsensitiveCompare(term) == .orderedSame }
+        terms.insert(term, at: 0)
+        if terms.count > Self.limit { terms.removeLast(terms.count - Self.limit) }
+        persist()
+    }
+
+    mutating func remove(_ term: String) {
+        terms.removeAll { $0 == term }
+        persist()
+    }
+
+    mutating func clear() {
+        terms = []
+        persist()
+    }
+
+    private func persist() {
+        UserDefaults.standard.set(terms, forKey: Self.key)
     }
 }
 
@@ -71,9 +119,33 @@ struct SearchView: View {
             Group {
                 switch model?.results ?? .idle {
                 case .idle:
-                    BrowseGridView { genre in
-                        query = genre
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 28) {
+                            if let model, !model.recentSearches.terms.isEmpty {
+                                // Design screen 33 draws recents in place of
+                                // the Browse grid, under the keyboard, while
+                                // the field is focused. This app's field
+                                // lives in the chrome rather than the
+                                // content (M-2's own departure), so there's
+                                // no separate "focused" content state to key
+                                // off — recents sit above Browse instead of
+                                // replacing it, honest about what's actually
+                                // reachable here rather than simulating a
+                                // focus state that doesn't exist.
+                                RecentSearchesView(
+                                    terms: model.recentSearches.terms,
+                                    onSelect: { query = $0 },
+                                    onRemove: { model.removeRecentSearch($0) },
+                                    onClear: { model.clearRecentSearches() }
+                                )
+                            }
+                            BrowseGridView { genre in
+                                query = genre
+                            }
+                        }
+                        .padding(.top, 8)
                     }
+                    .scrollIndicators(.hidden)
 
                 case .loading:
                     RowSkeleton(count: 6)
@@ -191,32 +263,83 @@ private struct BrowseGridView: View {
     ]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Browse")
-                    .humFont(20, weight: .light)
-                    .foregroundStyle(Palette.textPrimary)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Browse")
+                .humFont(20, weight: .light)
+                .foregroundStyle(Palette.textPrimary)
 
-                LazyVGrid(columns: columns, spacing: Metrics.browseGridSpacing) {
-                    ForEach(genres, id: \.name) { genre in
-                        Button {
-                            onSelect(genre.name)
-                        } label: {
-                            Text(genre.name)
-                                .humFont(16, weight: .light)
-                                .foregroundStyle(Palette.textPrimary)
-                                .frame(maxWidth: .infinity, alignment: .bottomLeading)
-                                .padding(14)
-                                .frame(height: Metrics.browseTileHeight)
-                                .background(genre.fill, in: RoundedRectangle(cornerRadius: Metrics.browseTileRadius))
-                        }
-                        .buttonStyle(.pressable)
+            LazyVGrid(columns: columns, spacing: Metrics.browseGridSpacing) {
+                ForEach(genres, id: \.name) { genre in
+                    Button {
+                        onSelect(genre.name)
+                    } label: {
+                        Text(genre.name)
+                            .humFont(16, weight: .light)
+                            .foregroundStyle(Palette.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .bottomLeading)
+                            .padding(14)
+                            .frame(height: Metrics.browseTileHeight)
+                            .background(genre.fill, in: RoundedRectangle(cornerRadius: Metrics.browseTileRadius))
                     }
+                    .buttonStyle(.pressable)
                 }
             }
-            .padding(.horizontal, Metrics.gutter)
-            .padding(.top, 8)
         }
-        .scrollIndicators(.hidden)
+        .padding(.horizontal, Metrics.gutter)
+    }
+}
+
+/// Design screen 33's "Recent searches" — up to 8 terms, a clock glyph per
+/// row, a trailing ✕ to drop one, and a "Clear" to drop them all.
+private struct RecentSearchesView: View {
+    let terms: [String]
+    let onSelect: (String) -> Void
+    let onRemove: (String) -> Void
+    let onClear: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Recent Searches")
+                    .humFont(.groupLabel)
+                    .foregroundStyle(Palette.textMuted)
+                Spacer()
+                Button("Clear", action: onClear)
+                    .buttonStyle(.plain)
+                    .humFont(14)
+                    .foregroundStyle(Palette.honeyAmber)
+            }
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.bottom, 10)
+
+            ForEach(terms, id: \.self) { term in
+                Button { onSelect(term) } label: {
+                    HStack(spacing: 14) {
+                        Image(systemName: "clock")
+                            .humFont(15, weight: .regular)
+                            .foregroundStyle(Palette.textMuted)
+                        Text(term)
+                            .humFont(16)
+                            .foregroundStyle(Palette.textPrimary)
+                        Spacer()
+                        Button {
+                            onRemove(term)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .humFont(13, weight: .regular)
+                                .foregroundStyle(Palette.textMuted)
+                                .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove \(term)")
+                    }
+                    .frame(height: 52)
+                    .padding(.horizontal, Metrics.gutter)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
