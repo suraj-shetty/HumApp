@@ -9,7 +9,14 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **C-1, C-2 (chrome glass) and M-5 (text ramp) are fixed.** The chrome now calls `chromeGlass` before `amberGlass` on all three surfaces, and both bars share one `ChromeGlassContainer`; `textTertiary`/`textQuaternary` are gone, replaced by `textMuted` at the design's 62%. Verified by build, containment check and screenshot (`shots/11-AFTER-chrome-glass-fix.png`). Everything else below still stands.
+> **Five findings are fixed since this report was written.**
+>
+> - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
+> - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
+> - **C-3** (Now Playing crash) — cause was **not** the `MPVolumeView` this report guessed at. `VolumeRow` rendered itself, overflowing the stack; it is not Simulator-specific. See §2.
+> - **M-1** (Detail hero) and **M-7** (Now Playing glow). `shots/13-`, `shots/14-`
+>
+> Fixing C-3 made Now Playing and Queue reachable, and **§8 is their audit** — 22 further findings. Everything else below still stands.
 
 ---
 
@@ -18,16 +25,18 @@
 | Metric | Count |
 |---|---|
 | Screens in app nav graph | 11 |
-| Fully audited (screenshot + code + design) | 6 |
-| Audited from code + design only (capture blocked) | 5 |
+| Fully audited (screenshot + code + design) | 8 |
+| Audited from code + design only (capture blocked) | 3 |
 | Screens in the design | 42 |
-| **Total issues** | **28** |
+| **Total issues** | **50** |
 
 | Severity | Count | IDs |
 |---|---|---|
 | **Critical** | 3 | C-1 … C-3 |
-| **Major** | 9 | M-1 … M-9 |
-| **Minor** | 16 | m-1 … m-16 |
+| **Major** | 13 | M-1 … M-9 · NP-1, NP-2 · Q-1, Q-2 |
+| **Minor** | 34 | m-1 … m-16 · NP-3 … NP-11 · Q-3 … Q-11 |
+
+§5 covers the first pass; **§8 covers Now Playing and Queue**, audited later once C-3 was fixed.
 
 ### The headline
 
@@ -61,7 +70,7 @@ Two findings from my initial report were wrong, and the design file settles both
 
 | State | Why |
 |---|---|
-| Now Playing · Queue | App crashes on open (C-3) — see `05-`/`07-CRASH-after-tapping-playerbar.png`. Audited from code + design instead. |
+| ~~Now Playing · Queue~~ | Was blocked by the C-3 crash (`05-`/`07-CRASH-after-tapping-playerbar.png`). **Now resolved and audited — see §8.** |
 | Connect — 4 states | Preview services grant authorization immediately; no hook to force a state |
 | Subscription gap · Toast | Require a gated play intent unreachable with preview services |
 | Reduce Transparency ON | `simctl` toggle did not take (`10-…-DID-NOT-APPLY.png`); the app's own Settings screen still read `Off`. **Fallback path untested** — reported as neither passing nor failing. |
@@ -86,8 +95,8 @@ The design has **42 screens**; the app implements 11. Every app screen has a des
 | Search — empty | `Search/SearchView.swift` | ✅ `08-search.png` | 12 |
 | Settings | `Settings/SettingsView.swift` | ✅ `09-settings.png` | 39–41 (as sub-screens) |
 | Bottom chrome | `Root/HumTabBar.swift`, `Components/PlayerBar.swift` | ✅ `06-home-playerbar.png` | `Dock.dc.html` |
-| Now Playing | `NowPlaying/NowPlayingView.swift` | ❌ crash | 23 |
-| Queue | `Queue/QueueView.swift` | ❌ blocked | 26, 27 |
+| Now Playing | `NowPlaying/NowPlayingView.swift` | ✅ `15-nowplaying.png` | 23 |
+| Queue | `Queue/QueueView.swift` | ✅ `16-queue.png` (empty state 27 unverified) | 26, 27 |
 | Connect (4 states) | `Connect/ConnectView.swift` | ❌ unreachable | 04, 05, 06, 07 |
 | Subscription gap | `Connect/SubscriptionGapView.swift` | ❌ unreachable | 05 |
 
@@ -396,9 +405,13 @@ Legend: ✅ pass · ❌ fail · ⚠️ partial · 🚫 not verified
 | Component states | ⚠️ | Buffering (24) and Track-unavailable (25) unimplemented (**M-8**) |
 | Stability | ❌ | **C-3** |
 
-### 6.8 Queue · 6.9 Connect · 6.10 Subscription gap
+### 6.8 Now Playing · 6.9 Queue
 
-🚫 **Not captured** (B-2). Code and design were compared for Now Playing above; a full pass on these three remains outstanding — the design specs are now extracted and in hand (`Dock`, screens 26/27, 04–07), so this is straightforward once C-3 is resolved.
+✅ **Both audited** — see §8, added after C-3 was fixed and the screens became reachable.
+
+### 6.10 Connect · 6.11 Subscription gap
+
+🚫 **Not captured** (B-2). The design specs are extracted and in hand (screens 04–07), but both states need a way to force the authorization/subscription path — the preview services grant immediately.
 
 ---
 
@@ -417,7 +430,71 @@ Ordered by leverage. **This audit made no code changes; everything below is a pr
 
 ---
 
-## 8. Provenance
+## 8. Addendum — Now Playing and Queue
+
+Added after the C-3 recursion fix made both screens reachable. Captured on the same device and compared against design screens **23** (Now Playing) and **26 / 27** (Queue). **22 further findings: 4 Major, 18 Minor.**
+
+Screenshots: `shots/15-nowplaying.png`, `shots/16-queue.png`.
+
+### 8.1 What matches exactly
+
+Worth recording, because it is most of both screens. Now Playing's entire hero geometry and transport are correct to the pixel: ring box **322**, ring **⌀304** at stroke **3** with a round cap, track at white **9%**, disc **262**, knob **13**; play disc **78** with a **27** glyph on solid `#E8A33D` under `amber .35 / radius 17 / y 10`; three transport controls with **26** glyphs at **34** apart; the secondary row at **21** and **56** apart in white **66%**. Type is exact too — title 27/300/−0.4, artist 16 amber, gap 7, header overline 11.5/1.6/uppercase at white 62%, timecodes 12pt tabular at white 62%. Queue's track rows are the shared `TrackRow`, already verified in §6.
+
+### 8.2 Now Playing
+
+| ID | Severity | Category | Expected (design 23) | Actual | Delta | Location |
+|---|---|---|---|---|---|---|
+| **NP-1** | **Major** | Accessibility / Color | Play glyph `#0A0A0A` on amber — **9.18:1** | `Palette.textPrimary` (white) on amber — **2.16:1** | **fails WCAG 3:1 for graphical objects** | `NowPlayingView.swift:565` |
+| **NP-2** | **Major** | Layout | Title/artist block **centred**, no control in it | Left-aligned with a trailing add-to-library button | alignment + extra control | `NowPlayingView.swift:112-126` |
+| **NP-3** | Minor | Iconography | Knob carries `0 0 14px 3px rgba(232,163,61,.7)` | No shadow — flat amber dot | glow absent | `NowPlayingView.swift:322-325` |
+| **NP-4** | Minor | Layout | Header padding `8px 24px 0` | `Metrics.navGutter` = 18 | 6 pt | `NowPlayingView.swift:272` |
+| **NP-5** | Minor | Layout | Time row inset **46** | `Metrics.heroGutter` = 34 | 12 pt | `NowPlayingView.swift:102` |
+| **NP-6** | Minor | Component states | Header trailing control is an overflow **⋮** (20×20); queue lives in the bottom row | Header trailing control is the queue button | control swapped | `NowPlayingView.swift:264-270` |
+| **NP-7** | Minor | Component states | Bottom row is **queue · lyrics · shuffle** | **shuffle · repeat** | repeat is not in the design; lyrics is screen 34, unbuilt | `NowPlayingView.swift:528+` |
+| **NP-8** | Minor | Layout | Two bottom rows: volume `bottom 96`, actions `bottom 40` | Three: secondary controls, volume, then an "Up next · N" + AirPlay footer | extra row | `NowPlayingView.swift:96-107` |
+| **NP-9** | Minor | Color | Chevron stroke `rgba(255,255,255,.7)` | `Palette.textSecondary` (66%) | 4 pp | `NowPlayingView.swift:253` |
+| **NP-10** | Minor | Design system | Ring track = white 9% | Correct value, but hardcoded as `Color.white.opacity(0.09)` rather than `Palette.hairlineStrong` (same value) | token bypass | `NowPlayingView.swift:307` |
+| **NP-11** | Minor | Component states | Custom volume track — `height 4, radius 2`, ground white **14%**, fill amber **85%** | `MPVolumeView` (system control, renders empty in Simulator) | custom control replaced by system one | `SystemAudioControls.swift:13-32` |
+
+**NP-1 is the one to fix first.** It is the primary control on the app's centrepiece screen, and at 2.16:1 the glyph fails the 3:1 floor for graphical objects. The design's near-black is not a stylistic preference — it is what makes the control legible. This is the second contrast failure the audit has turned up, after the text ramp.
+
+**NP-2, NP-6, NP-7, NP-8** are all the same underlying decision: the app redistributed Now Playing's secondary controls (add-to-library into the title row, queue into the header, repeat into the secondary row, "Up next" into a footer) where the design keeps the title block clean and gathers actions into one bottom row. Worth settling as a group rather than one at a time.
+
+### 8.3 Queue
+
+| ID | Severity | Category | Expected (design 26) | Actual | Delta | Location |
+|---|---|---|---|---|---|---|
+| **Q-1** | **Major** | Layout | Now-playing block is a **card**: `margin 0 20 8`, `padding 14`, `radius 14`, fill `#141416` | Plain full-width row with a divider under it — no fill, no radius, no inset | card treatment absent | `QueueView.swift:87-117` |
+| **Q-2** | **Major** | Color | "Clear" enabled is `#E8A33D`; disabled `rgba(255,255,255,.25)` | Tinted `Palette.textSecondary` (white 66%) in both states | reads as disabled when it is not | `QueueView.swift:78` |
+| **Q-3** | Minor | Iconography | Card art **52** at radius **8** | `artQueueHeader` 56 at `radiusArt` 10 | 4 pt / 2 pt | `QueueView.swift:91-92` |
+| **Q-4** | Minor | Color | "Now playing" label `rgba(232,163,61,.9)` | `Palette.honeyAmber` at 100% | 10 pp | `QueueView.swift:98` |
+| **Q-5** | Minor | Component states | Card is label + title + meter | Adds an artist line | extra element | `QueueView.swift:103-106` |
+| **Q-6** | Minor | Materials | "Done" / "Clear" are plain 16px text | iOS 26 toolbar renders them as glass capsules | unrequested chrome | `QueueView.swift:69-81` |
+| **Q-7** | Minor | Component states | Section header row carries an **18×18 shuffle** on the right | Absent | control missing | `QueueView.swift:39-58` |
+| **Q-8** | Minor | Layout | Bottom fade — 120 pt `rgba(10,10,10,0)` → `#0A0A0A` | Absent | fade missing | `QueueView.swift:29-64` |
+| **Q-9** | Minor | Layout | Section header padding `16px 20px 8px` | top 12 | 4 pt | `QueueView.swift:52` |
+| **Q-10** | Minor | Design system | — | Section header hardcodes `textPrimary.opacity(0.62)`; `Palette.textMuted` now exists at exactly that value | token bypass | `QueueView.swift:47` |
+| **Q-11** | Minor | Iconography | Meter bars **2.5** wide, **2.5** gap, container **16**, heights 7/14/10 | 3 wide, 3 gap, height 20 | 0.5 / 0.5 / 4 pt | `Motion.swift:53-69` |
+
+**Not verified:** design **27** (Queue — empty). The queue was populated throughout, and the empty state needs a queue drained to zero. Its spec is extracted and in hand.
+
+### 8.4 Check tables
+
+| Category | Now Playing | Queue |
+|---|---|---|
+| Layout & spacing | ⚠️ NP-2, NP-4, NP-5, NP-8 | ⚠️ Q-1, Q-8, Q-9 |
+| Typography | ✅ exact throughout | ✅ |
+| Color | ❌ NP-1, NP-9 | ❌ Q-2, Q-4 |
+| Liquid Glass / materials | ✅ correctly opaque — content layer | ⚠️ Q-6 |
+| Iconography & imagery | ⚠️ NP-3 | ⚠️ Q-3, Q-11 |
+| Component states | ⚠️ NP-6, NP-7, NP-11 | ⚠️ Q-5, Q-7; empty state unverified |
+| Responsiveness | 🚫 not exercised | 🚫 not exercised |
+| Accessibility | ❌ **NP-1**; ring is a proper adjustable element with spoken value | ✅ card combines into one element with a spoken label |
+| Motion | ✅ arc animates alone; honours Reduce Motion | ✅ meter honours Reduce Motion |
+
+---
+
+## 9. Provenance
 
 - **Screenshots:** captured with `xcrun simctl io … screenshot` on iPhone 17 Pro / iOS 26.5 and referenced throughout as `shots/…`. **Not committed** — they are ~14 MB of PNGs and were left out of the repo deliberately, so the `design-audit/shots/` paths cited above resolve only in the working tree they were captured in.
 - **Design values:** extracted from inline CSS in `designs/Hum-All-Platforms.html`, unpacked from its bundler manifest (gzip+base64) into `01-iPhone-Screens-and-UI-System.dc.html` (42 screens) plus `Dock`, `TrackRow`, `ArtPill`, `StatusBar` components. Every number is quoted from a style attribute, not measured off a raster.
