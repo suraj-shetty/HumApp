@@ -491,41 +491,46 @@ Six fixes were reasoned from reading the code and all six were wrong. Every fact
 
 ---
 
-## FIXED — the UI did not follow automatic track advance
+## MAJOR DEFECT — the UI does not follow automatic track advance
 
-**Status: fixed in code, awaiting device confirmation.** Reported from device.
+**Status: open. One fix attempted and disproved on device. Deferred by the listener; not under active investigation.**
+
+Severity: **major**. The player shows the wrong song on every screen for as long as playback continues unattended, which is the ordinary way a music app is used. Rated above the reorder hang.
 
 ### Reproduction
 
-Let a track finish so the player advances on its own. **The audio moved to the next song; the UI did not.** The player bar, Now Playing and the Queue's "Playing now" all kept showing the previous track — one defect seen from several screens, since they all read `currentTrack` off the same snapshot.
+Let a track finish so the player advances on its own. **The audio moves to the next song; the UI does not.** The player bar, Now Playing and the Queue's "Playing now" all keep showing the previous track — one defect seen from several screens, since they all read `currentTrack` off the same snapshot. Explicit skip is unaffected.
 
-### Root cause: the queue observer was bound to a discarded object
+### Attempt 1 — stale queue observer. Wrong.
 
-Neither of the two mechanisms originally guessed at. The adapter subscribed to `player.state.objectWillChange` and `player.queue.objectWillChange` **once, in `init()`**. `player.state` lives as long as the player, so that half kept working. `player.queue` does not: cueing assigns a *new* `Queue` object —
+The adapter subscribed to `player.queue.objectWillChange` once, in `init()`. `player.queue` is a *replaceable object*: cueing assigns a new `Queue`, so from the first `play()` onward the subscription was attached to the empty default queue seen at construction, and no queue notification could reach the adapter again.
 
-```swift
-player.queue = ApplicationMusicPlayer.Queue(for: songs, startingAt: song)
-```
+This was argued from the source as *the* cause, and it fit the evidence well — including why explicit skip worked, since that path calls `publish()` itself. **It was wrong.** Rebinding the observer on every queue replacement changed nothing on device.
 
-— and from the first `play()` onward the subscription was still attached to the empty default queue the adapter saw at construction. **No queue notification ever reached the adapter again.**
+The rebinding was kept anyway: subscribing to an object the player has discarded is defective regardless of this bug, and leaving it in place would only mislead the next attempt. But it is now **unverified code fixing an unobserved problem** — treat it as such. The duplicate-safe cursor lookup landed in the same commit and is likewise correct-in-principle and unconfirmed.
 
-That explains the symptom exactly. An automatic advance changes only `queue.currentEntry`; `playbackStatus` stays `.playing`, so the state observer has nothing to report, and the queue observer is listening to an object nothing plays from. `publish()` never runs, `syncCursor()` never re-reads the cursor, and the 4 Hz ticker keeps emitting progress against the stale track — a still UI with a live progress bar. It also explains why **explicit skip worked**: that path calls `publish()` itself and never depended on the observer.
+Commit `4ebae50`.
 
-This was diagnosable from the source, which the two earlier guesses were not: it needs no device, only the observation that `player.queue` is a *replaceable object* and the subscription outlives the object it was made against.
+### What the failed attempt rules out
 
-### The fix
+If `Queue.objectWillChange` fires on an automatic advance, `publish()` now certainly runs — so the cursor is being re-read and still not moving. That leaves two live candidates:
 
-- The queue subscription is rebound whenever the queue is replaced. Both assignment sites now go through `setQueue(_:)`, which swaps the queue and calls `observeQueue()`.
-- `republish(_:_:)` holds the one-main-actor-hop deferral both observers need; it is generic over the publisher because MusicKit type-erases `objectWillChange` to `AnyPublisher<Void, Never>` rather than exposing an `ObservableObjectPublisher`.
-- `syncCursor()` no longer resolves the cursor with a plain `firstIndex`. A queue can hold the same track twice — a playlist with a repeated single is ordinary, and the playlist built to test the reorder hang has exactly that — so advancing into the second copy found the first copy's index, saw no change, and left the cursor parked. `indexOfTrack(_:)` searches forward from the cursor first, then wraps.
+1. **`Queue.objectWillChange` does not fire on auto-advance.** MusicKit may simply not republish a `currentEntry` change that it drives itself. Then no amount of observer repair helps and the cursor has to be polled or driven from another signal.
+2. **`syncCursor()` runs but cannot match the entry.** It compares `player.queue.currentEntry?.item?.id.rawValue` against `queue.entries[].id`. Library songs cued into `ApplicationMusicPlayer` may come back as their catalog equivalents, in which case the ids never match and the cursor silently never moves. The "previous entry is unexpectedly transient" log MusicKit emits during reorder suggests it does substitute entries.
 
-Files: `Hum/Services/Adapters/ApplicationMusicPlayerAdapter.swift`.
+### First move for whoever picks this up
 
-### Not yet proven
+**Call `syncCursor()` from `emitProgress()`.** One line, and it splits the space decisively: the ticker already runs at 4 Hz during playback and does not currently sync the cursor.
 
-The fix is verified only as far as a clean device build and 72 passing tests. **The defect itself was reported by ear and eye, and that is how the fix has to be confirmed**: let a track finish and watch whether the player bar follows. Two further paths land through this same repaired observer and are worth checking in the same pass — lock-screen and Dynamic Island transport, and advancing into a repeated track.
+- If the UI then follows, it is (1) — the notification never arrives — and the question becomes whether to keep polling or find the right signal.
+- If it stays stale, it is (2) — the cursor is being re-read four times a second against an entry it cannot match — and the adapter needs to track entries by `Entry.id` rather than by item id. That is also the right shape for the reorder defect above, since a queue entry is genuinely not the same thing as a track.
 
-The adapter is not unit-testable (it reaches `ApplicationMusicPlayer.shared` directly), so no regression test guards this. Making `indexOfTrack` testable means lifting cursor resolution out into the domain beside `QueueReducer` — the right move, but a restructuring rather than a fix, so it was not taken here.
+Confirm by ear and eye on device. **Do not accept a third fix reasoned from the source without running it** — that is now two out of two wrong on this defect, against the same lesson the reorder post-mortem records.
+
+### Consequences
+
+- The acceptance criterion that playback state is reflected in the UI is **not met** for automatic advance.
+- Suspect the same root cause for anything else that looks like a stale player: lock-screen and Dynamic Island transport drive the same shared player and land through the same `syncCursor` path.
 
 ---
 
@@ -838,7 +843,7 @@ own suite:
 
 Two open defects are recorded in full above: **drag-to-reorder hangs during
 playback**, and **the UI does not follow automatic track advance**. The second is
-the more serious of the two for a music app. *(Since fixed — see the entry above.)*
+the more serious of the two for a music app. *(Still open — one fix attempted and disproved; see the entry above.)*
 
 ### Carried into Phase 6
 
