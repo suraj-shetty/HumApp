@@ -22,6 +22,11 @@ import SwiftUI
 /// `glassEffect(` in that one file, so this stays inside the architecture.
 struct HumTabBar: View {
     @Binding var selection: RootTabView.HumTab
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The selected pill is one moving view, not a fill that appears and
+    /// disappears on two — that is what makes it travel between tabs instead
+    /// of blinking from one to the other.
+    @Namespace private var pillNamespace
 
     var body: some View {
         HStack(spacing: Metrics.chromeGap) {
@@ -57,16 +62,21 @@ struct HumTabBar: View {
     ) -> some View {
         let isSelected = selection == tab
         return Button {
-            selection = tab
+            withAnimation(Motion.reduced(Motion.tabSelection, when: reduceMotion)) {
+                selection = tab
+            }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: isSelected ? filled : icon)
                     .font(.system(size: isSelected ? 21 : 22, weight: .regular))
+                    .contentTransition(.symbolEffect(.replace))
                 // Only the selected tab carries its label — the design's own
                 // rule, and what makes the two pills read as one control.
                 if isSelected {
                     Text(label)
                         .humFont(HumTextStyle(size: 13.5, weight: .medium, relativeTo: .caption))
+                        .fixedSize()
+                        .transition(.opacity.combined(with: .scale(scale: 0.86, anchor: .leading)))
                 }
             }
             .foregroundStyle(isSelected ? Palette.honeyAmber : Palette.tabIconInactive)
@@ -76,6 +86,7 @@ struct HumTabBar: View {
                 if isSelected {
                     RoundedRectangle(cornerRadius: Metrics.tabPillRadius, style: .continuous)
                         .fill(Palette.tabSelection)
+                        .matchedGeometryEffect(id: "tabPill", in: pillNamespace)
                 }
             }
             .contentShape(.rect)

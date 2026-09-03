@@ -80,7 +80,7 @@ struct LibraryView: View {
             }
             .scrollIndicators(.hidden)
             .background(Palette.deepOnyx)
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $route) { DetailView(collection: $0) }
             .task {
                 if model == nil { model = LibraryViewModel(environment: environment) }

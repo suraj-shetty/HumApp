@@ -125,7 +125,6 @@ struct SearchView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarTitleDisplayMode(.inline)
         }
         .searchable(
             text: Binding(

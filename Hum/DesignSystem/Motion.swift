@@ -25,6 +25,11 @@ enum Motion {
     /// spring on every pressable control was the most widespread breach of it.
     static let press = Animation.easeOut(duration: 0.16)
 
+    /// Tab selection. The handoff's content spring — response 0.42, damping
+    /// 0.82 — which is near-critically damped, so it settles without the bounce
+    /// the design rules out elsewhere.
+    static let tabSelection = Animation.spring(response: 0.42, dampingFraction: 0.82)
+
     static let pressScaleButton: CGFloat = 0.98
     static let pressScaleTransport: CGFloat = 0.94
 

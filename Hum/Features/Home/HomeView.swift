@@ -22,6 +22,11 @@ struct HomeView: View {
             }
             .scrollIndicators(.hidden)
             .background(Palette.deepOnyx)
+            // Every tab root draws its own 32/200 header, so none of them
+            // wants a system navigation bar. They must agree: when one tab
+            // reserved a bar and another hid it, switching between them
+            // animated the bar in and out, and the tab change read as a jolt.
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $route) { collection in
                 DetailView(collection: collection)
             }
