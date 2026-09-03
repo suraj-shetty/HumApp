@@ -44,7 +44,9 @@ struct HumTabBar: View {
     private var isSearching: Bool { selection == .search }
 
     var body: some View {
-        HStack(spacing: Metrics.chromeGap) {
+        // Horizontal gap, 2pt wider than the vertical `chromeGap` the player
+        // capsule and tab row use — the two used to share one value (m-6).
+        HStack(spacing: Metrics.chromeGapHorizontal) {
             // The pills leave and the island takes the width they vacate. One
             // `if` drives both halves, so they cannot disagree about which
             // state the bar is in mid-animation.
@@ -93,7 +95,8 @@ struct HumTabBar: View {
         )
         .amberGlass(
             in: RoundedRectangle(cornerRadius: Metrics.tabCapsuleRadius, style: .continuous),
-            shadow: false
+            shadow: false,
+            opaqueEdge: Palette.glassOpaqueEdgeNeutral
         )
     }
 
@@ -129,6 +132,12 @@ struct HumTabBar: View {
                 if isSelected {
                     RoundedRectangle(cornerRadius: Metrics.tabPillRadius, style: .continuous)
                         .fill(Palette.tabSelection)
+                        // `inset 0 0 0 1px rgba(232,163,61,.36)` — the fill
+                        // alone before this (m-8).
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Metrics.tabPillRadius, style: .continuous)
+                                .strokeBorder(Palette.honeyAmber.opacity(0.36), lineWidth: 1)
+                        )
                         .matchedGeometryEffect(id: "tabPill", in: pillNamespace)
                 }
             }
@@ -191,7 +200,7 @@ struct HumTabBar: View {
         .frame(maxWidth: isSearching ? .infinity : Metrics.searchIsland)
         .frame(height: Metrics.searchIsland)
         .chromeGlass(in: Capsule(style: .continuous), tint: nil)
-        .amberGlass(in: Capsule(style: .continuous), shadow: false)
+        .amberGlass(in: Capsule(style: .continuous), shadow: false, opaqueEdge: Palette.glassOpaqueEdgeNeutral)
         .contentShape(Capsule(style: .continuous))
         .onTapGesture {
             if isSearching {

@@ -59,7 +59,7 @@ struct LibraryView: View {
     // Two columns of the design's 160pt card, 22 between them. Adaptive so the
     // grid still reads on a wider screen; the minimum is the design's width.
     private let columns = [
-        GridItem(.adaptive(minimum: Metrics.artShelf), spacing: Metrics.libraryGridSpacing)
+        GridItem(.adaptive(minimum: Metrics.artShelf), spacing: Metrics.libraryGridColumnSpacing)
     ]
 
     private var state: LoadState<[HumCollection]> {

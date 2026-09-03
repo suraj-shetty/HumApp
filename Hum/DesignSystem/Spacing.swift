@@ -16,14 +16,6 @@ enum Metrics {
 
     // MARK: - Chrome
 
-    static let tabBarHeight: CGFloat = 92
-    static let playerBarHeight: CGFloat = 64
-    static let playerBarRadius: CGFloat = 32
-    static let playerBarInset: CGFloat = 20
-    /// Clears the tab bar; the player bar floats above it.
-    static let playerBarBottomOffset: CGFloat = 104
-    /// Bottom padding for every scroll view, so content clears both chrome
-    /// elements rather than sliding under them.
     /// Clearance for a toast floating above the tab bar and its accessory.
     ///
     /// **Not** for scroll content: `TabView`'s bottom accessory and the tab
@@ -41,29 +33,41 @@ enum Metrics {
     /// Both chrome capsules inset 14pt from each edge — the handoff's "safe
     /// inset 14pt". 390 − 28 = 362.
     static let chromeInset: CGFloat = 14
-    static let chromeWidth: CGFloat = 362
-    static let chromeHeight: CGFloat = 64
-    /// Between the player capsule and the tab row, and between the tab capsule
-    /// and the search island.
+    /// All three chrome surfaces — player capsule, tab capsule, search
+    /// island — measure 62pt tall (island 62×62; capsule = 6+50+6). Was 64
+    /// (m-4).
+    static let chromeHeight: CGFloat = 62
+    /// Vertically, between the player capsule and the tab row.
     static let chromeGap: CGFloat = 10
+    /// Horizontally, between the tab capsule and the search island — the
+    /// design's own value, 2pt wider than the vertical `chromeGap` the two
+    /// used to share (m-6).
+    static let chromeGapHorizontal: CGFloat = 12
     /// Below the tab row. Handoff: "dock bottom 22pt".
     static let chromeBottom: CGFloat = 22
 
+    /// The player capsule's own corner radius — not `Capsule()`'s automatic
+    /// height/2, which no longer lands on this value now that `chromeHeight`
+    /// isn't 52 (m-7).
     static let playerCapsuleRadius: CGFloat = 26
-    static let tabCapsuleWidth: CGFloat = 288
     static let tabCapsuleRadius: CGFloat = 28
-    static let tabPillWidth: CGFloat = 135
     static let tabPillHeight: CGFloat = 50
     static let tabPillRadius: CGFloat = 25
     static let tabPillSpacing: CGFloat = 4
-    static let tabCapsulePadding: CGFloat = 7
-    static let searchIsland: CGFloat = 64
+    /// Was 7 (m-5); 6+50+6 is what makes the capsule's content land on the
+    /// shared `chromeHeight` (62) without an explicit override.
+    static let tabCapsulePadding: CGFloat = 6
+    static let searchIsland: CGFloat = 62
 
     /// Library filter chips and the grid they sit above, measured off screen 16.
     static let chipHeight: CGFloat = 38
     static let chipRadius: CGFloat = 19
     static let chipSpacing: CGFloat = 8
+    /// Row gap. Column gap is `libraryGridColumnSpacing` — the design runs
+    /// the two at different values (22 vs 14), which one shared constant
+    /// couldn't represent (m-13).
     static let libraryGridSpacing: CGFloat = 22
+    static let libraryGridColumnSpacing: CGFloat = 14
 
     /// Search's Browse genre grid — two columns, measured off screen 12.
     static let browseGridSpacing: CGFloat = 12
@@ -130,6 +134,4 @@ enum Metrics {
     /// one size up. Kept as its own name rather than rounded to `radiusArt` so
     /// the divergence stays visible instead of being quietly averaged away.
     static let radiusArtHero: CGFloat = 14
-    /// Cards — shelf tiles and grid cells.
-    static let radiusCard: CGFloat = 18
 }

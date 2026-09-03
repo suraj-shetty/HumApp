@@ -110,15 +110,11 @@ enum Palette {
     // solid or a gradient at full strength. They will not look identical, and
     // that is correct.
 
-    /// Primary action — Connect, album Play.
+    /// Connect's 322×56 full-width CTA. **Not** album Play — that pill is
+    /// flat `#E8A33D`, no gradient at all (`DetailActionButton`'s `.filled`
+    /// style); this doc used to claim otherwise (m-11).
     static let amberButton = LinearGradient(
         colors: [Color(hex: 0xE8A33D, alpha: 0.26), Color(hex: 0xE8A33D, alpha: 0.12)],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-    /// The 76pt transport play button — a touch stronger than `amberButton`.
-    static let amberTransport = LinearGradient(
-        colors: [Color(hex: 0xE8A33D, alpha: 0.30), Color(hex: 0xE8A33D, alpha: 0.13)],
         startPoint: .top,
         endPoint: .bottom
     )
@@ -157,6 +153,9 @@ enum Palette {
     /// Layout, tap targets and hierarchy are unchanged; only the material is.
     static let glassOpaqueFallback = Color(hex: 0x1C1A17, alpha: 0.96)
     static let glassOpaqueEdge = Color(hex: 0xE8A33D, alpha: 0.35)
+    /// The RT edge for the player bar and tab bar specifically — only the
+    /// toast keeps the amber edge above (m-16).
+    static let glassOpaqueEdgeNeutral = Color.white.opacity(0.14)
 
     /// The hairline every glass surface carries, at 16%.
     static let glassHairline = Color.white.opacity(0.16)

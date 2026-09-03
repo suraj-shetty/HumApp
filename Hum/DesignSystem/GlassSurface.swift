@@ -66,6 +66,11 @@ private struct GlassTintModifier<S: Shape>: ViewModifier {
     let shape: S
     let tint: AnyShapeStyle
     var shadow: Bool = true
+    /// Only the toast uses the amber-tinted RT edge (`glassOpaqueEdge`) — the
+    /// design gives the player bar and tab bar a neutral white 14% instead
+    /// (m-16). Defaults to the amber edge since the toast is `amberGlass`'s
+    /// only caller left after the bars opt into the neutral one below.
+    var opaqueEdge: Color = Palette.glassOpaqueEdge
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -93,15 +98,15 @@ private struct GlassTintModifier<S: Shape>: ViewModifier {
     }
 
     private var edge: Color {
-        reduceTransparency ? Palette.glassOpaqueEdge : Palette.glassHairline
+        reduceTransparency ? opaqueEdge : Palette.glassHairline
     }
 }
 
 extension View {
     /// Lays the design's Amber Glass tint over a surface the system has already
     /// given a material — the player bar's accessory slot, a success toast.
-    func amberGlass(in shape: some Shape, shadow: Bool = true) -> some View {
-        modifier(GlassTintModifier(shape: shape, tint: AnyShapeStyle(Palette.amberGlassTint), shadow: shadow))
+    func amberGlass(in shape: some Shape, shadow: Bool = true, opaqueEdge: Color = Palette.glassOpaqueEdge) -> some View {
+        modifier(GlassTintModifier(shape: shape, tint: AnyShapeStyle(Palette.amberGlassTint), shadow: shadow, opaqueEdge: opaqueEdge))
     }
 
     /// The same tint-over-material recipe as `amberGlass`, with a caller-supplied

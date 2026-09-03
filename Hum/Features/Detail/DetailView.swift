@@ -75,15 +75,17 @@ struct DetailView: View {
                 .multilineTextAlignment(.center)
 
             if !collection.subtitle.isEmpty {
+                // 15px, not 16 (m-15).
                 Text(collection.subtitle)
-                    .humFont(16)
+                    .humFont(15)
                     .foregroundStyle(Palette.textPrimary.opacity(0.82))
                     .multilineTextAlignment(.center)
             }
 
-            // 14 / 400 in amber at 80% — not a tracked uppercase overline.
+            // 13 / 400 in amber at 80% — not a tracked uppercase overline.
+            // Was 14 (m-15).
             Text(collection.metaLine)
-                .humFont(14)
+                .humFont(13)
                 .foregroundStyle(Palette.honeyAmber.opacity(0.8))
                 .multilineTextAlignment(.center)
         }
@@ -193,8 +195,10 @@ private struct DetailActionButton: View {
                     .humFont(16, weight: style == .filled ? .medium : .regular)
             }
             .foregroundStyle(style == .filled ? Palette.deepOnyx : Palette.honeyAmber)
-            .padding(.horizontal, 22)
-            .frame(height: style == .filled ? 48 : 50)
+            // Play 30, Shuffle 26 — was 22 for both (m-2).
+            .padding(.horizontal, style == .filled ? 30 : 26)
+            // Both 48 — Shuffle was 50 (m-1).
+            .frame(height: 48)
             .background {
                 if style == .filled {
                     Capsule(style: .continuous).fill(Palette.honeyAmber)

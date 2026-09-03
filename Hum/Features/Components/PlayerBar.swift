@@ -71,13 +71,21 @@ struct PlayerBar: View {
         .padding(.vertical, 9)
         // Material, then the design's amber tint over it. No shadow here — the
         // container casts one for the whole chrome stack.
-        .chromeGlass(in: Capsule(style: .continuous), tint: nil)
-        .amberGlass(in: Capsule(style: .continuous), shadow: false)
+        //
+        // A fixed-radius rounded rect, not `Capsule()` — the design's 26pt
+        // corner doesn't track this bar's height the way a capsule's
+        // automatic height/2 corner would (m-7).
+        .chromeGlass(in: barShape, tint: nil)
+        .amberGlass(in: barShape, shadow: false, opaqueEdge: Palette.glassOpaqueEdgeNeutral)
         .contentShape(.rect)
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Now playing: \(track.title) by \(track.artist)")
         .accessibilityHint("Opens the full player")
+    }
+
+    private var barShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Metrics.playerCapsuleRadius, style: .continuous)
     }
 }
 
