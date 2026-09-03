@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Composition root.
 ///
-/// The app roots at `RootGateView`, which shows `ConnectView` until MusicKit
+/// The app roots at `LaunchFlowView` — splash, then onboarding once ever,
+/// then `RootGateView`, which shows `ConnectView` until MusicKit
 /// authorization is granted and `RootTabView` after — decided by `AuthReducer`.
 ///
 /// Authorization and subscription come from the live MusicKit adapters, proven
@@ -82,7 +83,7 @@ struct HumApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootGateView()
+            LaunchFlowView()
                 .environment(\.appEnvironment, environment)
                 .environment(player)
                 .preferredColorScheme(.dark)

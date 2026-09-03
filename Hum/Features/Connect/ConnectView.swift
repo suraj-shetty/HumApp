@@ -384,8 +384,13 @@ private struct ConnectSpinner: View {
 
 /// Hum's mark: a centre dot between two facing arcs — sound leaving a source.
 /// Drawn rather than shipped as an asset so it inherits the accent colour.
+///
+/// `outerArcs` adds a second, wider pair at 60% opacity — screen 01's louder
+/// splash variant of the same glyph. Connect (04) and onboarding screen 03
+/// use the plain two-arc form; only the splash screen draws the fuller one.
 struct HumMark: View {
     var color: Color = Palette.honeyAmber
+    var outerArcs: Bool = false
 
     var body: some View {
         Canvas { context, size in
@@ -412,6 +417,20 @@ struct HumMark: View {
                     clockwise: false
                 )
                 context.stroke(path, with: .color(color), style: stroke)
+            }
+
+            guard outerArcs else { return }
+            let outerStroke = StrokeStyle(lineWidth: 2.4 * scale, lineCap: .round)
+            for mirrored in [false, true] {
+                var path = Path()
+                path.addArc(
+                    center: center,
+                    radius: 19 * scale,
+                    startAngle: .degrees(mirrored ? 122 : -58),
+                    endAngle: .degrees(mirrored ? 238 : 58),
+                    clockwise: false
+                )
+                context.stroke(path, with: .color(color.opacity(0.6)), style: outerStroke)
             }
         }
     }
