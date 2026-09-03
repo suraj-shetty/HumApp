@@ -62,8 +62,9 @@ struct ChromeGlassContainer<Content: View>: View {
 /// This is a *tint layer over* the system material, not a second material —
 /// which is exactly what the design's "Amber Glass · chrome tint only" token
 /// describes, and why it does not violate the glass-on-glass rule.
-private struct AmberGlassModifier<S: Shape>: ViewModifier {
+private struct GlassTintModifier<S: Shape>: ViewModifier {
     let shape: S
+    let tint: AnyShapeStyle
     var shadow: Bool = true
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -88,9 +89,7 @@ private struct AmberGlassModifier<S: Shape>: ViewModifier {
     /// The system substitutes an opaque material for the glass itself; this
     /// substitutes the tint laid over it, so the two do not disagree.
     private var fill: AnyShapeStyle {
-        reduceTransparency
-            ? AnyShapeStyle(Palette.glassOpaqueFallback)
-            : AnyShapeStyle(Palette.amberGlassTint)
+        reduceTransparency ? AnyShapeStyle(Palette.glassOpaqueFallback) : tint
     }
 
     private var edge: Color {
@@ -100,9 +99,17 @@ private struct AmberGlassModifier<S: Shape>: ViewModifier {
 
 extension View {
     /// Lays the design's Amber Glass tint over a surface the system has already
-    /// given a material — the player bar's accessory slot, a toast.
+    /// given a material — the player bar's accessory slot, a success toast.
     func amberGlass(in shape: some Shape, shadow: Bool = true) -> some View {
-        modifier(AmberGlassModifier(shape: shape, shadow: shadow))
+        modifier(GlassTintModifier(shape: shape, tint: AnyShapeStyle(Palette.amberGlassTint), shadow: shadow))
+    }
+
+    /// The same tint-over-material recipe as `amberGlass`, with a caller-supplied
+    /// gradient — the toast's error (terracotta) and neutral (white) variants,
+    /// which carry the identical border, top highlight and shadow but a
+    /// different fill (design screen 30).
+    func glassTint(in shape: some Shape, _ tint: LinearGradient, shadow: Bool = true) -> some View {
+        modifier(GlassTintModifier(shape: shape, tint: AnyShapeStyle(tint), shadow: shadow))
     }
 }
 

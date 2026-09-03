@@ -83,17 +83,48 @@ struct PlayerBar: View {
 
 /// A transient message. **Chrome — glass**, per the brief's list
 /// ("Player Bar, Tab Bar, toolbars, Toasts, sheets").
+///
+/// Three variants, design screen 30: **success** (amber, the default — a
+/// confirmation needs no icon or action), **error** (terracotta, a
+/// `#E29070` warning glyph, and an optional `Retry`), and **neutral** (white,
+/// no icon). A playback failure and a library confirmation used to render
+/// identically; this is what tells them apart (finding M-9).
 struct ToastView: View {
-    let message: String
+    let toast: ToastMessage
 
     var body: some View {
-        Text(message)
-            .humFont(14)
-            .foregroundStyle(Palette.textPrimary)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .chromeGlassCapsule(tint: nil)
-            .amberGlass(in: Capsule(style: .continuous))
-            .accessibilityAddTraits(.isStaticText)
+        HStack(spacing: 10) {
+            if toast.kind == .error {
+                Image(systemName: HumIcon.warning)
+                    .humFont(14, weight: .regular)
+                    .foregroundStyle(Palette.terracottaLift)
+                    .accessibilityHidden(true)
+            }
+            Text(toast.text)
+                .humFont(14.5)
+                .foregroundStyle(Palette.textPrimary)
+            if toast.kind == .error, let onRetry = toast.onRetry {
+                Button("Retry", action: onRetry)
+                    .buttonStyle(.plain)
+                    .humFont(14.5, weight: .medium)
+                    .foregroundStyle(Palette.terracottaLift)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 13)
+        .chromeGlassCapsule(tint: nil)
+        .glassTint(in: Capsule(style: .continuous), tint)
+        // A Retry button must stay its own element — combining it into the
+        // toast would swallow its tap target from VoiceOver. Only the
+        // button-less variants collapse to one static-text element.
+        .accessibilityElement(children: (toast.kind == .error && toast.onRetry != nil) ? .contain : .combine)
+    }
+
+    private var tint: LinearGradient {
+        switch toast.kind {
+        case .success: Palette.amberGlassTint
+        case .error: Palette.terracottaGlassTint
+        case .neutral: Palette.neutralGlassTint
+        }
     }
 }

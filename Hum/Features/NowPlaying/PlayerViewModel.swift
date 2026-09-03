@@ -36,7 +36,7 @@ final class PlayerViewModel {
     /// subscribe, or the check itself failed. Drives `SubscriptionGapView`.
     var isPresentingSubscriptionGap = false
     /// Transient message shown as a toast — the only chrome-glass content view.
-    private(set) var toast: String?
+    private(set) var toast: ToastMessage?
 
     /// Tracks the listener has added to their library this session, so the
     /// Now Playing action can render its filled state without a round trip.
@@ -166,7 +166,7 @@ final class PlayerViewModel {
     /// Apple's offer sheet failed to load. Reported plainly rather than left
     /// as a control that visibly does nothing.
     func subscriptionOfferFailed(_ reason: String) {
-        showToast("Couldn't open Apple Music sign-up.")
+        showToast("Couldn't open Apple Music sign-up.", kind: .error)
     }
 
     // MARK: - Intents
@@ -199,7 +199,7 @@ final class PlayerViewModel {
             Task {
                 subscription = await subscriptionService.current
                 if case .unknown = subscription {
-                    showToast("Couldn't check your Apple Music subscription.")
+                    showToast("Couldn't check your Apple Music subscription.", kind: .error)
                 } else {
                     play(tracks, startingAt: index, source: source)
                 }
@@ -281,7 +281,10 @@ final class PlayerViewModel {
                 addedToLibrary.insert(track.id)
                 showToast("Added to your library")
             } catch {
-                showToast("Couldn't add to your library")
+                showToast("Couldn't add to your library", kind: .error) { [weak self] in
+                    self?.addedToLibrary.remove(track.id)
+                    self?.addToLibrary(track)
+                }
             }
         }
     }
@@ -292,18 +295,38 @@ final class PlayerViewModel {
         do {
             try await work()
         } catch {
-            showToast("Playback failed. Try again.")
+            showToast("Playback failed.", kind: .error) { [weak self] in
+                guard let self else { return }
+                Task { await self.perform(work) }
+            }
         }
     }
 
-    func showToast(_ message: String) {
-        toast = message
+    func showToast(_ message: String, kind: ToastMessage.Kind = .success, onRetry: (() -> Void)? = nil) {
+        toast = ToastMessage(text: message, kind: kind, onRetry: onRetry)
         toastTask?.cancel()
         toastTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
             self?.toast = nil
         }
+    }
+}
+
+/// A toast's content, decoupled from `ToastView` so the view model doesn't
+/// import SwiftUI's view layer. `onRetry` is excluded from equality — the
+/// player bar only needs to know the *message* changed to re-animate.
+struct ToastMessage: Equatable {
+    enum Kind {
+        case success, error, neutral
+    }
+
+    let text: String
+    var kind: Kind = .success
+    var onRetry: (() -> Void)?
+
+    static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool {
+        lhs.text == rhs.text && lhs.kind == rhs.kind
     }
 }
 

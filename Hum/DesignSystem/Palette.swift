@@ -125,6 +125,22 @@ enum Palette {
         startPoint: .top,
         endPoint: .bottom
     )
+    /// The toast's error fill (design screen 30) — terracotta, halved the same
+    /// way and for the same reason as `amberGlassTint`: the design's `.22→.09`
+    /// is measured over a transparent `backdrop-filter`, and the system
+    /// material underneath already tints what it covers.
+    static let terracottaGlassTint = LinearGradient(
+        colors: [Color(hex: 0xD2714A, alpha: 0.11), Color(hex: 0xD2714A, alpha: 0.045)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+    /// The toast's neutral fill (design screen 30) — the same halving as
+    /// `amberGlassTint`, applied to the design's `.14→.05` white.
+    static let neutralGlassTint = LinearGradient(
+        colors: [Color.white.opacity(0.07), Color.white.opacity(0.025)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
     /// The Reduce Transparency substitute for every glass surface: the design
     /// names it exactly — `#1C1A17` at 96%, with a 1px amber-tinted edge.
     /// Layout, tap targets and hierarchy are unchanged; only the material is.
