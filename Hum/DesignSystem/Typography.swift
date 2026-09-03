@@ -53,16 +53,15 @@ extension HumTextStyle {
     /// The design asks for `ui-monospace` — a monospaced *face*, which is not
     /// the same as `.monospacedDigit()` on the proportional one.
     static let timecode = Self(size: 12.5, design: .monospaced, relativeTo: .caption)
-    /// 11, not 10.5: the design's floor is "nothing below 11pt".
-    static let tabLabel = Self(size: 11, relativeTo: .caption2)
-
     // MARK: - Tracked labels
 
-    /// Settings' group headers, the Queue's "next from", the detail meta line.
-    static let groupLabel = Self(size: 11.5, relativeTo: .caption, tracking: 1.5, uppercase: true)
-    /// The uppercase wide-tracked overline — the greeting, meta lines.
-    static let overline = Self(size: 11, relativeTo: .caption2, tracking: 1.4, uppercase: true)
+    // No `tabLabel` token: the native `TabView` owns its label typography, so
+    // the design's 13.5/500 is unreachable without hand-building the bar.
+    // No `overline` token either — every tracked uppercase label in the app is
+    // either `groupLabel` or a screen-specific size set inline.
 
+    /// Settings' group headers and the Queue's "next from".
+    static let groupLabel = Self(size: 11.5, relativeTo: .caption, tracking: 1.5, uppercase: true)
     /// The wordmark — the only rounded type in the app, and the only place a
     /// weight above 400 is permitted.
     static let wordmark = Self(size: 30, weight: .semibold, design: .rounded, relativeTo: .largeTitle, tracking: -0.8)

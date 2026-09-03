@@ -184,11 +184,11 @@ private struct NowPlayingLandscapeLayout: View {
                         .humFont(HumTextStyle(size: 11.5, relativeTo: .caption2, tracking: 1.6, uppercase: true))
                         .foregroundStyle(Palette.textQuaternary)
                     Text(track.title)
-                        .humFont(HumTextStyle(size: 30, weight: .light, relativeTo: .title, tracking: -0.5))
+                        .humFont(HumTextStyle(size: 27, weight: .light, relativeTo: .title, tracking: -0.4))
                         .foregroundStyle(Palette.textPrimary)
                         .lineLimit(1)
                     Text(track.artist)
-                        .humFont(18)
+                        .humFont(16)
                         .foregroundStyle(Palette.honeyAmber)
                         .lineLimit(1)
                 }

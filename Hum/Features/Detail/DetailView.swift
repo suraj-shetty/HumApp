@@ -36,7 +36,9 @@ struct DetailView: View {
         }
         .scrollIndicators(.hidden)
         .background(Palette.deepOnyx)
-        .navigationTitle(collection.title)
+        // No nav-bar title: the design's detail screen carries the title once,
+        // in the header below. With real Apple Music titles — long, and often
+        // suffixed " - Single" — a truncated nav copy read as repetition.
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

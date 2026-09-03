@@ -22,7 +22,10 @@ enum Palette {
     /// The lighter warning step, for text on onyx where Terracotta is too dark.
     static let terracottaLift = Color(hex: 0xE29070)
     /// `#1C1A18` — raised chips (the Home avatar).
-    static let surfaceRaised = Color(hex: 0x1C1A18)
+    /// Slate 900 — the design's plate colour, measured on the Home avatar.
+    /// The same value as `artworkFill`; kept as its own name because one is a
+    /// control's ground and the other is missing artwork.
+    static let surfaceRaised = Color(hex: 0x1E1E20)
 
     // MARK: - Text ramp
     //

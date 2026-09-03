@@ -32,10 +32,10 @@ After Phase 7's component work, most of the ramp is already right. Verified matc
 
 ## Divergences — triage list
 
-### D-1 · Detail carries a nav title the design does not have · **fix, easy**
+### D-1 · Detail carries a nav title the design does not have · ✅ **FIXED**
 `DetailView.swift:39` sets `.navigationTitle(collection.title)`. **The design's detail screen has no nav-bar title** — measured: the only title on screen 19 is the header at 26/300. This confirms the previously-logged "detail title appears twice" finding *with design evidence*, and settles it: the nav title goes.
 
-### D-2 · Now Playing title and artist are oversized · **fix, easy**
+### D-2 · Now Playing title and artist are oversized · ✅ **FIXED**
 | | Design (screen 23) | `NowPlayingView.swift:187,191` |
 |---|---|---|
 | Track title | **27** / 300 / −0.4 | 30 / light / −0.5 |
@@ -52,14 +52,16 @@ Build: Apple Music · **Appearance** · About.
 
 "Appearance" is not in the design; Playback is not in the build. Note Audio quality, Support and Privacy are three of the known-missing sub-screens (39, 40, 41), so this overlaps the missing-screens scope decision.
 
-### D-5 · `overline` tracking is short · **fix, trivial**
-`Typography.swift:66` — `overline` is tracking **1.4**; the design's overline is **1.6** (corroborated independently by the Figma import's `letter spacing/1_6`). Note Now Playing's own overline is already correct at 11.5/1.6, set inline rather than through the token — so fixing the token and pointing that call site at it removes a duplicate too.
+### D-5 · `overline` tracking is short · ✅ **RESOLVED — the token was dead**
+`Typography.swift:66` — `overline` is tracking **1.4**; the design's overline is **1.6** (corroborated independently by the Figma import's `letter spacing/1_6`). **Correction to this entry.** `overline` turned out to be referenced **only in comments** — nothing rendered through it, so its tracking never reached the screen, and it could not have been merged with Now Playing's 11.5/1.6 inline style as this entry originally suggested (different sizes: 11 vs 11.5). The token was deleted rather than corrected: a dead token carrying a wrong value is an invitation to use it later.
 
-### D-6 · `tabLabel` is a dead token · **delete or document**
-`Typography.swift:57` declares `tabLabel` at 11pt. **It is used nowhere.** The design's tab label measures 13.5 / 500, but the native `TabView` owns its own label typography, so neither value is reachable without hand-building the bar — which the brief forbids. Delete the token, or keep it with a comment saying why it cannot be applied.
+### D-6 · `tabLabel` is a dead token · ✅ **FIXED — deleted**
+`Typography.swift:57` declares `tabLabel` at 11pt. **It is used nowhere.** The design's tab label measures 13.5 / 500, but the native `TabView` owns its own label typography, so neither value is reachable without hand-building the bar — which the brief forbids. Deleted, with a comment left in `Typography.swift` recording why neither it nor `overline` exists.
 
-### D-7 · `surfaceRaised` is one digit off the glass fallback · **resolve**
-`Palette.surfaceRaised` is `#1C1A18`; the Reduce Transparency fallback is `#1C1A17`. The design names only `#1C1A17`. One of the two is a typo.
+### D-7 · `surfaceRaised` is the wrong colour · ✅ **FIXED**
+**This entry's premise was wrong.** `surfaceRaised` is not the glass fallback at all — its single call site is the Home avatar plate (`HomeView.swift:56`), and the design measures that plate at `rgb(30, 30, 32)` = **`#1E1E20`**, Slate 900. So `#1C1A18` was neither the fallback nor the plate; it matched nothing in the design.
+
+Retinted to `#1E1E20`. It now shares a value with `artworkFill` and keeps its own name, since one is a control's ground and the other is missing artwork.
 
 ### D-8 · `bodyL` weight · **check call sites, then decide**
 `bodyL` is 16 / **light**; the design's 16pt body is **regular**. Track rows use `rowTitle` (regular) and are correct, so this only affects wherever `bodyL` is actually used. Check before changing.
@@ -71,6 +73,14 @@ Design screen 12 shows, before typing, a **2-column Browse grid: 169 × 96 cards
 Design: player capsule **362** wide, tab capsule **288** — different by intent, at different radii (26 vs 28). Observed on device: the tab capsule expands to match the accessory above it. So this is a real divergence and *not* the design's intent, as the earlier note left open.
 
 **But** `tabViewBottomAccessory` and the tab bar share a system-owned container on iOS 26; matching the design likely means hand-building the tab bar, which the brief forbids. **Recommend accepting and recording it.** Do not hand-roll the bar to close it.
+
+---
+
+## Step 3 progress
+
+Five fixed in one pass (D-1, D-2, D-5, D-6, D-7): clean device build, zero warnings, 72 tests passing, containment clean. **Not yet confirmed on device** — all five are visual and want eyes.
+
+Still open and needing decisions: **D-3** (Disconnect row), **D-4** (Settings groups), **D-9** (Browse grid). **D-10** recommended for acceptance rather than fixing. **D-8** needs its call sites checked.
 
 ---
 
