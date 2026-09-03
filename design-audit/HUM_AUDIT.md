@@ -9,7 +9,7 @@
 
 > ### Status update — 2026-09-03, after the audit
 >
-> **15 findings, across 8 changes, are fixed since this report was written.**
+> **16 findings, across 9 changes, are fixed since this report was written.**
 >
 > - **C-1, C-2** (chrome glass) — all three surfaces now call `chromeGlass` before `amberGlass`, and both bars share one `ChromeGlassContainer`. `shots/11-AFTER-chrome-glass-fix.png`
 > - **M-5** (text ramp) — `textTertiary`/`textQuaternary` removed, replaced by `textMuted` at the design's 62%.
@@ -22,7 +22,9 @@
 >
 > - **CT-1, CT-2** (Connect denied/restricted layout, floating-CTA glass) — the denied and restricted screens now render screen 06's own layout (terracotta icon halo, centred heading, and — denied only — a "Where to look" info card) instead of reusing the invitation's; `.deniedRecoverable` also gains the "Try again" secondary action the design draws, wired to a real re-check rather than left decorative. `AmberCapsuleButton` (Connect's CTA, the subscription gap's retry) now carries real glass via a new, narrowly-scoped `floatingActionGlass`, resolving `DECISIONS M-07` the way it was left open to be resolved — see §9 and `DECISIONS.md`. `shots/27-`, `28-AFTER-connect-*-CT1.png`
 >
-> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the unaudited empty-queue state (design 27). With CT-1/CT-2, **no known Major finding remains open in the Connect/subscription-gap family** — SG-2, SG-3 and SG-4 (the same halo/type/secondary-button gaps, on `SubscriptionGapView` specifically) are still open, since this pass only touched `ConnectView`.
+> - **Q-12** (Queue empty-state button) — `EmptyStateView`'s action button now uses a new `AmberOutlineButton` (border only, no fill, amber label — screen 27's actual recipe) instead of the misleadingly-named `OutlineCapsuleButton`, which filled and labelled in white. `OutlineCapsuleButton` itself is untouched — it still serves `SubscriptionGapView`'s "Continue Without It", where **SG-4 remains open**: the two screens that used to share this one component wanted two different treatments, which is why a second component exists now rather than one shared fix. Built to screen 27's own height (48) too, closing that half of Q-14 as a side effect of building the button correctly; Q-14's headline-size delta is untouched. `shots/30-AFTER-queue-empty-Q12.png`
+>
+> With NP-1 fixed, **no known contrast failure remains** in the audited screens. With the control-placement round, **no known layout finding remains open on Now Playing or Queue** except the icon halo (Q-13) and headline size (part of Q-14), both still open. With CT-1/CT-2, **no known Major finding remains open in the Connect/subscription-gap family** — SG-2, SG-3 and SG-4 are still open, since that pass only touched `ConnectView`.
 >
 > **Also fixed, tooling rather than a finding:** the manual `AppEnvironment.live()` ⟷ `.preview()` edit every screenshot in this report required is retired. `HumApp.swift` now reads a `#if DEBUG`-gated launch argument instead — see B-1.
 >
@@ -35,16 +37,16 @@
 | Metric | Count |
 |---|---|
 | Screens in app nav graph | 11 |
-| Fully audited (screenshot + code + design) | 10 |
+| Fully audited (screenshot + code + design) | 11 |
 | Audited from code + design only (timing- or OS-blocked, not source-blocked) | 1 |
 | Screens in the design | 42 |
-| **Total issues** | **57** |
+| **Total issues** | **60** |
 
 | Severity | Count | IDs |
 |---|---|---|
 | **Critical** | 3 | C-1 … C-3 |
-| **Major** | 17 | M-1 … M-9 · NP-1, NP-2 · Q-1, Q-2 · CT-1, CT-2 · SG-2, SG-4 |
-| **Minor** | 37 | m-1 … m-16 · NP-3 … NP-11 · Q-3 … Q-11 · CT-3, CT-4 · SG-3 |
+| **Major** | 18 | M-1 … M-9 · NP-1, NP-2 · Q-1, Q-2, Q-12 · CT-1, CT-2 · SG-2, SG-4 |
+| **Minor** | 39 | m-1 … m-16 · NP-3 … NP-11 · Q-3 … Q-11, Q-13, Q-14 · CT-3, CT-4 · SG-3 |
 
 §5 covers the first pass; **§8 covers Now Playing and Queue**, audited later once C-3 was fixed.
 
@@ -108,7 +110,8 @@ The design has **42 screens**; the app implements 11. Every app screen has a des
 | Settings | `Settings/SettingsView.swift` | ✅ `09-settings.png` | 39–41 (as sub-screens) |
 | Bottom chrome | `Root/HumTabBar.swift`, `Components/PlayerBar.swift` | ✅ `06-home-playerbar.png` | `Dock.dc.html` |
 | Now Playing | `NowPlaying/NowPlayingView.swift` | ✅ `15-nowplaying.png` | 23 |
-| Queue | `Queue/QueueView.swift` | ✅ `16-queue.png` (empty state 27 unverified) | 26, 27 |
+| Queue — populated | `Queue/QueueView.swift` | ✅ `16-queue.png` | 26 |
+| Queue — empty | `Queue/QueueView.swift` | ✅ `29-queue-empty.png` | 27 — see §10 |
 | Connect — invitation | `Connect/ConnectView.swift` | ✅ `21-connect-invitation.png` | 04 |
 | Connect — connecting | `Connect/ConnectView.swift` | ⚠️ verified from code, not captured | 04 (spinner variant) |
 | Connect — denied | `Connect/ConnectView.swift` | ✅ `23-connect-denied.png` | 06 (closest analog — see §9) |
@@ -492,7 +495,7 @@ Worth recording, because it is most of both screens. Now Playing's entire hero g
 | **Q-10** | Minor | Design system | — | Section header hardcodes `textPrimary.opacity(0.62)`; `Palette.textMuted` now exists at exactly that value | token bypass | `QueueView.swift:47` |
 | **Q-11** | Minor | Iconography | Meter bars **2.5** wide, **2.5** gap, container **16**, heights 7/14/10 | 3 wide, 3 gap, height 20 | 0.5 / 0.5 / 4 pt | `Motion.swift:53-69` |
 
-**Not verified:** design **27** (Queue — empty). The queue was populated throughout, and the empty state needs a queue drained to zero. Its spec is extracted and in hand.
+**Now verified:** design **27** (Queue — empty) — see §10, added after clearing the queue to drain it to zero.
 
 ### 8.4 Check tables
 
@@ -503,7 +506,7 @@ Worth recording, because it is most of both screens. Now Playing's entire hero g
 | Color | ❌ NP-1, NP-9 | ❌ Q-2, Q-4 |
 | Liquid Glass / materials | ✅ correctly opaque — content layer | ⚠️ Q-6 |
 | Iconography & imagery | ⚠️ NP-3 | ⚠️ Q-3, Q-11 |
-| Component states | ⚠️ NP-6, NP-7, NP-11 | ⚠️ Q-5, Q-7; empty state unverified |
+| Component states | ⚠️ NP-6, NP-7, NP-11 | ⚠️ Q-5, Q-7; empty state now audited — see §10 |
 | Responsiveness | 🚫 not exercised | 🚫 not exercised |
 | Accessibility | ❌ **NP-1**; ring is a proper adjustable element with spoken value | ✅ card combines into one element with a spoken label |
 | Motion | ✅ arc animates alone; honours Reduce Motion | ✅ meter honours Reduce Motion |
@@ -568,7 +571,37 @@ What I captured instead — `.gap(canBecomeSubscriber: false)` and `.unavailable
 
 ---
 
-## 10. Provenance
+## 10. Addendum — Queue Empty State
+
+Design screen **27**, audited by clearing a five-track queue to zero (§8's populated state, `shots/16-queue.png`, drained via "Clear") and capturing the result. Screenshot: `shots/29-queue-empty.png`. **3 new findings — 1 Major, 2 Minor — plus two unscored notes.**
+
+### 10.1 The structural note first
+
+Design screen 27 shows **no "Now Playing" card at all** — its empty block sits alone under the header, describing a player that is fully idle: nothing playing, nothing queued. The app's `nowPlayingCard` renders `if let current = player.currentTrack`, and `RootTabView` only offers a route into `NowPlayingView` — and from there, into `QueueView` — when a track is already playing (`PlayerBar` itself only renders under the same condition). **The empty state design screen 27 draws is not reachable through the app's own navigation.** The state that *is* reachable — queue drained while something plays — always carries the now-playing card design 27 omits.
+
+This reframes the button-copy difference below (Q-N2) as a consequence of this, not a separate miss: the app's "Fill from this album" is contextually correct for the only state it can actually be in (something is always playing), where design 27's static "Browse library" fits the idle state it draws instead. Neither screen is wrong for the state it describes; they describe different states, and only one of the two is ever reachable.
+
+### 10.2 Findings
+
+| ID | Severity | Category | Expected (design 27) | Actual | Delta | Location |
+|---|---|---|---|---|---|---|
+| **Q-12** | **Major** | Color / Component states | "Browse library": **no fill**, `border: 1px solid rgba(232,163,61,.5)`, label `#E8A33D` | `OutlineCapsuleButton`: filled `Palette.amberOutlineFill` (amber 16%), label `Palette.textPrimary` (white) | wrong fill, wrong label color | `EmptyStateView.swift:37`, `HumButtons.swift` (`OutlineCapsuleButton`) |
+| **Q-13** | Minor | Iconography | 96×96 icon ring, `border: 1px solid rgba(232,163,61,.35)`, icon stroke 100% | No ring at all; icon at `Palette.honeyAmber.opacity(0.7)` | ring absent; icon dimmed 30pp | `EmptyStateView.swift:18-22` |
+| **Q-14** | Minor | Typography / Layout | Headline **21px**; button height **48** | Headline `19px` (`HumTextStyle` size 19); button height `46` | −2 pt each | `EmptyStateView.swift:25`, `HumButtons.swift:106` |
+
+**Q-12 is the one to fix first, and it isn't new** — it is `SG-4` again, on the same shared component, failing in the *opposite* direction. `SubscriptionGapView`'s "Continue Without It" (SG-4) should be plain text and gets a bordered pill instead; here, "Browse library" should be a bordered-but-unfilled pill and gets a filled one, with the wrong label color on top. **`OutlineCapsuleButton` cannot satisfy both call sites as one recipe — the two design screens that use it want two different secondary-button treatments**, and the correct *unfilled* version already exists elsewhere in the app: `DetailActionButton`'s `.outlined` style (Detail's Shuffle button) is `Capsule().strokeBorder(Palette.honeyAmber.opacity(0.5), lineWidth: 1)` with no fill at all — the exact recipe design 27 specifies, already built and already verified correct, one file away.
+
+### 10.3 A second unscored note
+
+**Q-N2**, following from §10.1: the button's copy and behavior ("Fill from this album," calling `player.refillFromCurrentSource()`) is a context-aware action the design's static "Browse library" doesn't specify — arguably a real improvement given the state is always reached with something playing, not a straightforward miss. Recorded for completeness, not scored.
+
+### 10.4 What matches exactly
+
+The headline copy is verbatim: "Nothing after this one" is the app's own string and design 27's, identically. The body copy is a close paraphrase carrying the same meaning, adjusted for the different button it leads into. The icon glyph — list lines with a play mark in the design's SVG — is reasonably matched by `HumIcon.library` (`music.note.list`), though an exact glyph-for-glyph comparison isn't possible from measured CSS alone.
+
+---
+
+## 11. Provenance
 
 - **Screenshots:** captured with `xcrun simctl io … screenshot` on iPhone 17 Pro / iOS 26.5 and referenced throughout as `shots/…`. **Not committed** — they are ~14 MB of PNGs and were left out of the repo deliberately, so the `design-audit/shots/` paths cited above resolve only in the working tree they were captured in.
 - **Design values:** extracted from inline CSS in `designs/Hum-All-Platforms.html`, unpacked from its bundler manifest (gzip+base64) into `01-iPhone-Screens-and-UI-System.dc.html` (42 screens) plus `Dock`, `TrackRow`, `ArtPill`, `StatusBar` components. Every number is quoted from a style attribute, not measured off a raster.
