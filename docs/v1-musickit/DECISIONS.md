@@ -134,16 +134,18 @@ The brief names nine screens. The prototype draws five. The delta:
 
 ---
 
-## M-07 — Prototype puts glass on content-layer buttons ⚠️ DEFAULTED
+## M-07 — Prototype puts glass on content-layer buttons ✅ RESOLVED — exception carved out
 
 The brief's boundary is explicit: *"Glass applies only to: Player Bar, Tab Bar, toolbars, Toasts, sheets. Content views render opaque — never glass."*
 
-The prototype uses `backdrop-filter: blur(24px) saturate(180%)` on three **content-layer** controls:
+Originally defaulted to rendering three controls opaque, on the premise that all three shared the prototype's `backdrop-filter: blur(24px) saturate(180%)` capsule recipe:
 1. The Connect screen's "Connect Apple Music" button
 2. Album Detail's "Play" button
 3. Now Playing's 76pt play/pause button
 
-**Default resolution:** these render as **opaque amber-gradient capsules** — same gradient, same border, same inner highlight, no `.glassEffect()`. On a dark opaque background at these sizes the visual difference is nearly nil, and it keeps the brief's acceptance criterion mechanically checkable (`grep glassEffect` outside `GlassSurface.swift` returns nothing). Flag if you want the exception carved out instead.
+The premise didn't hold once the actual design source was recovered and measured (design QA audit, `design-audit/HUM_AUDIT.md` §5 C-1/C-2, §9 CT-2). Only **#1** — and by extension every other screen `AmberCapsuleButton` draws on, the subscription gap's retry button included — specifies the blurred glass recipe, identically, everywhere it appears (screens 04–07). **#2 and #3 measure as flat, opaque fills with no `backdrop-filter` in the design at all** — genuinely different components that were already built correctly as opaque, and this decision never touched them.
+
+**Resolution:** `AmberCapsuleButton` now calls `GlassSurface.floatingActionGlass(in:)`, a narrow, explicitly-documented exception living in the one file the containment script permits — the acceptance criterion (`grep glassEffect` outside `GlassSurface.swift` returns nothing) still holds mechanically; only the ONE new caller inside that file changed. Detail's Play pill and Now Playing's play/pause remain untouched, opaque, and correct.
 
 ---
 
@@ -211,8 +213,8 @@ The prototype's Home shelf says "Recently played." MusicKit provides `MusicRecen
 
 | | |
 |---|---|
-| ✅ **Resolved** | **M-01** (MVVM + reducer core, no TCA package) · **M-02** (no preview engine; offer sheet instead) · M-03 (Feed.fm docs superseded) · **M-04** (Add to Library, not love) |
-| ⚠️ **Defaulted, proceeding** | M-05, M-06, M-07, M-08, M-09, M-11, M-12 |
+| ✅ **Resolved** | **M-01** (MVVM + reducer core, no TCA package) · **M-02** (no preview engine; offer sheet instead) · M-03 (Feed.fm docs superseded) · **M-04** (Add to Library, not love) · **M-07** (exception carved out — see above) |
+| ⚠️ **Defaulted, proceeding** | M-05, M-06, M-08, M-09, M-11, M-12 |
 | ✅ **Resolved** | **M-10** — bundle ID `org.surajshetty.humapp`, team `CYY72W5P5F`; builds, installs and runs on device |
 | 🚫 **Still open** | none |
 

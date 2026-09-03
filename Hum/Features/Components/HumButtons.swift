@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// The prototype's primary capsule — Connect, album Play, the 76pt transport.
+/// The prototype's primary capsule — Connect's CTA and the subscription
+/// gap's retry button, its only two callers.
 ///
-/// **Opaque, not glass.** The prototype applies `backdrop-filter: blur()` to
-/// these three content-layer controls, which contradicts the brief's boundary
-/// ("glass applies only to Player Bar, Tab Bar, toolbars, Toasts, sheets").
-/// Resolved in DECISIONS M-07: same amber gradient, same border, same inner
-/// highlight, rendered opaque. On a dark ground at these sizes the difference
-/// is nearly invisible, and it keeps the containment grep honest.
+/// **Glass, per the design — see `floatingActionGlass`'s own doc for why
+/// DECISIONS M-07's original "render everything opaque" default no longer
+/// holds.** The gradient, border and inner highlight were already exact
+/// matches for the design's floating-CTA recipe; only the material itself
+/// was missing.
 struct AmberCapsuleButton: View {
     let title: String
     var systemImage: String?
@@ -34,6 +34,11 @@ struct AmberCapsuleButton: View {
             .foregroundStyle(Palette.textPrimary)
             .frame(maxWidth: .infinity)
             .frame(height: height)
+            // Material first, then the design's amber tint over it — the
+            // same order the chrome glass uses, and for the same reason: the
+            // tint has to sit on top of a real material or it is just a
+            // translucent shape with nothing behind it.
+            .floatingActionGlass(in: Capsule(style: .continuous))
             .background(Palette.amberButton, in: Capsule(style: .continuous))
             .overlay(
                 Capsule(style: .continuous)
@@ -49,6 +54,9 @@ struct AmberCapsuleButton: View {
                         Rectangle().frame(height: height / 2)
                     }
             }
+            // `0 10px 30px rgba(0,0,0,.5)`. CSS blur halves into a SwiftUI
+            // radius, the same conversion used throughout this file.
+            .shadow(color: .black.opacity(0.5), radius: 15, y: 10)
         }
         .buttonStyle(.pressable)
         .disabled(isLoading)

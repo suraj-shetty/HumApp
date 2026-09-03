@@ -125,6 +125,35 @@ private struct ChromeGlassModifier<S: Shape>: ViewModifier {
     }
 }
 
+// MARK: - Floating action glass
+
+extension View {
+    /// The design's floating primary-action glass — the one capsule pattern
+    /// that appears identically everywhere it is drawn: Connect's CTA and the
+    /// subscription gap's retry button (`AmberCapsuleButton`, its only two
+    /// callers), across every screen either appears on (04–07).
+    ///
+    /// A narrow, deliberate exception to "content stays opaque"
+    /// (ARCHITECTURE.md §6). DECISIONS M-07 originally rendered every use of
+    /// this component opaque, on the premise that Detail's Play pill and Now
+    /// Playing's play/pause shared this same blurred-capsule recipe and that
+    /// glass on any content-layer control would blur the line the
+    /// containment script exists to keep sharp — but left it explicitly open:
+    /// "Flag if you want the exception carved out instead."
+    ///
+    /// Measuring the recovered design settles it the other way. Detail's Play
+    /// and Now Playing's disc are flat, opaque fills with no
+    /// `backdrop-filter` at all in the design — already built to match, and
+    /// untouched by this. Only `AmberCapsuleButton`'s own two uses specify
+    /// `backdrop-filter: blur(24px) saturate(180%)`, identically, everywhere
+    /// they're drawn. A single floating CTA is closer to what Apple's own
+    /// guidance calls the floating navigation layer than it is to page
+    /// content, which is the reasoning M-07 asked for before granting one.
+    func floatingActionGlass(in shape: some Shape) -> some View {
+        chromeGlass(in: shape, tint: nil)
+    }
+}
+
 extension View {
 
     /// Applies Hum's chrome glass. **Chrome only** — see the type doc.
