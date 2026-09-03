@@ -96,7 +96,8 @@ struct ConnectView: View {
             }
         }
         .padding(.horizontal, Metrics.heroGutter)
-        .padding(.top, 72)
+        // Design 04: 56, not 72 (CT-3).
+        .padding(.top, 56)
         .padding(.bottom, 40)
     }
 
@@ -301,10 +302,12 @@ private struct PermissionRow: View {
 
     var body: some View {
         HStack(spacing: 16) {
+            // 22×22, stroke-width 1.4 — was a 17pt glyph shrunk inside a 24pt
+            // frame (CT-4).
             Image(systemName: systemImage)
-                .humFont(17, weight: .light)
+                .humFont(22, weight: .light)
                 .foregroundStyle(Palette.honeyAmber)
-                .frame(width: 24)
+                .frame(width: 22)
                 .accessibilityHidden(true)
 
             Text(text)

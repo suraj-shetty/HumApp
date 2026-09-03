@@ -61,39 +61,39 @@ struct SettingsView: View {
     @State private var model: SettingsViewModel?
 
     var body: some View {
-        List {
-            Section {
-                row("Access", model?.authorizationDescription ?? "—")
-                row("Subscription", model?.subscriptionDescription ?? "—")
-
-                if model?.showsSystemSettingsLink == true,
-                   let url = URL(string: UIApplication.openSettingsURLString) {
-                    Link("Open Settings", destination: url)
-                        .tint(Palette.honeyAmber)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                settingsGroup("Apple Music") {
+                    row("Access", model?.authorizationDescription ?? "—")
+                    if model?.showsSystemSettingsLink == true,
+                       let url = URL(string: UIApplication.openSettingsURLString) {
+                        Divider().overlay(Palette.hairline)
+                        linkRow("Open Settings", destination: url)
+                    }
+                    Divider().overlay(Palette.hairline)
+                    row("Subscription", model?.subscriptionDescription ?? "—")
                 }
-            } header: {
-                groupLabel("Apple Music")
-            }
 
-            Section {
-                row("Reduce Transparency", reduceTransparency ? "On" : "Off")
-            } header: {
-                groupLabel("Appearance")
-            } footer: {
-                Text("Hum follows your system accessibility settings. With Reduce Transparency on, the player and tab bar render solid.")
-            }
+                settingsGroup(
+                    "Appearance",
+                    footer: "Hum follows your system accessibility settings. With Reduce Transparency on, the player and tab bar render solid."
+                ) {
+                    row("Reduce Transparency", reduceTransparency ? "On" : "Off")
+                }
 
-            Section {
-                row("Version", model?.appVersion ?? "—")
-            } header: {
-                groupLabel("About")
-            } footer: {
-                // Stated plainly because the Connect screen promises it.
-                Text("Hum plays your Apple Music library through Apple's own playback engine. No account, no tracking, no ads.")
+                settingsGroup(
+                    "About",
+                    // Stated plainly because the Connect screen promises it.
+                    footer: "Hum plays your Apple Music library through Apple's own playback engine. No account, no tracking, no ads."
+                ) {
+                    row("Version", model?.appVersion ?? "—")
+                }
             }
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
         .background(Palette.deepOnyx)
         .safeAreaInset(edge: .top, spacing: 0) {
             // 32 / 200, the same display title Home and Search carry.
@@ -124,7 +124,20 @@ struct SettingsView: View {
                 .humFont(16)
                 .foregroundStyle(Palette.textPrimary)
         }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
         .accessibilityElement(children: .combine)
+    }
+
+    private func linkRow(_ title: String, destination: URL) -> some View {
+        Link(destination: destination) {
+            Text(title)
+                .humFont(16)
+                .foregroundStyle(Palette.honeyAmber)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
     }
 
     /// Settings' group headers are the design's uppercase tracked label —
@@ -134,5 +147,35 @@ struct SettingsView: View {
             .humFont(.groupLabel)
             .foregroundStyle(Palette.textPrimary.opacity(0.62))
             .accessibilityAddTraits(.isHeader)
+    }
+
+    /// One card: `#141416` fill, radius 16, rows separated by a `.07` white
+    /// hairline inset to the row's own leading edge — the design's grouped
+    /// list, not the system's (m-14). The system version's fill sits at
+    /// roughly `#1C1C1E` — lighter than the design's card — at the system's
+    /// own ~10pt corner radius.
+    @ViewBuilder
+    private func settingsGroup(
+        _ title: String,
+        footer: String? = nil,
+        @ViewBuilder rows: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            groupLabel(title)
+                .padding(.horizontal, 4)
+
+            VStack(alignment: .leading, spacing: 0) {
+                rows()
+            }
+            .background(Palette.surfaceCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+            if let footer {
+                Text(footer)
+                    .humFont(12.5, weight: .light)
+                    .foregroundStyle(Palette.textMuted)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 4)
+            }
+        }
     }
 }
