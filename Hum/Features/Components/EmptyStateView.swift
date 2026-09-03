@@ -34,7 +34,11 @@ struct EmptyStateView: View {
                 .frame(maxWidth: 250)
 
             if let actionTitle, let action {
-                OutlineCapsuleButton(title: actionTitle, action: action)
+                // `AmberOutlineButton`, not `OutlineCapsuleButton` — this is
+                // the design's border-only, amber-labelled secondary action
+                // (screen 27, "Browse library"), not the filled, white-label
+                // treatment that name's other caller uses (finding Q-12).
+                AmberOutlineButton(title: actionTitle, action: action)
                     .padding(.top, 6)
             }
         }

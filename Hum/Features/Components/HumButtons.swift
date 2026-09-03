@@ -94,7 +94,14 @@ struct NeutralCapsuleButton: View {
     }
 }
 
-/// The outline capsule from the Queue empty state.
+/// `SubscriptionGapView`'s "Continue Without It", its one remaining caller.
+///
+/// Despite the name, this is not an outline — it fills with
+/// `Palette.amberOutlineFill` and labels in white. The design draws that
+/// screen's secondary action as plain text with no border or fill at all
+/// (audit finding SG-4, still open). It used to be Queue's empty-state
+/// action too; that call site now uses `AmberOutlineButton` instead; see its
+/// doc for why one shared recipe couldn't serve both screens.
 struct OutlineCapsuleButton: View {
     let title: String
     var action: () -> Void
@@ -111,6 +118,43 @@ struct OutlineCapsuleButton: View {
                     Capsule(style: .continuous)
                         .strokeBorder(Palette.amberOutlineStroke, lineWidth: 1)
                 )
+        }
+        .buttonStyle(.pressable)
+    }
+}
+
+/// The design's actual outline treatment — a border only, no fill, label in
+/// the accent colour. Measured off screen 27's "Browse library" (height 48,
+/// padding 0 26, `border: rgba(232,163,61,.5)`, label `#E8A33D`).
+///
+/// `OutlineCapsuleButton` was built for this and doesn't deliver it — it
+/// fills and labels in white (finding Q-12). This isn't shared with that
+/// type: the two screens that use secondary buttons in this family want two
+/// different treatments (SG-4 wants no border at all), so one recipe can't
+/// serve both without one of them drifting whenever the other changes.
+///
+/// The recipe itself isn't new — `DetailActionButton`'s `.outlined` style
+/// (Detail's Shuffle button) already renders it correctly, independently
+/// verified against a different design screen. Built fresh here rather than
+/// shared with that private, `DetailView`-scoped type, so a change on one
+/// screen can't silently move the other; `DetailActionButton`'s own height
+/// is 2pt off its own spec (finding m-1) and isn't inherited by this.
+struct AmberOutlineButton: View {
+    let title: String
+    var height: CGFloat = 48
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .humFont(16, weight: .regular)
+                .foregroundStyle(Palette.honeyAmber)
+                .padding(.horizontal, 26)
+                .frame(height: height)
+                .background {
+                    Capsule(style: .continuous)
+                        .strokeBorder(Palette.honeyAmber.opacity(0.5), lineWidth: 1)
+                }
         }
         .buttonStyle(.pressable)
     }
