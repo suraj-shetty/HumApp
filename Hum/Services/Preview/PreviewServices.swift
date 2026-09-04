@@ -38,6 +38,15 @@ enum PreviewFixtures {
         metaLine: "Artist", artworkURL: nil, source: .catalog
     )
 
+    /// Same artist, library-sourced — `PreviewLibraryService.artists()`'s
+    /// fixture for design screen 16's "Artists" filter chip. A separate
+    /// value rather than reusing `artist` because `source` distinguishes the
+    /// two lookup paths `MusicCatalogAdapter.tracks(in:)` dispatches on.
+    static let libraryArtist = HumCollection(
+        id: "artist-ana-roele", kind: .artist, title: "Ana Roele", subtitle: "",
+        metaLine: "Artist", artworkURL: nil, source: .library
+    )
+
     /// Design screen 11's own two examples, verbatim — what
     /// `-HumForceOffline YES` shows in the "Downloaded" shelf.
     static let downloads: [HumCollection] = [
@@ -77,12 +86,18 @@ actor PreviewSubscriptionService: SubscriptionService {
 }
 
 actor PreviewCatalogService: MusicCatalogService {
-    func search(_ term: String) async throws -> [HumTrack] {
-        guard !term.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
-        return PreviewFixtures.tracks.filter {
+    func search(_ term: String) async throws -> HumSearchResults {
+        guard !term.trimmingCharacters(in: .whitespaces).isEmpty else { return .empty }
+        let tracks = PreviewFixtures.tracks.filter {
             $0.title.localizedCaseInsensitiveContains(term)
                 || $0.artist.localizedCaseInsensitiveContains(term)
         }
+        let albums = PreviewFixtures.collections.filter {
+            $0.kind == .album
+                && ($0.title.localizedCaseInsensitiveContains(term)
+                    || $0.subtitle.localizedCaseInsensitiveContains(term))
+        }
+        return HumSearchResults(tracks: tracks, albums: albums)
     }
 
     func recentlyPlayed() async throws -> [HumCollection] { PreviewFixtures.collections }
@@ -115,6 +130,10 @@ actor PreviewLibraryService: MusicLibraryService {
 
     func playlists() async throws -> [HumCollection] {
         PreviewFixtures.collections.filter { $0.kind == .playlist } + createdPlaylists
+    }
+
+    func artists() async throws -> [HumCollection] {
+        [PreviewFixtures.libraryArtist]
     }
 
     func add(_ track: HumTrack) async throws { added.insert(track.id) }

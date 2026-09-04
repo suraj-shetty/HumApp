@@ -62,6 +62,7 @@
 		C48D7F472CB5F229ECD6DCE2 /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0E193FE51DFEE2B73E88E /* AuthViewModelTests.swift */; };
 		CBF3FE43457151CCC3042A5D /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883507AC0A7B437C313BF49C /* LibraryView.swift */; };
 		D067410226E1093EE89493DE /* HumCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDDD026C38F425616F2CEACA /* HumCollection.swift */; };
+		23FD8824110B4B898FC1BB43 /* HumSearchResults.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC50561F540346A98182018D /* HumSearchResults.swift */; };
 		D41023C952DB4168D9512D8A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BAF0A490B6FA9FDE59C589FC /* Assets.xcassets */; };
 		D43F6080629D67315290EBEF /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 080B76DCF9E15AA85FCA7485 /* TimeFormatting.swift */; };
 		D83F002012A0D79DFE4CA36B /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CAF61EB1B7D833875CD880F /* SearchView.swift */; };
@@ -156,6 +157,7 @@
 		C474B071A04D0C942259E90B /* DetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModel.swift; sourceTree = "<group>"; };
 		CB835F41C36E619AEB29106E /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
 		CDDD026C38F425616F2CEACA /* HumCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumCollection.swift; sourceTree = "<group>"; };
+		FC50561F540346A98182018D /* HumSearchResults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumSearchResults.swift; sourceTree = "<group>"; };
 		D1F4B3E089681FB7C9B7E08E /* QueueState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueState.swift; sourceTree = "<group>"; };
 		DABAA15E95222695B69E39E4 /* QueueReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueReducer.swift; sourceTree = "<group>"; };
 		DFC0CF7BA428150D3F67CFCF /* FakeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeServices.swift; sourceTree = "<group>"; };
@@ -259,6 +261,7 @@
 				CDDD026C38F425616F2CEACA /* HumCollection.swift */,
 				70E73DED47CE5781BF7ED294 /* HumError.swift */,
 				380983D9EA70B75ECFA87F39 /* HumTrack.swift */,
+				FC50561F540346A98182018D /* HumSearchResults.swift */,
 				A5FA5F0EDF3CCABE907CFE2C /* PlaybackState.swift */,
 				D1F4B3E089681FB7C9B7E08E /* QueueState.swift */,
 				0C81D823E4C18BD7C8AB6713 /* SubscriptionState.swift */,
@@ -572,6 +575,7 @@
 				6ED01D8F95C7AF7516C3BC9B /* HumApp.swift in Sources */,
 				7261C379952A49DDB9B24C04 /* HumButtons.swift in Sources */,
 				D067410226E1093EE89493DE /* HumCollection.swift in Sources */,
+				23FD8824110B4B898FC1BB43 /* HumSearchResults.swift in Sources */,
 				341F35889AFA0F74DE8AC17F /* HumError.swift in Sources */,
 				590B5F818A3CEF9F23D22504 /* HumIcons.swift in Sources */,
 				318FA736EB4FA047B2A6D538 /* HumTabBar.swift in Sources */,

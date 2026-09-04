@@ -22,6 +22,14 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
         }
     }
 
+    func artists() async throws -> [HumCollection] {
+        var request = MusicLibraryRequest<Artist>()
+        request.limit = Self.pageLimit
+        return try await request.response().items.map {
+            MusicKitMapping.collection($0, source: .library)
+        }
+    }
+
     /// Backs the action the prototype draws as a heart. MusicKit has no
     /// love/favorite API, so this adds to the library — a real capability
     /// (DECISIONS M-04).

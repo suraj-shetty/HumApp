@@ -6,6 +6,7 @@ import SwiftUI
 final class LibraryViewModel {
     private(set) var albums: LoadState<[HumCollection]> = .idle
     private(set) var playlists: LoadState<[HumCollection]> = .idle
+    private(set) var artists: LoadState<[HumCollection]> = .idle
 
     private let library: MusicLibraryService
 
@@ -17,15 +18,20 @@ final class LibraryViewModel {
         guard case .idle = albums else { return }
         albums = .loading
         playlists = .loading
+        artists = .loading
 
         async let albumsResult = library.albums()
         async let playlistsResult = library.playlists()
+        async let artistsResult = library.artists()
 
         do { albums = .loaded(try await albumsResult) }
         catch { albums = .failed("Couldn't load your albums.") }
 
         do { playlists = .loaded(try await playlistsResult) }
         catch { playlists = .failed("Couldn't load your playlists.") }
+
+        do { artists = .loaded(try await artistsResult) }
+        catch { artists = .failed("Couldn't load your artists.") }
     }
 
     func reload() async {
@@ -40,10 +46,12 @@ final class LibraryViewModel {
 /// one grid of whatever the selected chip names — not the stacked "Albums" and
 /// "Playlists" sections this carried before, and not a system large title.
 ///
-/// **Two of the design's four chips are missing**: Artists and Liked, along
-/// with the pinned "Liked Songs" row above the grid. `MusicLibraryService`
-/// exposes albums and playlists only, so those three want new library queries
-/// rather than a layout change — flagged rather than faked with empty states.
+/// **One of the design's four chips is still missing**: Liked, along with the
+/// pinned "Liked Songs" row above the grid. MusicKit exposes no love/favorite
+/// API to back either one (DECISIONS M-04, same gap `MusicLibraryService.add`
+/// already documents) — left open rather than wired to a capability that
+/// doesn't exist. Artists is built: `MusicLibraryRequest<Artist>` is real
+/// (M-6).
 struct LibraryView: View {
     @Environment(\.appEnvironment) private var environment
     @State private var model: LibraryViewModel?
@@ -53,6 +61,7 @@ struct LibraryView: View {
     enum Filter: String, CaseIterable, Identifiable {
         case playlists = "Playlists"
         case albums = "Albums"
+        case artists = "Artists"
         var id: String { rawValue }
     }
 
@@ -66,6 +75,7 @@ struct LibraryView: View {
         switch filter {
         case .playlists: model?.playlists ?? .idle
         case .albums: model?.albums ?? .idle
+        case .artists: model?.artists ?? .idle
         }
     }
 
@@ -207,7 +217,10 @@ private struct LibrarySyncErrorView: View {
 /// The design's filter chip: 38pt tall, radius 19. Selected carries an amber
 /// 16% fill and a 1px amber 45% border — which is what makes it measure 40pt
 /// against the others' 38. Unselected is a flat `#161618` with no border.
-private struct FilterChip: View {
+///
+/// Not private: Search's own result-type chips (M-4) draw from the same
+/// design spec and reuse this rather than a second copy.
+struct FilterChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void

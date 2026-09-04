@@ -5,7 +5,7 @@ import SwiftUI
 @Observable
 final class SearchViewModel {
     var term: String = ""
-    private(set) var results: LoadState<[HumTrack]> = .idle
+    private(set) var results: LoadState<HumSearchResults> = .idle
     private(set) var recentSearches = RecentSearches.load()
 
     private let catalog: MusicCatalogService
@@ -32,7 +32,7 @@ final class SearchViewModel {
             guard let self, !Task.isCancelled else { return }
             results = .loading
             do {
-                let found = try await catalog.search(query)
+                let found: HumSearchResults = try await catalog.search(query)
                 // Cancellation is checked again after the await: the term may
                 // have changed while the request was in flight, and a stale
                 // result overwriting a newer one is the classic search bug.
@@ -120,6 +120,17 @@ struct SearchView: View {
     @Environment(\.appEnvironment) private var environment
     @Environment(PlayerViewModel.self) private var player
     @State private var model: SearchViewModel?
+    @State private var filter: ResultFilter = .all
+    @State private var route: HumCollection?
+
+    /// Design screen 13's chip row — reuses `Metrics.chip*`/`Palette.chip*`,
+    /// the same tokens Library's own chips already draw from (M-4).
+    enum ResultFilter: String, CaseIterable, Identifiable {
+        case all = "All"
+        case songs = "Songs"
+        case albums = "Albums"
+        var id: String { rawValue }
+    }
 
     var body: some View {
         NavigationStack {
@@ -159,43 +170,67 @@ struct SearchView: View {
                         .padding(.horizontal, Metrics.gutter)
                         .frame(maxHeight: .infinity, alignment: .top)
 
-                case .loaded(let tracks) where tracks.isEmpty:
+                case .loaded(let found) where found.isEmpty:
                     EmptyStateView(
                         icon: HumIcon.search,
                         headline: "No results",
                         message: "Nothing matched that search. Try a different spelling."
                     )
 
-                case .loaded(let tracks):
+                case .loaded(let found):
                     ScrollView {
-                        LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                            // Design 13 also draws an "ALBUMS" section — this
-                            // app's catalog search returns tracks only, so
-                            // there is no second group to head. "TOP RESULTS"
-                            // is the one label that's true regardless.
-                            Section {
+                        LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
+                            // Design 13's chip row. Chips filter which of the
+                            // two sections below are shown; they don't
+                            // re-query — both lists are already in `found`.
+                            HStack(spacing: Metrics.chipSpacing) {
+                                ForEach(ResultFilter.allCases) { item in
+                                    FilterChip(title: item.rawValue, isSelected: filter == item) {
+                                        filter = item
+                                    }
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.bottom, 16)
+
+                            if filter != .albums, !found.tracks.isEmpty {
                                 // Identified by position, not by track id: results
                                 // can repeat a song, and duplicate SwiftUI
                                 // identities make rows drop out and taps land on
                                 // the wrong one.
-                                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                                    TrackRow(
-                                        track: track,
-                                        isCurrent: player.currentTrack?.id == track.id
-                                    ) {
-                                        player.play(tracks, startingAt: index, source: "Search")
+                                Section {
+                                    ForEach(Array(found.tracks.enumerated()), id: \.offset) { index, track in
+                                        TrackRow(
+                                            track: track,
+                                            isCurrent: player.currentTrack?.id == track.id
+                                        ) {
+                                            player.play(found.tracks, startingAt: index, source: "Search")
+                                        }
+                                        if index < found.tracks.count - 1 { RowDivider() }
                                     }
-                                    if index < tracks.count - 1 { RowDivider() }
+                                } header: {
+                                    SearchSectionHeader(title: "Top Results")
                                 }
-                            } header: {
-                                Text("Top Results")
-                                    .humFont(11.5, weight: .semibold)
-                                    .tracking(1.2)
-                                    .textCase(.uppercase)
-                                    .foregroundStyle(Palette.textMuted)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 8)
-                                    .background(Palette.deepOnyx)
+                            }
+
+                            if filter != .songs, !found.albums.isEmpty {
+                                Section {
+                                    ScrollView(.horizontal) {
+                                        LazyHStack(spacing: Metrics.rowSpacing) {
+                                            ForEach(found.albums) { album in
+                                                Button { route = album } label: {
+                                                    ShelfCard(collection: album)
+                                                }
+                                                .buttonStyle(.pressable)
+                                            }
+                                        }
+                                        .padding(.vertical, 6)
+                                    }
+                                    .scrollIndicators(.hidden)
+                                } header: {
+                                    SearchSectionHeader(title: "Albums")
+                                        .padding(.top, found.tracks.isEmpty || filter == .albums ? 0 : 12)
+                                }
                             }
                         }
                         .padding(.horizontal, Metrics.gutter)
@@ -209,6 +244,7 @@ struct SearchView: View {
                     }
                 }
             }
+            .navigationDestination(item: $route) { DetailView(collection: $0) }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Palette.deepOnyx)
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -239,6 +275,23 @@ struct SearchView: View {
                 model?.search()
             }
         }
+    }
+}
+
+/// Design 13's small uppercase section label — "TOP RESULTS" / "ALBUMS" —
+/// pinned to the top of its `Section` while that group scrolls (M-4).
+private struct SearchSectionHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .humFont(11.5, weight: .semibold)
+            .tracking(1.2)
+            .textCase(.uppercase)
+            .foregroundStyle(Palette.textMuted)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .background(Palette.deepOnyx)
     }
 }
 

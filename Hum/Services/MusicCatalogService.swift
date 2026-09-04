@@ -1,6 +1,10 @@
 /// Apple Music catalog reads: search, and the Home screen's shelves.
 protocol MusicCatalogService: Sendable {
-    func search(_ term: String) async throws -> [HumTrack]
+    /// `MusicCatalogSearchRequest(term:types:)` — songs and albums, each
+    /// returned as its own `MusicItemCollection` rather than merged into one
+    /// list, so Search can head "Top Results" and "Albums" separately
+    /// (design screen 13).
+    func search(_ term: String) async throws -> HumSearchResults
     /// `MusicRecentlyPlayedContainerRequest` — empty for a new account, which
     /// is why Home needs a designed empty state (DECISIONS M-12).
     func recentlyPlayed() async throws -> [HumCollection]

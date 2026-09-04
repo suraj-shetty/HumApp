@@ -11,15 +11,17 @@ actor MusicKitCatalogAdapter: MusicCatalogService {
     /// mostly buy rows nobody scrolls to.
     private static let searchLimit = 25
 
-    func search(_ term: String) async throws -> [HumTrack] {
+    func search(_ term: String) async throws -> HumSearchResults {
         let query = term.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return [] }
+        guard !query.isEmpty else { return .empty }
 
-        var request = MusicCatalogSearchRequest(term: query, types: [Song.self])
+        var request = MusicCatalogSearchRequest(term: query, types: [Song.self, Album.self])
         request.limit = Self.searchLimit
-        return try await request.response().songs.map {
-            MusicKitMapping.track($0, source: .catalog)
-        }
+        let response = try await request.response()
+        return HumSearchResults(
+            tracks: response.songs.map { MusicKitMapping.track($0, source: .catalog) },
+            albums: response.albums.map { MusicKitMapping.collection($0, source: .catalog) }
+        )
     }
 
     func recentlyPlayed() async throws -> [HumCollection] {
@@ -141,9 +143,22 @@ actor MusicKitCatalogAdapter: MusicCatalogService {
             return tracks.map { MusicKitMapping.track($0, source: .library) }
 
         case .artist:
-            // Unreachable: Library lists albums and playlists only, so no
-            // library artist collection is ever constructed to navigate to.
-            return []
+            // MusicKit's library `Artist` carries no `topSongs` relationship —
+            // that's a catalog-recommendation concept. What the library does
+            // offer is the artist's own `.albums`, so this aggregates their
+            // tracks the way the artist's Detail screen shows them: album by
+            // album, in library order.
+            var request = MusicLibraryRequest<Artist>()
+            request.filter(matching: \.id, equalTo: id)
+            guard let artist = try await request.response().items.first else { return [] }
+            let albums = try await artist.with([.albums]).albums ?? []
+
+            var tracks: [HumTrack] = []
+            for album in albums {
+                let albumTracks = try await album.with([.tracks]).tracks ?? []
+                tracks.append(contentsOf: albumTracks.map { MusicKitMapping.track($0, source: .library) })
+            }
+            return tracks
         }
     }
 }

@@ -2,6 +2,9 @@
 protocol MusicLibraryService: Sendable {
     func albums() async throws -> [HumCollection]
     func playlists() async throws -> [HumCollection]
+    /// `MusicLibraryRequest<Artist>` — design screen 16's "Artists" filter
+    /// chip.
+    func artists() async throws -> [HumCollection]
     /// `MusicLibrary.shared.add(_:)`.
     ///
     /// This backs the Now Playing action the prototype draws as a heart.
