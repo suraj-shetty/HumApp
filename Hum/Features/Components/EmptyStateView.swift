@@ -32,8 +32,12 @@ struct EmptyStateView: View {
             // Decorative: the headline and message say everything it does.
             .accessibilityHidden(true)
 
+            // 21px, not 19 — measured identically across every empty/error
+            // screen this component stands in for (12, 15, 18, 27), so this
+            // is a uniform correction to the shared value, not a per-screen
+            // fork (Q-14).
             Text(headline)
-                .humFont(HumTextStyle(size: 19, weight: .light, relativeTo: .title))
+                .humFont(HumTextStyle(size: 21, weight: .light, relativeTo: .title))
                 .foregroundStyle(Palette.textPrimary)
                 .multilineTextAlignment(.center)
 

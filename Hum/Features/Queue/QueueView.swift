@@ -105,8 +105,14 @@ struct QueueView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     // "Done", not a back chevron: the design treats the queue
                     // as a sheet you finish with, not a page you came from.
+                    // `.plain` opts out of iOS 26's automatic glass-capsule
+                    // toolbar-button chrome — the design draws these as
+                    // plain 16px text, not pills (Q-6).
                     Button("Done") { dismiss() }
-                        .tint(Palette.honeyAmber)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Palette.honeyAmber)
+                        .humFont(16)
+                        .fixedSize()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     // Amber when it does something, not just when it exists —
@@ -114,7 +120,10 @@ struct QueueView: View {
                     // both states the same grey made an enabled control read
                     // as though it couldn't be tapped.
                     Button("Clear") { player.clearUpNext() }
-                        .tint(player.upNext.isEmpty ? Palette.textDisabled : Palette.honeyAmber)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(player.upNext.isEmpty ? Palette.textDisabled : Palette.honeyAmber)
+                        .humFont(16)
+                        .fixedSize()
                         .disabled(player.upNext.isEmpty)
                 }
             }
