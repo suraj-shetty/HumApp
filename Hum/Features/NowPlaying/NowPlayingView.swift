@@ -82,23 +82,45 @@ private struct NowPlayingPortraitLayout: View {
 
             // The design's hero is a circular artwork with the progress track
             // wrapped around it, not a rounded square above a linear bar.
-            ProgressRing {
-                CircularArtworkView(
-                    url: track.artworkURL,
-                    size: Metrics.artNowPlayingDisc,
-                    label: track.albumTitle ?? track.title
-                )
-                // `0 0 68px 6px rgba(232,163,61,.22)` — an amber bloom centred
-                // on the disc, not a drop shadow. This was a black shadow
-                // offset 26pt down, which read as a card sitting on the screen
-                // rather than as a lit disc, and it is the one thing carrying
-                // the warmth on the app's centrepiece.
-                //
-                // CSS blur halves into a SwiftUI radius. The 6px spread has no
-                // SwiftUI equivalent and is left off rather than faked by
-                // inflating the radius, which would spread the glow thinner
-                // instead of denser.
-                .shadow(color: Palette.honeyAmber.opacity(0.22), radius: 34)
+            // Buffering (design screen 24) swaps the position-based arc for a
+            // spinner — there's no meaningful progress to show yet, and
+            // MusicKit gives no partial-load fraction to draw one from.
+            Group {
+                if player.isBuffering {
+                    BufferingRing {
+                        CircularArtworkView(
+                            url: track.artworkURL,
+                            size: Metrics.artNowPlayingDisc,
+                            label: track.albumTitle ?? track.title
+                        )
+                    }
+                } else {
+                    ProgressRing {
+                        CircularArtworkView(
+                            url: track.artworkURL,
+                            size: Metrics.artNowPlayingDisc,
+                            label: track.albumTitle ?? track.title
+                        )
+                        // `0 0 68px 6px rgba(232,163,61,.22)` — an amber bloom centred
+                        // on the disc, not a drop shadow. This was a black shadow
+                        // offset 26pt down, which read as a card sitting on the screen
+                        // rather than as a lit disc, and it is the one thing carrying
+                        // the warmth on the app's centrepiece.
+                        //
+                        // CSS blur halves into a SwiftUI radius. The 6px spread has no
+                        // SwiftUI equivalent and is left off rather than faked by
+                        // inflating the radius, which would spread the glow thinner
+                        // instead of denser.
+                        .shadow(color: Palette.honeyAmber.opacity(0.22), radius: 34)
+                    }
+                }
+            }
+
+            if player.isBuffering {
+                Text("Buffering")
+                    .humFont(HumTextStyle(size: 12.5, relativeTo: .caption, tracking: 1.4, uppercase: true))
+                    .foregroundStyle(Palette.honeyAmber.opacity(0.85))
+                    .padding(.top, 14)
             }
 
             Spacer(minLength: 20)
@@ -110,6 +132,11 @@ private struct NowPlayingPortraitLayout: View {
                 VolumeRow()
             }
             .padding(.horizontal, Metrics.heroGutter)
+            // The design dims title, artist and transport to 55% while
+            // buffering — everything below the disc reads as "waiting",
+            // not "broken".
+            .opacity(player.isBuffering ? 0.55 : 1)
+            .disabled(player.isBuffering)
 
             Spacer(minLength: 16)
 
@@ -413,6 +440,36 @@ private struct ProgressRing<Content: View>: View {
                 isScrubbing = false
                 dragFraction = nil
             }
+    }
+}
+
+/// Design screen 24's buffering state — `humSpin`, a partial amber ring
+/// spinning continuously, in place of `ProgressRing`'s position-based arc.
+/// Not seekable: buffering has no position to scrub to yet.
+private struct BufferingRing<Content: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ViewBuilder var content: Content
+
+    @State private var isSpinning = false
+
+    var body: some View {
+        ZStack {
+            content
+
+            Circle()
+                .trim(from: 0, to: 0.7)
+                .stroke(Palette.honeyAmber, style: StrokeStyle(lineWidth: Metrics.progressRingWidth, lineCap: .round))
+                .frame(width: Metrics.artNowPlayingRing, height: Metrics.artNowPlayingRing)
+                .rotationEffect(.degrees(isSpinning ? 360 : 0))
+                .animation(
+                    reduceMotion ? nil : .linear(duration: 1.1).repeatForever(autoreverses: false),
+                    value: isSpinning
+                )
+                .onAppear { isSpinning = true }
+        }
+        .frame(width: Metrics.artNowPlaying, height: Metrics.artNowPlaying)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Buffering")
     }
 }
 

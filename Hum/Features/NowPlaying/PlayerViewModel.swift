@@ -44,8 +44,17 @@ final class PlayerViewModel {
 
     // MARK: - Derived
 
-    var currentTrack: HumTrack? { state.track }
+    // `state.track` is nil during `.loading` — MusicKit's own state has no
+    // "buffering" case, so the adapter infers it from an in-flight request,
+    // and that inference carries no track. The queue's cursor is already set
+    // by then (`play()` sets it before the adapter call), so falling back to
+    // it is what keeps Now Playing showing the right track — art, title,
+    // artist — through the buffering window instead of reading as "nothing
+    // playing" (design screen 24). `.idle` needs no special case here: it's
+    // only ever reached when the queue has no current track either.
+    var currentTrack: HumTrack? { state.track ?? queue.currentTrack }
     var isPlaying: Bool { state.isPlaying }
+    var isBuffering: Bool { if case .loading = state { true } else { false } }
     var upNext: [HumTrack] { queue.upNext }
 
     /// 0…1, clamped. Guards against a zero-duration track producing `NaN` and
