@@ -203,13 +203,10 @@ struct SearchView: View {
                     .scrollIndicators(.hidden)
 
                 case .failed(let message):
-                    EmptyStateView(
-                        icon: HumIcon.warning,
-                        headline: "Something went wrong",
-                        message: message,
-                        actionTitle: "Try again",
-                        action: { model?.search() }
-                    )
+                    // Design screen 15.
+                    SearchErrorView(message: message) {
+                        model?.search()
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -348,5 +345,48 @@ private struct RecentSearchesView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+}
+
+/// Design screen 15. Was the same generic `EmptyStateView` a genuine empty
+/// result renders — amber ring, "Something went wrong" — for what is
+/// actually a request failure. The design draws a distinct terracotta
+/// treatment for it, and a fixed headline rather than the raw error string;
+/// the message itself still comes from `SearchViewModel`, not the design's
+/// own copy, which cites "downloads" playing offline — a capability this
+/// app doesn't have.
+private struct SearchErrorView: View {
+    let message: String
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(spacing: 18) {
+            ZStack {
+                Circle()
+                    .strokeBorder(Palette.terracotta.opacity(0.38), lineWidth: 1)
+                    .frame(width: 96, height: 96)
+                Image(systemName: HumIcon.warning)
+                    .humFont(32, weight: .light)
+                    .foregroundStyle(Palette.terracottaLift)
+            }
+            .accessibilityHidden(true)
+
+            Text("Search can't reach the catalog")
+                .humFont(21, weight: .light)
+                .foregroundStyle(Palette.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text(message)
+                .humFont(15, weight: .light)
+                .lineSpacing(4)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Palette.textSecondary)
+
+            AmberOutlineButton(title: "Try again", action: onRetry)
+                .padding(.top, 4)
+        }
+        .padding(.horizontal, 46)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .accessibilityElement(children: .combine)
     }
 }

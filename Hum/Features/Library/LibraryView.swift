@@ -128,33 +128,79 @@ struct LibraryView: View {
 
     @ViewBuilder
     private var grid: some View {
-        LazyVGrid(columns: columns, spacing: Metrics.libraryGridSpacing) {
-            switch state {
-            case .idle, .loading:
+        switch state {
+        case .idle, .loading:
+            LazyVGrid(columns: columns, spacing: Metrics.libraryGridSpacing) {
                 ForEach(0..<4, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
                         .fill(Palette.artworkFill)
                         .frame(height: Metrics.artShelf)
                 }
+            }
+            .padding(.horizontal, Metrics.gutter)
 
-            case .loaded(let collections) where collections.isEmpty:
-                Text("Nothing here yet.")
-                    .humFont(.rowSubtitle)
-                    .foregroundStyle(Palette.textMuted)
+        case .loaded(let collections) where collections.isEmpty:
+            Text("Nothing here yet.")
+                .humFont(.rowSubtitle)
+                .foregroundStyle(Palette.textMuted)
+                .padding(.horizontal, Metrics.gutter)
 
-            case .loaded(let collections):
+        case .loaded(let collections):
+            LazyVGrid(columns: columns, spacing: Metrics.libraryGridSpacing) {
                 ForEach(collections) { collection in
                     Button { route = collection } label: {
                         ShelfCard(collection: collection)
                     }
                     .buttonStyle(.pressable)
                 }
-
-            case .failed(let message):
-                InlineError(message: message)
             }
+            .padding(.horizontal, Metrics.gutter)
+
+        case .failed(let message):
+            // Design screen 18.
+            LibrarySyncErrorView(message: message) {
+                Task { await model?.reload() }
+            }
+            .padding(.horizontal, Metrics.gutter)
         }
-        .padding(.horizontal, Metrics.gutter)
+    }
+}
+
+/// Design screen 18. The design shows this as a card sitting above a *stale*
+/// grid, dimmed but still visible — "This is the copy from 2 hours ago."
+/// This app fetches fresh every time and keeps no prior copy to fall back
+/// to, so there's nothing to show dimmed underneath; the card fills the
+/// space alone instead of implying a cache that doesn't exist. Pull-to-
+/// refresh (`.refreshable` on the screen) already answers "pull down to try
+/// again" for real.
+private struct LibrarySyncErrorView: View {
+    let message: String
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Image(systemName: HumIcon.warning)
+                    .humFont(18, weight: .regular)
+                    .foregroundStyle(Palette.terracottaLift)
+                Text("Library is out of date")
+                    .humFont(16)
+                    .foregroundStyle(Palette.textPrimary)
+            }
+            Text(message)
+                .humFont(14.5, weight: .light)
+                .lineSpacing(3)
+                .foregroundStyle(Palette.textSecondary)
+            AmberOutlineButton(title: "Retry sync", height: 44, action: onRetry)
+        }
+        .padding(22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.surfaceCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Palette.terracotta.opacity(0.3), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
     }
 }
 
