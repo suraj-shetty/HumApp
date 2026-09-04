@@ -28,6 +28,15 @@ enum PreviewFixtures {
         .init(id: "c2", kind: .playlist, title: "Tuesday Tape", subtitle: "Hum",
               metaLine: "Playlist · 24 tracks", artworkURL: nil, source: .library),
     ]
+
+    /// `tracks`' shared artist and album — every fixture track is "Ana
+    /// Roele" off "Longer Evenings" (== `collections[0]`), so that's what
+    /// `PreviewCatalogService.artist(for:)` / `.album(for:)` resolve to
+    /// rather than a value invented just for this lookup.
+    static let artist = HumCollection(
+        id: "artist-ana-roele", kind: .artist, title: "Ana Roele", subtitle: "",
+        metaLine: "Artist", artworkURL: nil, source: .catalog
+    )
 }
 
 actor PreviewAuthorizationService: MusicAuthorizationService {
@@ -71,6 +80,16 @@ actor PreviewCatalogService: MusicCatalogService {
     func recommendations() async throws -> [HumTrack] { PreviewFixtures.tracks }
     func tracks(in collection: HumCollection) async throws -> [HumTrack] {
         PreviewFixtures.tracks
+    }
+
+    func artist(for track: HumTrack) async throws -> HumCollection? {
+        guard track.source == .catalog else { return nil }
+        return PreviewFixtures.artist
+    }
+
+    func album(for track: HumTrack) async throws -> HumCollection? {
+        guard track.source == .catalog else { return nil }
+        return PreviewFixtures.collections.first { $0.kind == .album }
     }
 }
 

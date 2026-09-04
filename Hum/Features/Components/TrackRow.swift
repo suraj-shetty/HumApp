@@ -21,7 +21,19 @@ struct TrackRow: View {
     var leading: Leading = .artwork
     var isCurrent: Bool = false
     var showsDuration: Bool = true
+    // `action` stays the first closure-typed property after the plain
+    // fields above: an unlabeled trailing closure binds to the *first*
+    // parameter of function type it finds after a call's explicit
+    // arguments, not the last one declared — so `onGoToArtist`/`onGoToAlbum`
+    // below it never intercept a call site's trailing `{ ... }` meant for
+    // this.
     var action: (() -> Void)?
+    /// "Go to Artist" / "Go to Album" (design screen 31). `nil` — the
+    /// default everywhere but `DetailView` — hides the corresponding menu
+    /// item entirely rather than showing one that does nothing; see the doc
+    /// comment on `contextMenuContent`.
+    var onGoToArtist: ((HumTrack) -> Void)?
+    var onGoToAlbum: ((HumTrack) -> Void)?
 
     var body: some View {
         Button {
@@ -70,13 +82,18 @@ struct TrackRow: View {
         .contextMenu { contextMenuContent }
     }
 
-    /// Design screen 31's long-press menu. Four of its seven actions are
-    /// built: "Add to Playlist…", "Go to Album" and "Go to Artist" all need
-    /// a navigable collection `HumTrack` doesn't carry an id for — it has
-    /// only `albumTitle`, a display string, not a `HumCollection` reference
-    /// MusicKit could look up. Wiring them to a fabricated destination would
-    /// be worse than leaving them out (the same call this codebase already
-    /// made for Now Playing's lyrics button, NP-7).
+    /// Design screen 31's long-press menu. Six of its seven actions are
+    /// built. "Add to Playlist…" is still left out: it needs a
+    /// playlist-mutation capability `MusicLibraryService` doesn't expose,
+    /// the same gap recorded against M-6. "Go to Artist" and "Go to Album"
+    /// resolve through `MusicCatalogService.artist(for:)` /
+    /// `.album(for:)` — real MusicKit lookups, not a guess from
+    /// `HumTrack.artist`/`albumTitle`'s display strings — but only when a
+    /// caller supplies the closure; most `TrackRow` call sites don't sit on
+    /// a navigation stack that can push the result, and a menu item that
+    /// resolves correctly but has nowhere to go is the same dead-button
+    /// problem this codebase already ruled out for Now Playing's lyrics
+    /// button (NP-7).
     @ViewBuilder
     private var contextMenuContent: some View {
         Button("Play Next", systemImage: HumIcon.playNext) {
@@ -93,6 +110,16 @@ struct TrackRow: View {
             player.addToLibrary(track)
         }
         .disabled(inLibrary)
+        if let onGoToAlbum {
+            Button("Go to Album", systemImage: "square.stack") {
+                onGoToAlbum(track)
+            }
+        }
+        if let onGoToArtist {
+            Button("Go to Artist", systemImage: "person") {
+                onGoToArtist(track)
+            }
+        }
         ShareLink(item: shareText) {
             Label("Share", systemImage: HumIcon.share)
         }

@@ -9,6 +9,11 @@ struct DetailView: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.dismiss) private var dismiss
     @State private var model: DetailViewModel?
+    /// "Go to Artist" / "Go to Album" (design screen 31) push here. This
+    /// view has no `NavigationStack` of its own — it's always pushed onto
+    /// its caller's (Home's or Library's) — so declaring the destination
+    /// here extends that same stack rather than starting a new one.
+    @State private var route: HumCollection?
 
     var body: some View {
         ScrollView {
@@ -43,6 +48,7 @@ struct DetailView: View {
         // in the header below. With real Apple Music titles — long, and often
         // suffixed " - Single" — a truncated nav copy read as repetition.
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $route) { DetailView(collection: $0) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -144,10 +150,11 @@ struct DetailView: View {
                         leading: model?.usesTrackNumbers == true
                             ? .index(index + 1)
                             : .artwork,
-                        isCurrent: player.currentTrack?.id == track.id
-                    ) {
-                        play(tracks, at: index)
-                    }
+                        isCurrent: player.currentTrack?.id == track.id,
+                        action: { play(tracks, at: index) },
+                        onGoToArtist: { goToArtist(for: $0) },
+                        onGoToAlbum: collection.kind == .album ? nil : { goToAlbum(for: $0) }
+                    )
                     if index < tracks.count - 1 { RowDivider() }
                 }
             }
@@ -170,6 +177,27 @@ struct DetailView: View {
         guard !tracks.isEmpty else { return }
         player.play(tracks, startingAt: Int.random(in: tracks.indices), source: collection.title)
         if !player.queue.shuffleEnabled { player.toggleShuffle() }
+    }
+
+    /// Real `MusicCatalogService` lookups, not a guess from `track.artist` /
+    /// `track.albumTitle`'s display strings — `nil` for a library track
+    /// (see the protocol doc), in which case this is a silent no-op rather
+    /// than an error, matching how the menu items themselves only appear
+    /// when a caller actually wired them.
+    private func goToArtist(for track: HumTrack) {
+        Task {
+            if let artist = try? await environment.catalog.artist(for: track) {
+                route = artist
+            }
+        }
+    }
+
+    private func goToAlbum(for track: HumTrack) {
+        Task {
+            if let album = try? await environment.catalog.album(for: track) {
+                route = album
+            }
+        }
     }
 }
 

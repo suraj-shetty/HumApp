@@ -150,6 +150,19 @@ actor FakeCatalogService: MusicCatalogService {
         return collectionTracks
     }
 
+    var resolvedArtist: HumCollection?
+    var resolvedAlbum: HumCollection?
+
+    func artist(for track: HumTrack) async throws -> HumCollection? {
+        try throwIfNeeded()
+        return resolvedArtist
+    }
+
+    func album(for track: HumTrack) async throws -> HumCollection? {
+        try throwIfNeeded()
+        return resolvedAlbum
+    }
+
     func setError(_ error: HumError?) { self.error = error }
     func setSearchResults(_ tracks: [HumTrack]) { searchResults = tracks }
     func setRecent(_ collections: [HumCollection]) { recent = collections }

@@ -98,6 +98,28 @@ actor MusicKitCatalogAdapter: MusicCatalogService {
         }
     }
 
+    // MARK: - Artist / album lookup
+
+    func artist(for track: HumTrack) async throws -> HumCollection? {
+        guard track.source == .catalog else { return nil }
+        var request = MusicCatalogResourceRequest<Song>(matching: \.id, equalTo: MusicItemID(track.id))
+        request.properties = [.artists]
+        guard let song = try await request.response().items.first,
+              let artist = song.artists?.first
+        else { return nil }
+        return MusicKitMapping.collection(artist, source: .catalog)
+    }
+
+    func album(for track: HumTrack) async throws -> HumCollection? {
+        guard track.source == .catalog else { return nil }
+        var request = MusicCatalogResourceRequest<Song>(matching: \.id, equalTo: MusicItemID(track.id))
+        request.properties = [.albums]
+        guard let song = try await request.response().items.first,
+              let album = song.albums?.first
+        else { return nil }
+        return MusicKitMapping.collection(album, source: .catalog)
+    }
+
     // MARK: - Library
 
     private func libraryTracks(in collection: HumCollection) async throws -> [HumTrack] {
