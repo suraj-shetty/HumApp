@@ -63,6 +63,34 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
         try await MusicLibrary.shared.add(song, to: target)
     }
 
+    /// Design screen 11's "Downloaded" shelf. Albums and playlists queried
+    /// separately, same as `albums()`/`playlists()` above, then combined —
+    /// the design's shelf doesn't distinguish the two kinds, just shows
+    /// whatever's actually on the device.
+    func downloads() async throws -> [HumCollection] {
+        async let downloadedAlbums = downloadedAlbumsResult()
+        async let downloadedPlaylists = downloadedPlaylistsResult()
+        return try await downloadedAlbums + downloadedPlaylists
+    }
+
+    private func downloadedAlbumsResult() async throws -> [HumCollection] {
+        var request = MusicLibraryRequest<Album>()
+        request.includeOnlyDownloadedContent = true
+        request.limit = Self.pageLimit
+        return try await request.response().items.map {
+            MusicKitMapping.collection($0, source: .library)
+        }
+    }
+
+    private func downloadedPlaylistsResult() async throws -> [HumCollection] {
+        var request = MusicLibraryRequest<Playlist>()
+        request.includeOnlyDownloadedContent = true
+        request.limit = Self.pageLimit
+        return try await request.response().items.map {
+            MusicKitMapping.collection($0, source: .library)
+        }
+    }
+
     // MARK: - Resolution
 
     private func song(for track: HumTrack) async throws -> Song? {

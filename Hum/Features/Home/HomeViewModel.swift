@@ -28,6 +28,9 @@ enum LoadState<Value: Sendable>: Sendable {
 final class HomeViewModel {
     private(set) var recentlyPlayed: LoadState<[HumCollection]> = .idle
     private(set) var recommendations: LoadState<[HumTrack]> = .idle
+    /// Design screen 11's "Downloaded" shelf — only ever populated when
+    /// `isOffline` is set before `load()` runs.
+    private(set) var downloads: LoadState<[HumCollection]> = .idle
 
     /// Both Home shelves are *personalized catalog* endpoints, so both need an
     /// active subscription. Without one they cannot answer — and reporting
@@ -35,11 +38,18 @@ final class HomeViewModel {
     /// gap, which is what this screen did on a real non-subscriber account.
     private(set) var needsSubscription = false
 
+    /// Set by `HomeView` from `NetworkMonitor` before `load()`/`reload()`
+    /// runs — this view model has no reachability opinion of its own, only
+    /// what it's told.
+    var isOffline = false
+
     private let catalog: MusicCatalogService
+    private let library: MusicLibraryService
     private let subscription: SubscriptionService
 
     init(environment: AppEnvironment) {
         self.catalog = environment.catalog
+        self.library = environment.library
         self.subscription = environment.subscription
     }
 
@@ -49,6 +59,25 @@ final class HomeViewModel {
         guard case .idle = recentlyPlayed else { return }
         recentlyPlayed = .loading
         recommendations = .loading
+
+        // Offline is asked first and answered without ever touching the
+        // catalog: those two requests would just fail, and reporting a
+        // confirmed-offline state as two generic "couldn't load" rows blames
+        // the network for something this app already knows for certain
+        // (design screen 11) — the same reasoning `needsSubscription`
+        // already applies to a missing subscription below.
+        guard !isOffline else {
+            needsSubscription = false
+            recentlyPlayed = .loaded([])
+            recommendations = .failed("Recommendations need a connection.")
+            downloads = .loading
+            do {
+                downloads = .loaded(try await library.downloads())
+            } catch {
+                downloads = .failed("Couldn't load your downloads.")
+            }
+            return
+        }
 
         // Asked before the requests, not after they fail: a confirmed gap is
         // an answer, so there is no reason to make two doomed round trips and
@@ -78,6 +107,7 @@ final class HomeViewModel {
 
     func reload() async {
         recentlyPlayed = .idle
+        downloads = .idle
         await load()
     }
 

@@ -19,4 +19,9 @@ protocol MusicLibraryService: Sendable {
     /// `MusicLibrary.shared.add(_:to:)` — design screen 32's "Add to
     /// Playlist" sheet.
     func add(_ track: HumTrack, to playlist: HumCollection) async throws
+
+    /// `MusicLibraryRequest.includeOnlyDownloadedContent` — design screen
+    /// 11's "Downloaded" shelf, shown in place of the catalog-backed
+    /// "Recently played" when `NetworkMonitor` reports no connection.
+    func downloads() async throws -> [HumCollection]
 }

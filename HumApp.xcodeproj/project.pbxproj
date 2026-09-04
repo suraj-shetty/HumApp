@@ -50,6 +50,7 @@
 		9F63409F5E9667BD175A4447 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CAE596549CB2C0DE206C77 /* HomeView.swift */; };
 		AAE51FEC164618A758BF8936 /* TrackRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F43A793DAB7011A873AF437 /* TrackRow.swift */; };
 		AF71E00E89E7F1A293B64D5A /* FakeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFC0CF7BA428150D3F67CFCF /* FakeServices.swift */; };
+		B0F6AC5320435DD1FB8EDA5A /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AF33E786353A9C55C6521B /* NetworkMonitor.swift */; };
 		B8437E5A55E961D11663128C /* PlayerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000D8EF28E6A6713F50C48AB /* PlayerBar.swift */; };
 		B9A749FC08AED9AEE217A93A /* ConnectionLostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F31CFA3C6FFB11D0A2E28D /* ConnectionLostView.swift */; };
 		BC01BB731C51BEA3495C2080 /* SubscriptionGapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC921709F5496D20D174F946 /* SubscriptionGapView.swift */; };
@@ -91,6 +92,7 @@
 /* Begin PBXFileReference section */
 		000D8EF28E6A6713F50C48AB /* PlayerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBar.swift; sourceTree = "<group>"; };
 		043A0D2ABA7AB095399FEF08 /* HumTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		04AF33E786353A9C55C6521B /* NetworkMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		062CE7B0F760EAAFC70C508D /* GlassSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
 		080B76DCF9E15AA85FCA7485 /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
 		09F31CFA3C6FFB11D0A2E28D /* ConnectionLostView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectionLostView.swift; sourceTree = "<group>"; };
@@ -242,6 +244,7 @@
 				63027A09A8ACB0E86EF9F231 /* MusicLibraryService.swift */,
 				1141120B45A703C1C961DDCE /* PlaybackService.swift */,
 				8A128F48DEEAA6DFFF41F21C /* SubscriptionService.swift */,
+				04AF33E786353A9C55C6521B /* NetworkMonitor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -610,6 +613,7 @@
 				62E71F58CB9B887DE50F59B2 /* PrivacyView.swift in Sources */,
 				DCD15D62C1A928C1E6E373DE /* AddToPlaylistView.swift in Sources */,
 				B9A749FC08AED9AEE217A93A /* ConnectionLostView.swift in Sources */,
+				B0F6AC5320435DD1FB8EDA5A /* NetworkMonitor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

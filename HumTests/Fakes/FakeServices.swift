@@ -217,6 +217,12 @@ actor FakeLibraryService: MusicLibraryService {
         addedToPlaylist.append((track.id, playlist.id))
     }
 
+    var storedDownloads: [HumCollection] = []
+    func downloads() async throws -> [HumCollection] {
+        try throwIfNeeded()
+        return storedDownloads
+    }
+
     func setError(_ error: HumError?) { self.error = error }
     func setAlbums(_ collections: [HumCollection]) { storedAlbums = collections }
     func setPlaylists(_ collections: [HumCollection]) { storedPlaylists = collections }

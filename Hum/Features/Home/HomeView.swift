@@ -6,14 +6,21 @@ struct HomeView: View {
     @Environment(PlayerViewModel.self) private var player
     @State private var model: HomeViewModel?
     @State private var route: HumCollection?
+    @State private var network = NetworkMonitor()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    if network.isOffline {
+                        offlineBanner
+                    }
                     header
                     if model?.needsSubscription == true {
                         catalogUnavailable
+                    } else if network.isOffline {
+                        downloadedShelf
+                        connectionRequiredCard
                     } else {
                         shelf
                         madeForYou
@@ -32,10 +39,111 @@ struct HomeView: View {
             }
             .task {
                 if model == nil { model = HomeViewModel(environment: environment) }
+                model?.isOffline = network.isOffline
                 await model?.load()
             }
-            .refreshable { await model?.reload() }
+            // Reachability can change after the first load — this is the
+            // only place that re-triggers it, since `load()` itself only
+            // ever runs once from `.idle`.
+            .onChange(of: network.isOffline) { _, offline in
+                Task {
+                    model?.isOffline = offline
+                    await model?.reload()
+                }
+            }
+            .refreshable {
+                model?.isOffline = network.isOffline
+                await model?.reload()
+            }
         }
+    }
+
+    /// Design screen 11's banner — chrome, glass, the same terracotta tint
+    /// the error toast uses (`Palette.terracottaGlassTint`), not a content
+    /// card.
+    private var offlineBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.slash")
+                .humFont(15, weight: .regular)
+                .foregroundStyle(Palette.terracottaLift)
+                .accessibilityHidden(true)
+            Text("You're offline — showing downloads")
+                .humFont(13.5)
+                .foregroundStyle(Palette.textPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .chromeGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous), tint: nil)
+        .glassTint(in: RoundedRectangle(cornerRadius: 20, style: .continuous), Palette.terracottaGlassTint, shadow: false)
+        .padding(.horizontal, 14)
+        .padding(.top, 6)
+        .padding(.bottom, 6)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Design screen 11's "Downloaded" shelf — `MusicLibraryService.downloads()`,
+    /// a real `includeOnlyDownloadedContent` query, in place of the
+    /// catalog-backed "Recently played" this app can't reach offline.
+    @ViewBuilder
+    private var downloadedShelf: some View {
+        SectionHeader(title: "Downloaded")
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.bottom, 10)
+
+        switch model?.downloads ?? .idle {
+        case .idle, .loading:
+            ShelfSkeleton()
+
+        case .loaded(let collections) where collections.isEmpty:
+            EmptyStateView(
+                icon: HumIcon.musicNote,
+                headline: "Nothing downloaded",
+                message: "Music you've downloaded for offline listening will show up here."
+            )
+
+        case .loaded(let collections):
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: Metrics.rowSpacing) {
+                    ForEach(collections) { collection in
+                        Button { route = collection } label: {
+                            ShelfCard(collection: collection)
+                        }
+                        .buttonStyle(.pressable)
+                    }
+                }
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.vertical, 6)
+            }
+            .scrollIndicators(.hidden)
+            .padding(.bottom, 20)
+
+        case .failed(let message):
+            InlineError(message: message)
+        }
+    }
+
+    /// Design screen 11's explanatory card in place of "Made for you" —
+    /// personalised recommendations are a catalog endpoint this app has no
+    /// offline answer for, so it says so rather than showing a dead shelf.
+    private var connectionRequiredCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recommendations need a connection.")
+                .humFont(15.5, weight: .light)
+                .foregroundStyle(Palette.textPrimary.opacity(0.78))
+            AmberOutlineButton(title: "Retry", height: 44) {
+                Task { await model?.reload() }
+            }
+        }
+        .padding(22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.surfaceCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .padding(.horizontal, Metrics.gutter)
+        .padding(.top, 10)
     }
 
     // MARK: - Header

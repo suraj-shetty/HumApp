@@ -37,6 +37,15 @@ enum PreviewFixtures {
         id: "artist-ana-roele", kind: .artist, title: "Ana Roele", subtitle: "",
         metaLine: "Artist", artworkURL: nil, source: .catalog
     )
+
+    /// Design screen 11's own two examples, verbatim — what
+    /// `-HumForceOffline YES` shows in the "Downloaded" shelf.
+    static let downloads: [HumCollection] = [
+        .init(id: "d0", kind: .playlist, title: "Late Kitchen", subtitle: "",
+              metaLine: "Playlist · 24 tracks", artworkURL: nil, source: .library),
+        .init(id: "d1", kind: .playlist, title: "Room Tone", subtitle: "",
+              metaLine: "Playlist · 58 tracks", artworkURL: nil, source: .library),
+    ]
 }
 
 actor PreviewAuthorizationService: MusicAuthorizationService {
@@ -128,6 +137,8 @@ actor PreviewLibraryService: MusicLibraryService {
     func add(_ track: HumTrack, to playlist: HumCollection) async throws {
         playlistMembership[track.id, default: []].insert(playlist.id)
     }
+
+    func downloads() async throws -> [HumCollection] { PreviewFixtures.downloads }
 }
 
 /// A playback service that actually advances time, so progress bars, the

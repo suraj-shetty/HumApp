@@ -33,7 +33,13 @@ import SwiftUI
 ///   offered: it routes straight to Apple's own offer sheet and was never
 ///   `SubscriptionGapView`'s to reach.
 ///
-/// `#if DEBUG` keeps all three out of Release builds entirely: they cannot be
+/// A fourth, unrelated to the three above: `-HumForceOffline YES` forces
+/// `NetworkMonitor.isOffline`, for the same reason — the Simulator shares the
+/// host Mac's own network, which there is no way to actually disconnect from
+/// here, so Home's offline banner and downloaded-only shelf (design screen
+/// 11) need a forced path to be reachable at all.
+///
+/// `#if DEBUG` keeps all four out of Release builds entirely: they cannot be
 /// triggered by anything short of a debug install under Xcode or `simctl`,
 /// never a real user's device.
 @main
