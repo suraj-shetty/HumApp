@@ -56,7 +56,13 @@ struct LibraryView: View {
     @Environment(\.appEnvironment) private var environment
     @State private var model: LibraryViewModel?
     @State private var route: HumCollection?
-    @State private var filter: Filter = .playlists
+    @State private var filter: Filter
+    /// iPad's sidebar (`RootSplitView`) pushes straight to one filter — the
+    /// "Artists"/"Albums" destinations are this same grid, preselected,
+    /// rather than a second implementation (Board 03's "Grid" composition).
+    init(initialFilter: Filter = .playlists) {
+        _filter = State(initialValue: initialFilter)
+    }
 
     enum Filter: String, CaseIterable, Identifiable {
         case playlists = "Playlists"

@@ -134,4 +134,13 @@ enum Metrics {
     /// one size up. Kept as its own name rather than rounded to `radiusArt` so
     /// the divergence stays visible instead of being quietly averaged away.
     static let radiusArtHero: CGFloat = 14
+
+    // MARK: - iPad three-column layout
+    //
+    // Board 03, measured against its 1194×834 iPad Pro 11″ frame.
+
+    static let iPadSidebarWidth: CGFloat = 260
+    static let iPadPlayerColumnWidth: CGFloat = 340
+    static let iPadFocusRingWidth: CGFloat = 2
+    static let iPadFocusRingOffset: CGFloat = 2
 }

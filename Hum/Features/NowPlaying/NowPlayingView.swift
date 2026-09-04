@@ -448,7 +448,7 @@ private struct ProgressRing<Content: View>: View {
 /// Design screen 24's buffering state — `humSpin`, a partial amber ring
 /// spinning continuously, in place of `ProgressRing`'s position-based arc.
 /// Not seekable: buffering has no position to scrub to yet.
-private struct BufferingRing<Content: View>: View {
+struct BufferingRing<Content: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ViewBuilder var content: Content
 
@@ -479,7 +479,7 @@ private struct BufferingRing<Content: View>: View {
 /// `HumAudioVariant`'s own doc for why. Renders nothing at all for `nil`
 /// (idle, paused, or a plain lossy-stereo track — see `badgeLabel`), so an
 /// absent badge never reads as a loading state.
-private struct AudioVariantBadge: View {
+struct AudioVariantBadge: View {
     let variant: HumAudioVariant?
 
     var body: some View {
@@ -544,7 +544,7 @@ private struct VolumeRow: View {
 /// (`ApplicationMusicPlayer.playbackTime`) and is user-initiated, so it sits
 /// inside the compliance rule even though the brief's shorthand names only
 /// play/pause/skip (DECISIONS M-08).
-private struct ProgressScrubber: View {
+struct ProgressScrubber: View {
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dragFraction: Double?
@@ -610,7 +610,7 @@ private struct ProgressScrubber: View {
 }
 
 /// Transport. **Opaque** — including the primary button (DECISIONS M-07).
-private struct TransportControls: View {
+struct TransportControls: View {
     var size: CGFloat
     var alignment: HorizontalAlignment = .center
     /// Landscape has no separate bottom action row to hold shuffle and
@@ -687,7 +687,7 @@ private struct TransportControls: View {
 /// 21pt, white at 66% until active, then amber — the design's secondary
 /// weight. Its own type so both `TransportControls` (landscape) and the
 /// portrait `bottomActionRow` can place it without duplicating the toggle.
-private struct ShuffleButton: View {
+struct ShuffleButton: View {
     @Environment(PlayerViewModel.self) private var player
 
     var body: some View {
@@ -705,7 +705,7 @@ private struct ShuffleButton: View {
 
 /// Not in the design (screen 23 draws shuffle only), but real and tested —
 /// see `bottomActionRow`'s comment for why it still gets a home.
-private struct RepeatButton: View {
+struct RepeatButton: View {
     @Environment(PlayerViewModel.self) private var player
 
     var body: some View {

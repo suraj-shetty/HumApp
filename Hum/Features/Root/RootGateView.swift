@@ -9,7 +9,17 @@ import SwiftUI
 struct RootGateView: View {
     @Environment(\.appEnvironment) private var environment
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var auth: AuthViewModel?
+
+    /// Board 03 is a genuinely different layout, not the phone screen
+    /// stretched (`docs/v1-musickit/DEVELOPMENT_PLAN.md` Phase 8's own
+    /// framing) — regular width on an iPad idiom is the only place this app
+    /// currently makes that call, matching the one other size-class check in
+    /// the codebase (`NowPlayingView`'s landscape check).
+    private var isIPadLayout: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular
+    }
 
     var body: some View {
         ZStack {
@@ -17,12 +27,20 @@ struct RootGateView: View {
 
             if let auth {
                 if let screen = auth.screen {
-                    ConnectView(
-                        screen: screen,
-                        onPrimaryAction: { Task { await auth.connect() } },
-                        onRefresh: { Task { await auth.refresh() } }
-                    )
-                    .transition(.opacity)
+                    if isIPadLayout {
+                        IPadConnectView(onConnect: { Task { await auth.connect() } })
+                            .transition(.opacity)
+                    } else {
+                        ConnectView(
+                            screen: screen,
+                            onPrimaryAction: { Task { await auth.connect() } },
+                            onRefresh: { Task { await auth.refresh() } }
+                        )
+                        .transition(.opacity)
+                    }
+                } else if isIPadLayout {
+                    RootSplitView()
+                        .transition(.opacity)
                 } else {
                     RootTabView()
                         .transition(.opacity)

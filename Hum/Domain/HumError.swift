@@ -1,7 +1,7 @@
 /// Failures Hum can surface. Deliberately small — most MusicKit errors are not
 /// actionable by the listener, and collapsing them into a single
 /// `.requestFailed` keeps the UI from inventing distinctions it cannot explain.
-enum HumError: Error, Sendable, Equatable {
+enum HumError: Error, Sendable, Equatable, Codable {
     case authorizationDenied
     case authorizationRestricted
     /// Catalog playback attempted without an active subscription. Should be

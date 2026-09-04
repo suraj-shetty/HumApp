@@ -1,6 +1,6 @@
 import Foundation
 
-enum PlaybackState: Sendable, Equatable {
+enum PlaybackState: Sendable, Equatable, Codable {
     case idle
     case loading
     case playing(HumTrack)
@@ -25,7 +25,7 @@ enum PlaybackState: Sendable, Equatable {
 /// `ObservableObject`, not `@Observable`, and will not participate in
 /// `@Observable` tracking. The adapter bridges it into a stream of these
 /// instead of leaking a MusicKit type upward. See ARCHITECTURE.md §3.
-struct PlaybackSnapshot: Sendable, Equatable {
+struct PlaybackSnapshot: Sendable, Equatable, Codable {
     let state: PlaybackState
     let elapsed: TimeInterval
     let duration: TimeInterval

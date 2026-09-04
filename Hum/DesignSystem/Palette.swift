@@ -32,6 +32,11 @@ enum Palette {
     /// distinct from `surfaceRaised`, which is a control's ground, not a
     /// content card's.
     static let surfaceCard = Color(hex: 0x141416)
+    /// `#0D0C0E` — iPad's sidebar and player-column ground. Distinct from
+    /// `deepOnyx`: those two columns are flatly opaque content surfaces, not
+    /// the screen's own base, per Board 03's three-column glass rule (only
+    /// the middle column's toolbar carries chrome glass).
+    static let contentSurfaceIPad = Color(hex: 0x0D0C0E)
 
     // MARK: - Text ramp
     //

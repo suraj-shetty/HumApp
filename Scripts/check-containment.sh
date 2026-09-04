@@ -41,7 +41,7 @@ check() {
       echo "$file:${line}: error: $message"
       found=1
     done < <(sed 's://.*::' "$file" | grep -nE "$pattern")
-  done < <(find Hum -name '*.swift' -type f | sort)
+  done < <(find Hum HumWatch -name '*.swift' -type f | sort)
 
   return $found
 }

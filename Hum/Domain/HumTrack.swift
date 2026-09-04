@@ -5,7 +5,7 @@ import Foundation
 /// Deliberately provider-neutral: nothing MusicKit-shaped appears here, so the
 /// entire app above `Services/Adapters/` compiles and runs without MusicKit —
 /// which is what makes Simulator development possible at all (DECISIONS M-09).
-struct HumTrack: Sendable, Identifiable, Equatable {
+struct HumTrack: Sendable, Identifiable, Equatable, Codable {
     /// `MusicItemID.rawValue` in the live adapter.
     let id: String
     let title: String

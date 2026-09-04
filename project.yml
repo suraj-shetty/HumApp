@@ -11,6 +11,7 @@ options:
   bundleIdPrefix: com.hum
   deploymentTarget:
     iOS: "26.0"
+    watchOS: "26.0"
   createIntermediateGroups: true
   groupSortPosition: top
 
@@ -55,6 +56,55 @@ targets:
         basedOnDependencyAnalysis: false
         outputFiles:
           - $(DERIVED_FILE_DIR)/containment-check-never-exists
+    dependencies:
+      - target: HumWatch
+        embed: true
+    # Embedding makes the `Hum` scheme's build depend on the watchOS platform
+    # being installed — on a machine without it (this one, until this pass),
+    # that fails the whole app's build, not just the watch app's. If that
+    # happens again, drop back to no `dependencies:` here; `HumWatch` has its
+    # own scheme and builds independently either way.
+
+  # Board 03, Section 03 — relays through the paired iPhone rather than
+  # talking to MusicKit independently (see
+  # Hum/Services/WatchConnectivityRelayService.swift's own doc comment for
+  # the reasoning). A modern single-target watch app: no separate WatchKit
+  # Extension target.
+  #
+  # `sources` repeats the already framework-agnostic slice of `Hum/` this
+  # target needs — `Domain/` (plain value types, already `Codable`),
+  # `Reducers/` (pure, no I/O), and the two protocol-only Services files —
+  # rather than extracting a Swift package for two targets. Nothing under
+  # `Services/Adapters/` is listed, so this target never sees a MusicKit
+  # import; `Scripts/check-containment.sh` scans it too (see that script).
+  HumWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: HumWatch
+      - path: Hum/Domain
+        excludes: ["**/.gitkeep"]
+      - path: Hum/Reducers
+        excludes: ["**/.gitkeep"]
+      - path: Hum/Services/PlaybackService.swift
+      - path: Hum/Services/SubscriptionService.swift
+      - path: Hum/DesignSystem/Palette.swift
+      - path: Hum/DesignSystem/HumIcons.swift
+      - path: Hum/Features/Components/TimeFormatting.swift
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.surajshetty.humapp.watchkitapp
+        PRODUCT_NAME: Hum
+        INFOPLIST_FILE: HumWatch/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "4"
+        ENABLE_PREVIEWS: YES
+        WATCHOS_DEPLOYMENT_TARGET: "26.0"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_MACCATALYST: NO
 
   HumTests:
     type: bundle.unit-test
@@ -83,3 +133,10 @@ schemes:
       gatherCoverageData: true
       targets:
         - HumTests
+
+  HumWatch:
+    build:
+      targets:
+        HumWatch: all
+    run:
+      config: Debug

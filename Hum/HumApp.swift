@@ -46,11 +46,18 @@ import SwiftUI
 struct HumApp: App {
     private let environment: AppEnvironment
     @State private var player: PlayerViewModel
+    /// Board 03, Section 03 — relays playback to a paired Apple Watch.
+    /// Kept alive here for the same reason `player` is: it's a
+    /// `WCSessionDelegate`, so nothing may deallocate it for the app's
+    /// lifetime. No-ops on iPad (`WCSession.isSupported()` is `false` there).
+    @State private var watchRelay: WatchConnectivityRelayService?
 
     init() {
         let environment = Self.resolveEnvironment()
         self.environment = environment
-        _player = State(initialValue: PlayerViewModel(environment: environment))
+        let player = PlayerViewModel(environment: environment)
+        _player = State(initialValue: player)
+        _watchRelay = State(initialValue: WatchConnectivityRelayService(player: player))
     }
 
     @MainActor

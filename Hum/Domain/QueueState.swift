@@ -1,4 +1,4 @@
-enum RepeatMode: Sendable, Equatable, CaseIterable {
+enum RepeatMode: Sendable, Equatable, CaseIterable, Codable {
     case off
     case all
     case one
@@ -17,7 +17,7 @@ enum RepeatMode: Sendable, Equatable, CaseIterable {
 ///
 /// `currentIndex == nil` means nothing is cued — the queue is either empty or
 /// has run off its end with repeat off. It is *not* the same as being paused.
-struct QueueState: Sendable, Equatable {
+struct QueueState: Sendable, Equatable, Codable {
     var entries: [HumTrack] = []
     var currentIndex: Int?
     var shuffleEnabled: Bool = false

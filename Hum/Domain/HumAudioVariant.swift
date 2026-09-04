@@ -7,7 +7,7 @@ import Foundation
 /// `MusicKit.swiftinterface`, not assumed) — that stays a system Settings
 /// control. This is the honest, read-only alternative: a badge naming
 /// what's playing, not a picker choosing it.
-enum HumAudioVariant: Sendable, Equatable {
+enum HumAudioVariant: Sendable, Equatable, Codable {
     case dolbyAtmos
     case dolbyAudio
     case lossless
