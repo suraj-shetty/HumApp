@@ -159,6 +159,7 @@ private struct NowPlayingPortraitLayout: View {
                 .humFont(16)
                 .foregroundStyle(Palette.honeyAmber)
                 .lineLimit(1)
+            AudioVariantBadge(variant: player.audioVariant)
         }
         .frame(maxWidth: .infinity)
     }
@@ -236,6 +237,7 @@ private struct NowPlayingLandscapeLayout: View {
                         .humFont(16)
                         .foregroundStyle(Palette.honeyAmber)
                         .lineLimit(1)
+                    AudioVariantBadge(variant: player.audioVariant)
                 }
 
                 ProgressScrubber()
@@ -470,6 +472,29 @@ private struct BufferingRing<Content: View>: View {
         .frame(width: Metrics.artNowPlaying, height: Metrics.artNowPlaying)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Buffering")
+    }
+}
+
+/// Design screen 39's read-only alternative to a quality *setting* — see
+/// `HumAudioVariant`'s own doc for why. Renders nothing at all for `nil`
+/// (idle, paused, or a plain lossy-stereo track — see `badgeLabel`), so an
+/// absent badge never reads as a loading state.
+private struct AudioVariantBadge: View {
+    let variant: HumAudioVariant?
+
+    var body: some View {
+        if let label = variant?.badgeLabel {
+            Text(label)
+                .humFont(HumTextStyle(size: 10.5, relativeTo: .caption2, tracking: 1.2, uppercase: true))
+                .foregroundStyle(Palette.honeyAmber.opacity(0.85))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .overlay(
+                    Capsule().strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
+                )
+                .accessibilityLabel("Playing in \(label)")
+                .transition(.opacity)
+        }
     }
 }
 

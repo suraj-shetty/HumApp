@@ -257,7 +257,12 @@ actor PreviewPlaybackService: PlaybackService {
                 state: state,
                 elapsed: elapsed,
                 duration: track?.duration ?? 0,
-                queue: queue
+                queue: queue,
+                // Invented for verification, same as every other preview
+                // fixture — MusicKit never reports one in the Simulator
+                // (DECISIONS M-09), and there's no real value to read here
+                // any more than there's a real catalog to search.
+                audioVariant: track == nil ? nil : .lossless
             )
         )
     }

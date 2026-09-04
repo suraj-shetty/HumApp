@@ -28,6 +28,10 @@ final class PlayerViewModel {
     private(set) var elapsed: TimeInterval = 0
     private(set) var duration: TimeInterval = 0
     private(set) var queue = QueueState()
+    /// Design screen 39's read-only alternative — see `HumAudioVariant`'s
+    /// own doc for why this is a badge naming what's playing, not a picker
+    /// choosing it.
+    private(set) var audioVariant: HumAudioVariant?
     private(set) var subscription: SubscriptionState = .unknown
     /// Set when a play intent hits a subscription gap Apple *can* close;
     /// drives Apple's own offer sheet.
@@ -146,6 +150,7 @@ final class PlayerViewModel {
         if elapsed != snapshot.elapsed { elapsed = snapshot.elapsed }
         if duration != snapshot.duration { duration = snapshot.duration }
         if queue != snapshot.queue { queue = snapshot.queue }
+        if audioVariant != snapshot.audioVariant { audioVariant = snapshot.audioVariant }
     }
 
     func stop() {

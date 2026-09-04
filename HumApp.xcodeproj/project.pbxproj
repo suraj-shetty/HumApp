@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		02A3C4B4F13DB0E1596E9154 /* PreviewServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D8EB10CF6046D391777EE6 /* PreviewServices.swift */; };
 		040E4C906C200000D22D8CD1 /* MusicLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63027A09A8ACB0E86EF9F231 /* MusicLibraryService.swift */; };
+		055C0916B80D00C60DE4AF63 /* HumAudioVariant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F060AA1019F34DB43A94CFF /* HumAudioVariant.swift */; };
 		16BECD34D0485EC75A072B54 /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C474B071A04D0C942259E90B /* DetailViewModel.swift */; };
 		1D0567BD03E69F28C9FDA69F /* MusicCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6E07071D2904A2B5D19F9F /* MusicCatalogService.swift */; };
 		1E2E6DDF762734B442B782E6 /* PlaybackSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8791020DF59D1EB65F6F98B7 /* PlaybackSessionTests.swift */; };
@@ -99,6 +100,7 @@
 		0A41BF096D3046001453C9CB /* AuthReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthReducer.swift; sourceTree = "<group>"; };
 		0A79831AF0059BDD39A8AEFE /* MusicKitLibraryAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicKitLibraryAdapter.swift; sourceTree = "<group>"; };
 		0C81D823E4C18BD7C8AB6713 /* SubscriptionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionState.swift; sourceTree = "<group>"; };
+		0F060AA1019F34DB43A94CFF /* HumAudioVariant.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HumAudioVariant.swift; sourceTree = "<group>"; };
 		1141120B45A703C1C961DDCE /* PlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackService.swift; sourceTree = "<group>"; };
 		11540B776084F538020586CE /* SubscriptionOfferAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferAdapter.swift; sourceTree = "<group>"; };
 		126EB789EAE93AE2EEE9DCE2 /* AddToPlaylistView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddToPlaylistView.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 				A5FA5F0EDF3CCABE907CFE2C /* PlaybackState.swift */,
 				D1F4B3E089681FB7C9B7E08E /* QueueState.swift */,
 				0C81D823E4C18BD7C8AB6713 /* SubscriptionState.swift */,
+				0F060AA1019F34DB43A94CFF /* HumAudioVariant.swift */,
 			);
 			path = Domain;
 			sourceTree = "<group>";
@@ -614,6 +617,7 @@
 				DCD15D62C1A928C1E6E373DE /* AddToPlaylistView.swift in Sources */,
 				B9A749FC08AED9AEE217A93A /* ConnectionLostView.swift in Sources */,
 				B0F6AC5320435DD1FB8EDA5A /* NetworkMonitor.swift in Sources */,
+				055C0916B80D00C60DE4AF63 /* HumAudioVariant.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

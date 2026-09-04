@@ -354,13 +354,30 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             // The player reports no duration of its own; the track carries
             // the one MusicKit already gave us.
             duration: queue.currentTrack?.duration ?? 0,
-            queue: queue
+            queue: queue,
+            audioVariant: Self.audioVariant(player.state.audioVariant)
         )
         // `objectWillChange` fires far more often than anything visible
         // changes. Dropping identical snapshots keeps that churn off the UI.
         guard snapshot != last else { return }
         last = snapshot
         continuation.yield(snapshot)
+    }
+
+    /// MusicKit → domain, the same type-erasure rule `MusicKitMapping`
+    /// follows for everything else: no `MusicKit.AudioVariant` leaves this
+    /// file.
+    private static func audioVariant(_ variant: MusicKit.AudioVariant?) -> HumAudioVariant? {
+        guard let variant else { return nil }
+        switch variant {
+        case .dolbyAtmos: return .dolbyAtmos
+        case .dolbyAudio: return .dolbyAudio
+        case .lossless: return .lossless
+        case .highResolutionLossless: return .highResolutionLossless
+        case .lossyStereo: return .lossyStereo
+        case .spatialAudio: return .spatialAudio
+        @unknown default: return nil
+        }
     }
 
     /// One derivation of playback state, in precedence order.

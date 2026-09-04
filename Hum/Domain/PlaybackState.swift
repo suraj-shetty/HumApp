@@ -30,6 +30,10 @@ struct PlaybackSnapshot: Sendable, Equatable {
     let elapsed: TimeInterval
     let duration: TimeInterval
     let queue: QueueState
+    /// `ApplicationMusicPlayer.state.audioVariant` — read-only, real, and
+    /// only meaningful while something is actually playing. `nil` idle,
+    /// paused, or before MusicKit has reported one yet.
+    var audioVariant: HumAudioVariant? = nil
 
     static let idle = PlaybackSnapshot(
         state: .idle,
