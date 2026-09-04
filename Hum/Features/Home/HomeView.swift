@@ -8,53 +8,68 @@ struct HomeView: View {
     @State private var route: HumCollection?
     @State private var network = NetworkMonitor()
 
+    /// iPad's content column already sits inside `NavigationSplitView`'s own
+    /// per-column navigation container and toolbar. Nesting a second
+    /// `NavigationStack` here — with its bar hidden, which every iPhone tab
+    /// root needs so switching tabs doesn't animate a bar in and out — was
+    /// swallowing that column's entire toolbar, including the system
+    /// sidebar-reveal control, when `IPadContentColumn` reused this view
+    /// as-is. `RootSplitView`'s content column passes `false`.
+    var embedsNavigationChrome: Bool = true
+
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    if network.isOffline {
-                        offlineBanner
-                    }
-                    header
-                    if model?.needsSubscription == true {
-                        catalogUnavailable
-                    } else if network.isOffline {
-                        downloadedShelf
-                        connectionRequiredCard
-                    } else {
-                        shelf
-                        madeForYou
-                    }
+        Group {
+            if embedsNavigationChrome {
+                NavigationStack {
+                    content
+                        .toolbar(.hidden, for: .navigationBar)
+                }
+            } else {
+                content
+            }
+        }
+    }
+
+    private var content: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if network.isOffline {
+                    offlineBanner
+                }
+                header
+                if model?.needsSubscription == true {
+                    catalogUnavailable
+                } else if network.isOffline {
+                    downloadedShelf
+                    connectionRequiredCard
+                } else {
+                    shelf
+                    madeForYou
                 }
             }
-            .scrollIndicators(.hidden)
-            .background(Palette.deepOnyx)
-            // Every tab root draws its own 32/200 header, so none of them
-            // wants a system navigation bar. They must agree: when one tab
-            // reserved a bar and another hid it, switching between them
-            // animated the bar in and out, and the tab change read as a jolt.
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(item: $route) { collection in
-                DetailView(collection: collection)
-            }
-            .task {
-                if model == nil { model = HomeViewModel(environment: environment) }
-                model?.isOffline = network.isOffline
-                await model?.load()
-            }
-            // Reachability can change after the first load — this is the
-            // only place that re-triggers it, since `load()` itself only
-            // ever runs once from `.idle`.
-            .onChange(of: network.isOffline) { _, offline in
-                Task {
-                    model?.isOffline = offline
-                    await model?.reload()
-                }
-            }
-            .refreshable {
-                model?.isOffline = network.isOffline
+        }
+        .scrollIndicators(.hidden)
+        .background(Palette.deepOnyx)
+        .navigationDestination(item: $route) { collection in
+            DetailView(collection: collection)
+        }
+        .task {
+            if model == nil { model = HomeViewModel(environment: environment) }
+            model?.isOffline = network.isOffline
+            await model?.load()
+        }
+        // Reachability can change after the first load — this is the
+        // only place that re-triggers it, since `load()` itself only
+        // ever runs once from `.idle`.
+        .onChange(of: network.isOffline) { _, offline in
+            Task {
+                model?.isOffline = offline
                 await model?.reload()
             }
+        }
+        .refreshable {
+            model?.isOffline = network.isOffline
+            await model?.reload()
         }
     }
 
@@ -296,6 +311,8 @@ struct HomeView: View {
 struct ShelfCard: View {
     let collection: HumCollection
 
+    @Environment(\.isFocused) private var isFocused
+
     var body: some View {
         // Measured: 160 art at radius 10, a 10pt gap to the caption, then the
         // title and subtitle 4 apart — 208 tall in total. The caption pair is
@@ -322,6 +339,19 @@ struct ShelfCard: View {
         .frame(width: Metrics.artShelf, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(collection.title), \(collection.subtitle)")
+        // Board 03, iPad pointer/keyboard row (A5): a 3pt lift on trackpad
+        // hover, and a 2px amber ring — offset so it doesn't crowd the art —
+        // when reached via keyboard/game-controller focus navigation. Both
+        // are no-ops without a pointer or a hardware keyboard, so this is
+        // safe to leave unconditional rather than gated on idiom.
+        .hoverEffect(.lift)
+        .overlay {
+            if isFocused {
+                RoundedRectangle(cornerRadius: Metrics.radiusArt, style: .continuous)
+                    .strokeBorder(Palette.honeyAmber, lineWidth: Metrics.iPadFocusRingWidth)
+                    .padding(-Metrics.iPadFocusRingOffset)
+            }
+        }
     }
 }
 

@@ -9,6 +9,8 @@ struct IPadContentColumn: View {
     let destination: IPadSidebarDestination
     @Binding var searchQuery: String
 
+    @Environment(PlayerViewModel.self) private var player
+
     var body: some View {
         Group {
             switch destination {
@@ -16,12 +18,17 @@ struct IPadContentColumn: View {
                 // Board 03's "Listen Now" screen is exactly Home's own
                 // composition — greeting, Recently Played shelf, Made for
                 // You — so this reuses `HomeView` rather than a second copy.
-                HomeView()
+                // `embedsNavigationChrome: false` — this column already sits
+                // inside `NavigationSplitView`'s own navigation container; see
+                // `HomeView.embedsNavigationChrome`'s doc comment for why a
+                // second, hidden-bar `NavigationStack` here was swallowing
+                // this column's entire toolbar, sidebar toggle included.
+                HomeView(embedsNavigationChrome: false)
 
             case .artists:
-                LibraryView(initialFilter: .artists)
+                LibraryView(initialFilter: .artists, embedsNavigationChrome: false)
             case .albums:
-                LibraryView(initialFilter: .albums)
+                LibraryView(initialFilter: .albums, embedsNavigationChrome: false)
 
             case .recentlyAdded, .songs:
                 // Board 03 revision item 12: neither destination has a
@@ -35,13 +42,24 @@ struct IPadContentColumn: View {
                 IPadMadeForYouView()
 
             case .search:
-                SearchView(query: $searchQuery)
+                SearchView(query: $searchQuery, embedsNavigationChrome: false)
 
             case .playlist(let collection):
                 NavigationStack { DetailView(collection: collection) }
             }
         }
         .background(Palette.deepOnyx)
+        // Board 03 revision item 8: the toast anchors to the middle column
+        // only, not the full window width — the sidebar and player column
+        // are never what a toast is confirming or apologizing for.
+        .overlay(alignment: .bottom) {
+            if let toast = player.toast {
+                ToastView(toast: toast)
+                    .padding(.bottom, 20)
+                    .transition(.opacity.combined(with: .offset(y: 8)))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: player.toast)
     }
 
     private var pendingTitle: String {

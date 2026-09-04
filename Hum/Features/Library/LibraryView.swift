@@ -57,11 +57,17 @@ struct LibraryView: View {
     @State private var model: LibraryViewModel?
     @State private var route: HumCollection?
     @State private var filter: Filter
+    /// See `HomeView.embedsNavigationChrome` — same reason, same fix:
+    /// `IPadContentColumn` passes `false` so its own `NavigationSplitView`
+    /// content-column toolbar (search field, sidebar toggle) isn't swallowed
+    /// by a second, hidden-bar `NavigationStack` nested inside it.
+    var embedsNavigationChrome: Bool = true
     /// iPad's sidebar (`RootSplitView`) pushes straight to one filter — the
     /// "Artists"/"Albums" destinations are this same grid, preselected,
     /// rather than a second implementation (Board 03's "Grid" composition).
-    init(initialFilter: Filter = .playlists) {
+    init(initialFilter: Filter = .playlists, embedsNavigationChrome: Bool = true) {
         _filter = State(initialValue: initialFilter)
+        self.embedsNavigationChrome = embedsNavigationChrome
     }
 
     enum Filter: String, CaseIterable, Identifiable {
@@ -86,24 +92,34 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    header
-                    chips
-                    grid
+        Group {
+            if embedsNavigationChrome {
+                NavigationStack {
+                    content
+                        .toolbar(.hidden, for: .navigationBar)
                 }
+            } else {
+                content
             }
-            .scrollIndicators(.hidden)
-            .background(Palette.deepOnyx)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(item: $route) { DetailView(collection: $0) }
-            .task {
-                if model == nil { model = LibraryViewModel(environment: environment) }
-                await model?.load()
-            }
-            .refreshable { await model?.reload() }
         }
+    }
+
+    private var content: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                chips
+                grid
+            }
+        }
+        .scrollIndicators(.hidden)
+        .background(Palette.deepOnyx)
+        .navigationDestination(item: $route) { DetailView(collection: $0) }
+        .task {
+            if model == nil { model = LibraryViewModel(environment: environment) }
+            await model?.load()
+        }
+        .refreshable { await model?.reload() }
     }
 
     private var header: some View {

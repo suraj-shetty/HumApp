@@ -122,6 +122,11 @@ struct SearchView: View {
     @State private var model: SearchViewModel?
     @State private var filter: ResultFilter = .all
     @State private var route: HumCollection?
+    /// See `HomeView.embedsNavigationChrome` — same fix, for the same reason:
+    /// nesting a second `NavigationStack` inside iPad's content column drew a
+    /// second, mostly-empty nav bar under the split view's own (which carries
+    /// the always-visible search field). `IPadContentColumn` passes `false`.
+    var embedsNavigationChrome: Bool = true
 
     /// Design screen 13's chip row — reuses `Metrics.chip*`/`Palette.chip*`,
     /// the same tokens Library's own chips already draw from (M-4).
@@ -133,7 +138,29 @@ struct SearchView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        Group {
+            if embedsNavigationChrome {
+                NavigationStack { results }
+            } else {
+                results
+            }
+        }
+        .onChange(of: query) { _, term in
+            model?.term = term
+            model?.search()
+        }
+        .task {
+            if model == nil { model = SearchViewModel(environment: environment) }
+            // The tab can be entered with a query already typed — the field is
+            // in the chrome and outlives this view's lifetime.
+            if !query.isEmpty, model?.term != query {
+                model?.term = query
+                model?.search()
+            }
+        }
+    }
+
+    private var results: some View {
             Group {
                 switch model?.results ?? .idle {
                 case .idle:
@@ -261,20 +288,6 @@ struct SearchView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .onChange(of: query) { _, term in
-            model?.term = term
-            model?.search()
-        }
-        .task {
-            if model == nil { model = SearchViewModel(environment: environment) }
-            // The tab can be entered with a query already typed — the field is
-            // in the chrome and outlives this view's lifetime.
-            if !query.isEmpty, model?.term != query {
-                model?.term = query
-                model?.search()
-            }
-        }
     }
 }
 

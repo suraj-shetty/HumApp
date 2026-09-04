@@ -15,9 +15,20 @@ struct RootSplitView: View {
     @State private var searchQuery = ""
     @State private var isPresentingNewPlaylist = false
     @State private var library = SidebarLibraryModel()
+    // A real `@State`, not `.constant(.all)`: at 1194×834 landscape (the
+    // board's own measurement) all three fixed-width columns fit and this
+    // starts and stays `.all`. But `.constant` can never be written back to,
+    // so at any width the system can't satisfy — portrait, a smaller iPad,
+    // Split View multitasking — it was silently dropping the sidebar with no
+    // toggle to bring it back, because there was nothing for the system to
+    // write the collapse into. A mutable binding gets the sidebar's own
+    // built-in reveal control back in that case.
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        NavigationSplitView(columnVisibility: .constant(.all)) {
+        @Bindable var bindable = player
+
+        return NavigationSplitView(columnVisibility: $columnVisibility) {
             IPadSidebar(
                 selection: $selection,
                 library: library,
@@ -45,6 +56,17 @@ struct RootSplitView: View {
                 selection = .playlist(newPlaylist)
             }
         }
+        // Same account-modal flows `RootTabView` presents (design screen 29
+        // and its subscription-gap/offer follow-ons) — app-modal regardless
+        // of which column triggered them, so there's no separate iPad
+        // treatment, only the same two modifiers wired at this root too.
+        .subscriptionOffer(
+            isPresented: $bindable.isPresentingSubscriptionOffer,
+            onFailure: { reason in player.subscriptionOfferFailed(reason) }
+        )
+        .sheet(isPresented: $bindable.isPresentingSubscriptionGap) {
+            SubscriptionGapView(state: player.subscription, onRetry: retryAction)
+        }
         // Board 03's keyboard row: ⌘F focuses search, space toggles
         // play/pause, ⌥→ skips next. ⌘⌥U is left unbound — the player column
         // is permanent and never hidden on iPad, so there's no "show queue"
@@ -52,6 +74,13 @@ struct RootSplitView: View {
         .installHiddenShortcut("f", modifiers: .command) { selection = .search }
         .installHiddenShortcut(.space, modifiers: []) { player.togglePlayPause() }
         .installHiddenShortcut(.rightArrow, modifiers: .option) { player.skipToNext() }
+    }
+
+    /// A retry is only honest when the check *failed*. A confirmed "no
+    /// subscription" is an answer, and offering to re-ask it would be theatre.
+    private var retryAction: (() -> Void)? {
+        guard player.subscription.isUnavailable else { return nil }
+        return { player.retrySubscriptionCheck() }
     }
 }
 
@@ -108,12 +137,22 @@ private struct IPadSidebar: View {
             .padding(.bottom, 4)
         }
         .safeAreaInset(edge: .bottom) {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Palette.honeyAmber.opacity(0.8))
-                Text("Apple Music · Connected")
-                    .humFont(12)
-                    .foregroundStyle(Palette.textMuted)
+            // Board 03's measurement: a plain person-circle avatar, then two
+            // lines — "Apple Music" over "Connected · library synced" — not
+            // a single checkmark-and-line row.
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle")
+                    .humFont(20, weight: .regular)
+                    .foregroundStyle(Palette.textSecondary)
+                    .frame(width: 34, height: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Apple Music")
+                        .humFont(14)
+                        .foregroundStyle(Palette.textPrimary)
+                    Text("Connected · library synced")
+                        .humFont(11.5)
+                        .foregroundStyle(Palette.textMuted)
+                }
                 Spacer()
             }
             .padding(.horizontal, 18)
@@ -138,6 +177,24 @@ private struct IPadSearchField: View {
             TextField("Search your library", text: $query)
                 .textFieldStyle(.plain)
                 .onSubmit(onFocus)
+            // Same clear affordance the iPhone chrome's own search field
+            // carries (`HumTabBar`) — shown only once there's text to clear.
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: HumIcon.clearField)
+                        .foregroundStyle(Palette.textMuted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+            // Board 03's own measurement shows this hint sitting inside the
+            // field's trailing edge — a label, not a live key-event target;
+            // ⌘F itself is wired as a hidden shortcut at the split view root.
+            Text("⌘F")
+                .humFont(12, weight: .medium)
+                .foregroundStyle(Palette.textDisabled)
         }
         .padding(.horizontal, 12)
         .frame(height: 36, alignment: .center)

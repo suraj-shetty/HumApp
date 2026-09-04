@@ -25,7 +25,10 @@ struct NowPlayingColumnView: View {
             } else if let track = player.currentTrack {
                 VStack(spacing: 0) {
                     ScrollView {
-                        VStack(spacing: 22) {
+                        VStack(alignment: .leading, spacing: 22) {
+                            Text("Now Playing")
+                                .humFont(.groupLabel)
+                                .foregroundStyle(Palette.textMuted)
                             hero(track)
                             titleBlock(track)
                             if player.isBuffering {
@@ -70,30 +73,45 @@ struct NowPlayingColumnView: View {
         }
     }
 
+    /// Full column width, not a fixed thumbnail size — the board's own
+    /// measurement runs the hero art edge-to-edge with the 26pt gutter on
+    /// both sides (288pt at this column's 340pt width), not a smaller
+    /// centered square.
+    private var heroSize: CGFloat { Metrics.iPadPlayerColumnWidth - 52 }
+
     private func artwork(_ track: HumTrack) -> some View {
         ArtworkView(
             url: track.artworkURL,
-            size: 220,
+            size: heroSize,
             cornerRadius: Metrics.radiusArt,
             label: track.albumTitle ?? track.title
         )
     }
 
+    /// Left-aligned, title/artist/badge stacked under the art with the
+    /// library toggle beside them — not centered text with a text-label
+    /// library button underneath. Matches the board's own layout
+    /// measurement: title, artist and badge all share the art's left edge,
+    /// and "Add to Library" is a plain 44pt circle icon at the block's
+    /// trailing edge, the same plus/checkmark glyph the iPhone overflow
+    /// menu already uses (`HumIcon.addToLibrary`/`.inLibrary`), not a
+    /// second, iPad-only icon.
     private func titleBlock(_ track: HumTrack) -> some View {
-        VStack(spacing: 6) {
-            Text(track.title)
-                .humFont(HumTextStyle(size: 20, weight: .light, relativeTo: .title3, tracking: -0.3))
-                .foregroundStyle(Palette.textPrimary)
-                .lineLimit(1)
-                .multilineTextAlignment(.center)
-            Text(track.artist)
-                .humFont(15)
-                .foregroundStyle(Palette.honeyAmber)
-                .lineLimit(1)
-            AudioVariantBadge(variant: player.audioVariant)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(track.title)
+                    .humFont(HumTextStyle(size: 20, weight: .light, relativeTo: .title3, tracking: -0.3))
+                    .foregroundStyle(Palette.textPrimary)
+                    .lineLimit(1)
+                Text(track.artist)
+                    .humFont(15)
+                    .foregroundStyle(Palette.honeyAmber)
+                    .lineLimit(1)
+                AudioVariantBadge(variant: player.audioVariant)
+            }
+            Spacer(minLength: 8)
             libraryButton(track)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private func libraryButton(_ track: HumTrack) -> some View {
@@ -101,16 +119,15 @@ struct NowPlayingColumnView: View {
         return Button {
             player.addToLibrary(track)
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: added ? HumIcon.inLibrary : HumIcon.addToLibrary)
-                Text(added ? "In Your Library" : "Add to Library")
-            }
-            .humFont(12.5)
-            .foregroundStyle(added ? Palette.textMuted : Palette.honeyAmber)
+            Image(systemName: added ? HumIcon.inLibrary : HumIcon.addToLibrary)
+                .humFont(21, weight: .regular)
+                .foregroundStyle(added ? Palette.textMuted : Palette.textSecondary)
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .disabled(added)
-        .padding(.top, 2)
+        .accessibilityLabel(added ? "In Your Library" : "Add to Library")
     }
 
     // MARK: - Up Next

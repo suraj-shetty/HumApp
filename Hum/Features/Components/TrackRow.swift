@@ -16,7 +16,9 @@ struct TrackRow: View {
 
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(PlayerViewModel.self) private var player
+    @Environment(\.isFocused) private var isFocused
     @State private var isPresentingAddToPlaylist = false
+    @State private var isHovered = false
 
     let track: HumTrack
     var leading: Leading = .artwork
@@ -74,9 +76,23 @@ struct TrackRow: View {
             }
             .padding(.vertical, rowPadding)
             .contentShape(.rect)
+            // iPad pointer/keyboard row (Board 03 A5): a 4%-white tint on
+            // trackpad hover — rows get a tint, not the grid tiles' lift,
+            // per the board's own distinction between the two — plus the
+            // same 2px amber focus ring grid tiles draw when reached by
+            // keyboard/controller focus, not hover.
+            .background(isHovered ? Color.white.opacity(0.04) : Color.clear)
+            .overlay {
+                if isFocused {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Palette.honeyAmber, lineWidth: Metrics.iPadFocusRingWidth)
+                        .padding(-Metrics.iPadFocusRingOffset)
+                }
+            }
         }
         .buttonStyle(.pressable)
         .disabled(action == nil)
+        .onHover { isHovered = $0 }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(action == nil ? [] : .isButton)
