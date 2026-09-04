@@ -10,4 +10,13 @@ protocol MusicLibraryService: Sendable {
     /// to the listener's Apple Music account (DECISIONS M-04).
     func add(_ track: HumTrack) async throws
     func contains(_ track: HumTrack) async throws -> Bool
+
+    /// `MusicLibrary.shared.createPlaylist(name:description:)` — design
+    /// screen 42. Returns the new playlist as a navigable collection so the
+    /// caller can push straight into it.
+    func createPlaylist(name: String, description: String) async throws -> HumCollection
+
+    /// `MusicLibrary.shared.add(_:to:)` — design screen 32's "Add to
+    /// Playlist" sheet.
+    func add(_ track: HumTrack, to playlist: HumCollection) async throws
 }

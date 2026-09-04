@@ -46,6 +46,23 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
         return try await request.response().items.contains { $0.artistName == track.artist }
     }
 
+    func createPlaylist(name: String, description: String) async throws -> HumCollection {
+        let playlist = try await MusicLibrary.shared.createPlaylist(name: name, description: description)
+        return MusicKitMapping.collection(playlist, source: .library)
+    }
+
+    func add(_ track: HumTrack, to playlist: HumCollection) async throws {
+        guard let song = try await song(for: track) else {
+            throw HumError.requestFailed("That track is no longer available.")
+        }
+        var request = MusicLibraryRequest<Playlist>()
+        request.filter(matching: \.id, equalTo: MusicItemID(playlist.id))
+        guard let target = try await request.response().items.first else {
+            throw HumError.requestFailed("That playlist is no longer available.")
+        }
+        try await MusicLibrary.shared.add(song, to: target)
+    }
+
     // MARK: - Resolution
 
     private func song(for track: HumTrack) async throws -> Song? {

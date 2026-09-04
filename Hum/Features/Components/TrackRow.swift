@@ -16,6 +16,7 @@ struct TrackRow: View {
 
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(PlayerViewModel.self) private var player
+    @State private var isPresentingAddToPlaylist = false
 
     let track: HumTrack
     var leading: Leading = .artwork
@@ -80,20 +81,22 @@ struct TrackRow: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(action == nil ? [] : .isButton)
         .contextMenu { contextMenuContent }
+        .sheet(isPresented: $isPresentingAddToPlaylist) {
+            AddToPlaylistView(track: track)
+        }
     }
 
-    /// Design screen 31's long-press menu. Six of its seven actions are
-    /// built. "Add to Playlist…" is still left out: it needs a
-    /// playlist-mutation capability `MusicLibraryService` doesn't expose,
-    /// the same gap recorded against M-6. "Go to Artist" and "Go to Album"
-    /// resolve through `MusicCatalogService.artist(for:)` /
+    /// Design screen 31's long-press menu, all seven actions now built.
+    /// "Add to Playlist…" presents its own sheet (screen 32) directly — a
+    /// modal needs no navigation stack, unlike "Go to Artist" / "Go to
+    /// Album", which resolve through `MusicCatalogService.artist(for:)` /
     /// `.album(for:)` — real MusicKit lookups, not a guess from
-    /// `HumTrack.artist`/`albumTitle`'s display strings — but only when a
-    /// caller supplies the closure; most `TrackRow` call sites don't sit on
-    /// a navigation stack that can push the result, and a menu item that
-    /// resolves correctly but has nowhere to go is the same dead-button
-    /// problem this codebase already ruled out for Now Playing's lyrics
-    /// button (NP-7).
+    /// `HumTrack.artist`/`albumTitle`'s display strings — but only appear
+    /// when a caller supplies the closure; most `TrackRow` call sites don't
+    /// sit on a navigation stack that can push the result, and a menu item
+    /// that resolves correctly but has nowhere to go is the same
+    /// dead-button problem this codebase already ruled out for Now
+    /// Playing's lyrics button (NP-7).
     @ViewBuilder
     private var contextMenuContent: some View {
         Button("Play Next", systemImage: HumIcon.playNext) {
@@ -110,6 +113,9 @@ struct TrackRow: View {
             player.addToLibrary(track)
         }
         .disabled(inLibrary)
+        Button("Add to Playlist…", systemImage: "text.badge.plus") {
+            isPresentingAddToPlaylist = true
+        }
         if let onGoToAlbum {
             Button("Go to Album", systemImage: "square.stack") {
                 onGoToAlbum(track)

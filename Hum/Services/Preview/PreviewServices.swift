@@ -95,17 +95,39 @@ actor PreviewCatalogService: MusicCatalogService {
 
 actor PreviewLibraryService: MusicLibraryService {
     private var added: Set<String> = []
+    private var createdPlaylists: [HumCollection] = []
+    /// track id → playlist ids it's been added to, for a preview session
+    /// only — not persisted, mirroring every other preview fixture.
+    private var playlistMembership: [String: Set<String>] = [:]
 
     func albums() async throws -> [HumCollection] {
         PreviewFixtures.collections.filter { $0.kind == .album }
     }
 
     func playlists() async throws -> [HumCollection] {
-        PreviewFixtures.collections.filter { $0.kind == .playlist }
+        PreviewFixtures.collections.filter { $0.kind == .playlist } + createdPlaylists
     }
 
     func add(_ track: HumTrack) async throws { added.insert(track.id) }
     func contains(_ track: HumTrack) async throws -> Bool { added.contains(track.id) }
+
+    func createPlaylist(name: String, description: String) async throws -> HumCollection {
+        let playlist = HumCollection(
+            id: "preview-playlist-\(createdPlaylists.count)",
+            kind: .playlist,
+            title: name,
+            subtitle: "",
+            metaLine: "Playlist",
+            artworkURL: nil,
+            source: .library
+        )
+        createdPlaylists.append(playlist)
+        return playlist
+    }
+
+    func add(_ track: HumTrack, to playlist: HumCollection) async throws {
+        playlistMembership[track.id, default: []].insert(playlist.id)
+    }
 }
 
 /// A playback service that actually advances time, so progress bars, the

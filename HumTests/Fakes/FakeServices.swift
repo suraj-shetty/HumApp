@@ -200,6 +200,23 @@ actor FakeLibraryService: MusicLibraryService {
         return added.contains(track.id)
     }
 
+    private(set) var createdPlaylistNames: [String] = []
+    private(set) var addedToPlaylist: [(track: String, playlist: String)] = []
+
+    func createPlaylist(name: String, description: String) async throws -> HumCollection {
+        try throwIfNeeded()
+        createdPlaylistNames.append(name)
+        return HumCollection(
+            id: "fake-playlist-\(createdPlaylistNames.count)", kind: .playlist, title: name,
+            subtitle: "", metaLine: "Playlist", artworkURL: nil, source: .library
+        )
+    }
+
+    func add(_ track: HumTrack, to playlist: HumCollection) async throws {
+        try throwIfNeeded()
+        addedToPlaylist.append((track.id, playlist.id))
+    }
+
     func setError(_ error: HumError?) { self.error = error }
     func setAlbums(_ collections: [HumCollection]) { storedAlbums = collections }
     func setPlaylists(_ collections: [HumCollection]) { storedPlaylists = collections }
