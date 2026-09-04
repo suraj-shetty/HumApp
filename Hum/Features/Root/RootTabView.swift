@@ -63,6 +63,16 @@ struct RootTabView: View {
         .fullScreenCover(isPresented: $isShowingNowPlaying) {
             NowPlayingView()
         }
+        // Design screen 29. See PlayerViewModel.perform's doc comment for
+        // what actually triggers this — a heuristic, not a real MusicKit
+        // status. Presented at the root rather than nested in Now Playing so
+        // it still shows up if the listener had already backed out to a tab.
+        .fullScreenCover(isPresented: $bindable.isShowingConnectionLost) {
+            ConnectionLostView {
+                player.retryConnectionLost?()
+                player.isShowingConnectionLost = false
+            }
+        }
         // Apple's own trial-membership entry point, bridged from
         // Services/Adapters because this file may not import MusicKit. It is
         // presented only when the tested subscription gate turns back a play

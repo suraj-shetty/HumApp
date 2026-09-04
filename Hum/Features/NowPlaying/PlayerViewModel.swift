@@ -37,6 +37,12 @@ final class PlayerViewModel {
     var isPresentingSubscriptionGap = false
     /// Transient message shown as a toast — the only chrome-glass content view.
     private(set) var toast: ToastMessage?
+    /// Design screen 29's full-screen "Playback stopped" — see `perform`'s
+    /// doc comment for what actually triggers this.
+    var isShowingConnectionLost = false
+    private(set) var retryConnectionLost: (() -> Void)?
+    private var consecutiveFailures = 0
+    private static let connectionLostThreshold = 2
 
     /// Tracks the listener has added to their library this session, so the
     /// Now Playing action can render its filled state without a round trip.
@@ -316,11 +322,30 @@ final class PlayerViewModel {
     private func perform(_ work: @escaping () async throws -> Void) async {
         do {
             try await work()
+            consecutiveFailures = 0
         } catch {
-            showToast("Playback failed.", kind: .error) { [weak self] in
+            consecutiveFailures += 1
+            // MusicKit gives this app no signal that distinguishes "lost the
+            // connection to Apple Music" from an ordinary single command
+            // failing — design screen 29's full-screen "Playback stopped" is
+            // for the former, and the toast-with-retry above is for the
+            // latter. Two failures in a row, with nothing succeeding between
+            // them, is the closest honest proxy this codebase has: still a
+            // heuristic, not a real status read, which is why it's spelled
+            // out here rather than left implicit.
+            guard consecutiveFailures >= Self.connectionLostThreshold else {
+                showToast("Playback failed.", kind: .error) { [weak self] in
+                    guard let self else { return }
+                    Task { await self.perform(work) }
+                }
+                return
+            }
+            consecutiveFailures = 0
+            retryConnectionLost = { [weak self] in
                 guard let self else { return }
                 Task { await self.perform(work) }
             }
+            isShowingConnectionLost = true
         }
     }
 
