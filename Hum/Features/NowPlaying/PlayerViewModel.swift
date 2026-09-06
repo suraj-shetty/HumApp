@@ -203,6 +203,7 @@ final class PlayerViewModel {
         case .play:
             sourceLabel = source
             sourceTracks = tracks
+            recordPlaybackStart()
             Task { await perform { try await self.playback.play(tracks, startingAt: index) } }
 
         case .presentSubscriptionOffer:
@@ -225,6 +226,27 @@ final class PlayerViewModel {
                 }
             }
         }
+    }
+
+    // MARK: - Recently played sync hint
+
+    private static let lastPlaybackStartedKey = "HumLastPlaybackStartedAt"
+
+    private func recordPlaybackStart() {
+        UserDefaults.standard.set(Date(), forKey: Self.lastPlaybackStartedKey)
+    }
+
+    /// `MusicRecentlyPlayedContainerRequest` reads Apple's own server-side
+    /// history, which is not updated the instant playback starts — a listener
+    /// who plays something and immediately force-quits can relaunch to find
+    /// Apple hasn't scrobbled it yet. This distinguishes that case from
+    /// genuinely never having played anything, so Home's empty state can say
+    /// "still syncing" instead of the wrong "nothing here yet".
+    var recentlyPlayedMaySyncSoon: Bool {
+        guard let last = UserDefaults.standard.object(forKey: Self.lastPlaybackStartedKey) as? Date else {
+            return false
+        }
+        return Date().timeIntervalSince(last) < 15 * 60
     }
 
     func togglePlayPause() {

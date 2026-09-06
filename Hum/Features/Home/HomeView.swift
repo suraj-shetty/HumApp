@@ -229,11 +229,19 @@ struct HomeView: View {
             ShelfSkeleton()
 
         case .loaded(let collections) where collections.isEmpty:
-            EmptyStateView(
-                icon: HumIcon.musicNote,
-                headline: "Nothing here yet",
-                message: "Albums and playlists you listen to will show up here."
-            )
+            if player.recentlyPlayedMaySyncSoon {
+                EmptyStateView(
+                    icon: HumIcon.musicNote,
+                    headline: "Still syncing",
+                    message: "Apple Music can take a few minutes to update your play history after you listen. Check back shortly."
+                )
+            } else {
+                EmptyStateView(
+                    icon: HumIcon.musicNote,
+                    headline: "Nothing here yet",
+                    message: "Albums and playlists you listen to will show up here."
+                )
+            }
 
         case .loaded(let collections):
             ScrollView(.horizontal) {
