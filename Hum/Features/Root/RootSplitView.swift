@@ -28,26 +28,67 @@ struct RootSplitView: View {
     var body: some View {
         @Bindable var bindable = player
 
+        // Genuinely three columns in the design, but built as a *two*-column
+        // `NavigationSplitView` (sidebar + detail) with the player column
+        // folded into the detail side as a plain `HStack` sibling, not
+        // NavigationSplitView's own third `detail:` slot. Measured against
+        // the running app (not just read from the API): with all three
+        // slots real NavigationSplitView columns, `.balanced` (and every
+        // other built-in style) inserted two dead-black ~60-140pt gaps ­—
+        // one between content and player, one after player to the trailing
+        // edge — that no combination of `min`/`ideal`/`max` on any column
+        // could close; the content column's own `ideal` was silently
+        // ignored outright. A plain `HStack` has none of that arbitration to
+        // get wrong. The only behaviour actually needed from
+        // `NavigationSplitView` here is the sidebar's own collapse/reveal at
+        // narrow widths (RootSplitView's own history: `.constant(.all)` used
+        // to drop the sidebar with no way back) — a two-column split still
+        // gives that, with content+player simply riding along as one unit.
         return NavigationSplitView(columnVisibility: $columnVisibility) {
             IPadSidebar(
                 selection: $selection,
                 library: library,
                 onNewPlaylist: { isPresentingNewPlaylist = true }
             )
-            .navigationSplitViewColumnWidth(Metrics.iPadSidebarWidth)
-        } content: {
-            IPadContentColumn(destination: selection ?? .recentlyPlayed, searchQuery: $searchQuery)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        IPadSearchField(query: $searchQuery) { selection = .search }
-                    }
-                }
+            .navigationSplitViewColumnWidth(min: Metrics.iPadSidebarWidth, ideal: Metrics.iPadSidebarWidth, max: Metrics.iPadSidebarWidth)
         } detail: {
-            NowPlayingColumnView()
-                .navigationSplitViewColumnWidth(Metrics.iPadPlayerColumnWidth)
-                .toolbar(.hidden, for: .navigationBar)
+            HStack(spacing: 0) {
+                // A `.toolbar` principal item never rendered here — a
+                // `NavigationStack` nested inside this `HStack` (rather than
+                // being NavigationSplitView's own direct column content)
+                // didn't host one reliably, with or without a navigation
+                // title. `safeAreaInset` is the pattern `IPadSidebar` below
+                // already uses for its own header/footer, and it doesn't
+                // depend on that toolbar-hosting relationship at all — so
+                // this also becomes the fix for the sidebar-toggle icon
+                // being the system's own (a different glyph, floating above
+                // the search field instead of beside it) and for the
+                // filter/more icons the board draws beside it that a system
+                // toolbar had no slot for anyway.
+                NavigationStack {
+                    IPadContentColumn(destination: selection ?? .recentlyPlayed, searchQuery: $searchQuery)
+                        .safeAreaInset(edge: .top) {
+                            IPadContentToolbar(
+                                query: $searchQuery,
+                                isSidebarVisible: columnVisibility != .detailOnly,
+                                onToggleSidebar: toggleSidebar,
+                                onFocusSearch: { selection = .search }
+                            )
+                        }
+                        .toolbar(.hidden, for: .navigationBar)
+                }
+                .frame(maxWidth: .infinity)
+
+                NowPlayingColumnView()
+                    .toolbar(.hidden, for: .navigationBar)
+            }
         }
-        .navigationSplitViewStyle(.balanced)
+        // The system's own sidebar-toggle glyph — a different icon than the
+        // board's plain 3-line hamburger, and it floated above the search
+        // field instead of beside it (see `IPadContentToolbar`, which is
+        // this control's real replacement). Without removing the system one
+        // too, both showed at once.
+        .toolbar(removing: .sidebarToggle)
         .tint(Palette.honeyAmber)
         .task { await library.load(environment: environment) }
         .sheet(isPresented: $isPresentingNewPlaylist) {
@@ -82,6 +123,12 @@ struct RootSplitView: View {
         guard player.subscription.isUnavailable else { return nil }
         return { player.retrySubscriptionCheck() }
     }
+
+    private func toggleSidebar() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+        }
+    }
 }
 
 // MARK: - Sidebar destinations
@@ -105,27 +152,34 @@ private struct IPadSidebar: View {
     let onNewPlaylist: () -> Void
 
     var body: some View {
-        List(selection: $selection) {
-            Section {
+        ScrollView {
+            // A plain `VStack` of custom rows, not `List(selection:)` — the
+            // system sidebar list style draws its own row height, insets and
+            // selection tint, none of which match Board 03's measured 44pt
+            // row on an 11px-radius pill at 14%-amber when selected. Reusing
+            // it would leave the sidebar looking system-default forever, no
+            // matter how the tokens above it were tuned.
+            VStack(alignment: .leading, spacing: 2) {
                 row("Recently played", icon: "clock", .recentlyPlayed)
                 row("Recently added", icon: "plus", .recentlyAdded)
                 row("Artists", icon: "person", .artists)
                 row("Albums", icon: "square.stack", .albums)
-                row("Songs", icon: "music.note", .songs)
+                row("Songs", icon: HumIcon.musicNote, .songs)
                 row("Made for you", icon: "star", .madeForYou)
-            }
 
-            Section("Playlists") {
+                sectionLabel("Playlists")
                 ForEach(library.playlists) { playlist in
                     row(playlist.title, icon: "music.note.list", .playlist(playlist))
                 }
                 Button(action: onNewPlaylist) {
-                    Label("New playlist", systemImage: "plus.circle")
+                    rowLabel("New playlist", icon: "plus.circle", tint: Palette.honeyAmber)
                 }
-                .foregroundStyle(Palette.honeyAmber)
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
         }
-        .listStyle(.sidebar)
+        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .top) {
             HStack(spacing: 10) {
                 HumMark().frame(width: 26, height: 26)
@@ -135,6 +189,7 @@ private struct IPadSidebar: View {
             .padding(.horizontal, 18)
             .padding(.top, 10)
             .padding(.bottom, 4)
+            .background(Palette.contentSurfaceIPad)
         }
         .safeAreaInset(edge: .bottom) {
             // Board 03's measurement: a plain person-circle avatar, then two
@@ -157,13 +212,106 @@ private struct IPadSidebar: View {
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
+            .background(Palette.contentSurfaceIPad)
         }
         .background(Palette.contentSurfaceIPad)
-        .scrollContentBackground(.hidden)
+    }
+
+    private func sectionLabel(_ title: String) -> some View {
+        Text(title.uppercased())
+            .humFont(HumTextStyle(size: 11, relativeTo: .caption, tracking: 1.2))
+            .foregroundStyle(Palette.textMuted)
+            .padding(.horizontal, 12)
+            .padding(.top, 18)
+            .padding(.bottom, 6)
     }
 
     private func row(_ title: String, icon: String, _ destination: IPadSidebarDestination) -> some View {
-        Label(title, systemImage: icon).tag(destination)
+        let isSelected = selection == destination
+        return Button {
+            selection = destination
+        } label: {
+            rowLabel(title, icon: icon, tint: isSelected ? Palette.honeyAmber : Palette.textPrimary)
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(isSelected ? Palette.honeyAmber.opacity(0.14) : .clear)
+        )
+    }
+
+    private func rowLabel(_ title: String, icon: String, tint: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .humFont(15, weight: .regular)
+                .foregroundStyle(tint)
+                .frame(width: 20)
+            Text(title)
+                .humFont(15)
+                .foregroundStyle(tint)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .contentShape(.rect)
+    }
+}
+
+/// Board 03's own measured content-column toolbar: a plain 3-line hamburger
+/// (34×34, radius 9) directly beside the search field, then a filter icon
+/// and a "more" kebab at the trailing edge — all four in one row, 30pt
+/// gutters matching `Metrics.iPadContentGutter`. Replaces both the system's
+/// own sidebar-toggle glyph (a different icon, floating alone above the
+/// search field rather than beside it) and the toolbar that had no slot for
+/// the filter/kebab icons at all.
+private struct IPadContentToolbar: View {
+    @Binding var query: String
+    let isSidebarVisible: Bool
+    let onToggleSidebar: () -> Void
+    let onFocusSearch: () -> Void
+
+    var body: some View {
+        HStack(spacing: 14) {
+            IPadToolbarIconButton(systemName: HumIcon.dragHandle, action: onToggleSidebar)
+                .accessibilityLabel(isSidebarVisible ? "Hide Sidebar" : "Show Sidebar")
+
+            IPadSearchField(query: $query, onFocus: onFocusSearch)
+                .frame(maxWidth: .infinity)
+
+            // Filter and sort aren't defined features yet — the board draws
+            // both icons but specifies no behaviour behind them, so these
+            // stay honest placeholders (Board 03 revision items 10/12's
+            // "flag, don't silently resolve" treatment) rather than a
+            // fabricated menu.
+            IPadToolbarIconButton(systemName: "line.3.horizontal.decrease", action: {})
+                .accessibilityLabel("Filter")
+            IPadToolbarIconButton(systemName: HumIcon.overflow, rotation: 90, action: {})
+                .accessibilityLabel("More")
+        }
+        .padding(.horizontal, Metrics.iPadContentGutter)
+        .padding(.top, 14)
+        .padding(.bottom, 14)
+        .background(Palette.deepOnyx)
+    }
+}
+
+private struct IPadToolbarIconButton: View {
+    let systemName: String
+    var rotation: Double = 0
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .humFont(15, weight: .regular)
+                .foregroundStyle(Palette.textPrimary.opacity(0.72))
+                .rotationEffect(.degrees(rotation))
+                .frame(width: 34, height: 34)
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -197,7 +345,7 @@ private struct IPadSearchField: View {
                 .foregroundStyle(Palette.textDisabled)
         }
         .padding(.horizontal, 12)
-        .frame(height: 36, alignment: .center)
+        .frame(height: 38, alignment: .center)
         .frame(minWidth: 260)
         .chromeGlass(in: RoundedRectangle(cornerRadius: 10, style: .continuous), tint: nil)
     }

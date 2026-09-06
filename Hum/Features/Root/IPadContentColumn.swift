@@ -15,15 +15,12 @@ struct IPadContentColumn: View {
         Group {
             switch destination {
             case .recentlyPlayed:
-                // Board 03's "Listen Now" screen is exactly Home's own
-                // composition — greeting, Recently Played shelf, Made for
-                // You — so this reuses `HomeView` rather than a second copy.
-                // `embedsNavigationChrome: false` — this column already sits
-                // inside `NavigationSplitView`'s own navigation container; see
-                // `HomeView.embedsNavigationChrome`'s doc comment for why a
-                // second, hidden-bar `NavigationStack` here was swallowing
-                // this column's entire toolbar, sidebar toggle included.
-                HomeView(embedsNavigationChrome: false)
+                // Board 03's own measurement: "Listen Now" is a two-column
+                // composition (a "Start here" hero beside a resume list),
+                // not iPhone's single-column shelf-then-list Home. See
+                // `IPadListenNowView`'s doc comment for what backs the list
+                // rows instead of the board's unbacked "12 min left" text.
+                IPadListenNowView()
 
             case .artists:
                 LibraryView(initialFilter: .artists, embedsNavigationChrome: false)

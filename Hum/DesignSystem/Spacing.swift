@@ -139,8 +139,9 @@ enum Metrics {
     //
     // Board 03, measured against its 1194×834 iPad Pro 11″ frame.
 
-    static let iPadSidebarWidth: CGFloat = 260
+    static let iPadSidebarWidth: CGFloat = 264
     static let iPadPlayerColumnWidth: CGFloat = 340
+    static let iPadContentGutter: CGFloat = 30
     static let iPadFocusRingWidth: CGFloat = 2
     static let iPadFocusRingOffset: CGFloat = 2
 }
