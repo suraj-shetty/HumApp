@@ -120,6 +120,7 @@ actor FakePlaybackService: PlaybackService {
 
 actor FakeCatalogService: MusicCatalogService {
     var searchResults: [HumTrack] = []
+    var searchAlbumResults: [HumCollection] = []
     var recent: [HumCollection] = []
     var recommended: [HumTrack] = []
     var collectionTracks: [HumTrack] = []
@@ -129,10 +130,10 @@ actor FakeCatalogService: MusicCatalogService {
         if let error { throw error }
     }
 
-    func search(_ term: String) async throws -> [HumTrack] {
+    func search(_ term: String) async throws -> HumSearchResults {
         try throwIfNeeded()
-        guard !term.isEmpty else { return [] }
-        return searchResults
+        guard !term.isEmpty else { return .empty }
+        return HumSearchResults(tracks: searchResults, albums: searchAlbumResults)
     }
 
     func recentlyPlayed() async throws -> [HumCollection] {
@@ -165,6 +166,7 @@ actor FakeCatalogService: MusicCatalogService {
 
     func setError(_ error: HumError?) { self.error = error }
     func setSearchResults(_ tracks: [HumTrack]) { searchResults = tracks }
+    func setSearchAlbumResults(_ collections: [HumCollection]) { searchAlbumResults = collections }
     func setRecent(_ collections: [HumCollection]) { recent = collections }
     func setRecommended(_ tracks: [HumTrack]) { recommended = tracks }
     func setCollectionTracks(_ tracks: [HumTrack]) { collectionTracks = tracks }
@@ -173,6 +175,7 @@ actor FakeCatalogService: MusicCatalogService {
 actor FakeLibraryService: MusicLibraryService {
     var storedAlbums: [HumCollection] = []
     var storedPlaylists: [HumCollection] = []
+    var storedArtists: [HumCollection] = []
     private(set) var added: Set<String> = []
     var error: HumError?
 
@@ -188,6 +191,11 @@ actor FakeLibraryService: MusicLibraryService {
     func playlists() async throws -> [HumCollection] {
         try throwIfNeeded()
         return storedPlaylists
+    }
+
+    func artists() async throws -> [HumCollection] {
+        try throwIfNeeded()
+        return storedArtists
     }
 
     func add(_ track: HumTrack) async throws {
@@ -226,4 +234,5 @@ actor FakeLibraryService: MusicLibraryService {
     func setError(_ error: HumError?) { self.error = error }
     func setAlbums(_ collections: [HumCollection]) { storedAlbums = collections }
     func setPlaylists(_ collections: [HumCollection]) { storedPlaylists = collections }
+    func setArtists(_ collections: [HumCollection]) { storedArtists = collections }
 }
