@@ -338,6 +338,17 @@ private struct IPadSearchField: View {
             TextField("Search your library", text: $query)
                 .textFieldStyle(.plain)
                 .onSubmit(onFocus)
+                // `SearchView` itself already searches live as you type
+                // (`.onChange(of: query)`, debounced) — but nothing switched
+                // the content column *to* it until Return was pressed, so
+                // typing produced no visible results at all until then.
+                // `onFocus` here just selects the destination; `SearchView`
+                // owns the actual query timing.
+                .onChange(of: query) { previous, current in
+                    if previous.isEmpty && !current.isEmpty {
+                        onFocus()
+                    }
+                }
             // Same clear affordance the iPhone chrome's own search field
             // carries (`HumTabBar`) — shown only once there's text to clear.
             if !query.isEmpty {
