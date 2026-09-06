@@ -66,6 +66,10 @@ final class ArtworkStore {
 struct ArtworkView: View {
     let url: URL?
     var size: CGFloat
+    /// Overrides the height for a non-square plate (the iPad Listen Now hero,
+    /// per Board 03's own measurement — 292×272, not a square). Defaults to
+    /// `size` so every other call site stays square without change.
+    var height: CGFloat?
     var cornerRadius: CGFloat = Metrics.radiusArt
     var warm: Bool = false
     /// Names the image for VoiceOver — the album or track title, not "image".
@@ -86,7 +90,7 @@ struct ArtworkView: View {
                 placeholder
             }
         }
-        .frame(width: size, height: size)
+        .frame(width: size, height: height ?? size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

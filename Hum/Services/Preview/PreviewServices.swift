@@ -27,6 +27,17 @@ enum PreviewFixtures {
               metaLine: "Album · 2024 · 9 tracks", artworkURL: nil, source: .catalog),
         .init(id: "c2", kind: .playlist, title: "Tuesday Tape", subtitle: "Hum",
               metaLine: "Playlist · 24 tracks", artworkURL: nil, source: .library),
+        // Board 03's iPad sidebar measures four playlists, not one — added
+        // here (not renaming `c2`) so the row count and truncation/scroll
+        // behaviour can actually be checked against the board. Temporary,
+        // for this audit pass; not sourced from either prototype file the
+        // way the three fixtures above are.
+        .init(id: "c3", kind: .playlist, title: "Slow mornings", subtitle: "Hum",
+              metaLine: "Playlist · 18 tracks", artworkURL: nil, source: .library),
+        .init(id: "c4", kind: .playlist, title: "Kitchen radio", subtitle: "Hum",
+              metaLine: "Playlist · 31 tracks", artworkURL: nil, source: .library),
+        .init(id: "c5", kind: .playlist, title: "Long drive", subtitle: "Hum",
+              metaLine: "Playlist · 42 tracks", artworkURL: nil, source: .library),
     ]
 
     /// `tracks`' shared artist and album — every fixture track is "Ana

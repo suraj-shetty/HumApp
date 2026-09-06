@@ -79,6 +79,7 @@
 		B983D8C2473EEF2D4907FB97 /* RootSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0CD010CE6FEEB655BAE0D84 /* RootSplitView.swift */; };
 		BA4BAD391542638A4BDC360E /* LaunchFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D957063962EF7BDFA8F86C40 /* LaunchFlowView.swift */; };
 		BC01BB731C51BEA3495C2080 /* SubscriptionGapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC921709F5496D20D174F946 /* SubscriptionGapView.swift */; };
+		BC21D95391B912938912CE0B /* IPadListenNowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A03F126E851D9A8E7E75EA /* IPadListenNowView.swift */; };
 		BC4BC16E25C97706C493F1A6 /* QueueReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABAA15E95222695B69E39E4 /* QueueReducer.swift */; };
 		BCEF24214DD10A7EC29BAF16 /* SubscriptionGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1FE88CFE06EF13EB008FFF /* SubscriptionGateTests.swift */; };
 		BD9238D0ED09C342B1BD7FE4 /* PlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1141120B45A703C1C961DDCE /* PlaybackService.swift */; };
@@ -225,6 +226,7 @@
 		D0BBF587FDC5A7FA535244B5 /* WatchPlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPlayerViewModel.swift; sourceTree = "<group>"; };
 		D1F4B3E089681FB7C9B7E08E /* QueueState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueState.swift; sourceTree = "<group>"; };
 		D3B01F2BE967D9F5ED5F0055 /* IPadContentColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadContentColumn.swift; sourceTree = "<group>"; };
+		D6A03F126E851D9A8E7E75EA /* IPadListenNowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPadListenNowView.swift; sourceTree = "<group>"; };
 		D957063962EF7BDFA8F86C40 /* LaunchFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchFlowView.swift; sourceTree = "<group>"; };
 		DABAA15E95222695B69E39E4 /* QueueReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueReducer.swift; sourceTree = "<group>"; };
 		DFC0CF7BA428150D3F67CFCF /* FakeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeServices.swift; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 				2C78474E68314D08B65759FC /* ConnectionLostView.swift */,
 				62A7EF5843C5E64FB5191834 /* HumTabBar.swift */,
 				D3B01F2BE967D9F5ED5F0055 /* IPadContentColumn.swift */,
+				D6A03F126E851D9A8E7E75EA /* IPadListenNowView.swift */,
 				3168CC44A6D284987AC2E55C /* RootGateView.swift */,
 				A0CD010CE6FEEB655BAE0D84 /* RootSplitView.swift */,
 				6CB6044460B408251BAC0396 /* RootTabView.swift */,
@@ -701,6 +704,7 @@
 				200E995AC023797346DC1DD3 /* HumTrack.swift in Sources */,
 				83A4A5A0886442D72C7C580E /* IPadConnectView.swift in Sources */,
 				8649678BC4519A6CCA6A38F8 /* IPadContentColumn.swift in Sources */,
+				BC21D95391B912938912CE0B /* IPadListenNowView.swift in Sources */,
 				BA4BAD391542638A4BDC360E /* LaunchFlowView.swift in Sources */,
 				CBF3FE43457151CCC3042A5D /* LibraryView.swift in Sources */,
 				6A7716D602BF2F239140A1B2 /* Motion.swift in Sources */,

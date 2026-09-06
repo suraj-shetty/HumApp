@@ -15,15 +15,12 @@ struct IPadContentColumn: View {
         Group {
             switch destination {
             case .recentlyPlayed:
-                // Board 03's "Listen Now" screen is exactly Home's own
-                // composition — greeting, Recently Played shelf, Made for
-                // You — so this reuses `HomeView` rather than a second copy.
-                // `embedsNavigationChrome: false` — this column already sits
-                // inside `NavigationSplitView`'s own navigation container; see
-                // `HomeView.embedsNavigationChrome`'s doc comment for why a
-                // second, hidden-bar `NavigationStack` here was swallowing
-                // this column's entire toolbar, sidebar toggle included.
-                HomeView(embedsNavigationChrome: false)
+                // Board 03's own measurement: "Listen Now" is a two-column
+                // composition (a "Start here" hero beside a resume list),
+                // not iPhone's single-column shelf-then-list Home. See
+                // `IPadListenNowView`'s doc comment for what backs the list
+                // rows instead of the board's unbacked "12 min left" text.
+                IPadListenNowView()
 
             case .artists:
                 LibraryView(initialFilter: .artists, embedsNavigationChrome: false)
@@ -45,7 +42,15 @@ struct IPadContentColumn: View {
                 SearchView(query: $searchQuery, embedsNavigationChrome: false)
 
             case .playlist(let collection):
-                NavigationStack { DetailView(collection: collection) }
+                // No `NavigationStack` wrapper here — `DetailView`'s own doc
+                // comment is explicit that it has none of its own and must
+                // extend its caller's, the same ambient stack every other
+                // case in this switch already renders into. Wrapping it in a
+                // second, nested stack (as this used to) gave it its own
+                // isolated navigation/layout context instead, which is what
+                // was cutting its content off under the sidebar — the width
+                // every sibling case gets for free never reached this one.
+                DetailView(collection: collection)
             }
         }
         .background(Palette.deepOnyx)
