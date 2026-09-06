@@ -173,6 +173,13 @@ private struct IPadSidebar: View {
             // it would leave the sidebar looking system-default forever, no
             // matter how the tokens above it were tuned.
             VStack(alignment: .leading, spacing: 2) {
+                // Not in Board 03's own sidebar drawing — the design puts
+                // search only in the toolbar's own field/island. Added
+                // because the toolbar field has no destination-side
+                // indication once it *is* active: nothing in the sidebar
+                // showed the amber "you are here" the six rows below it
+                // already give every other destination.
+                row("Search", icon: HumIcon.search, .search)
                 row("Recently played", icon: "clock", .recentlyPlayed)
                 row("Recently added", icon: "plus", .recentlyAdded)
                 row("Artists", icon: "person", .artists)
@@ -272,12 +279,18 @@ private struct IPadSidebar: View {
 }
 
 /// Board 03's own measured content-column toolbar: a plain 3-line hamburger
-/// (34×34, radius 9) directly beside the search field, then a filter icon
-/// and a "more" kebab at the trailing edge — all four in one row, 30pt
-/// gutters matching `Metrics.iPadContentGutter`. Replaces both the system's
-/// own sidebar-toggle glyph (a different icon, floating alone above the
-/// search field rather than beside it) and the toolbar that had no slot for
-/// the filter/kebab icons at all.
+/// (34×34, radius 9) directly beside the search field. Replaces the
+/// system's own sidebar-toggle glyph (a different icon, floating alone
+/// above the search field rather than beside it).
+///
+/// The board also draws a filter icon and a "more" kebab at the trailing
+/// edge, but neither survived a real audit: no filter/sort concept exists
+/// anywhere in the app (Library already has its own real filter chips for
+/// its own content), and the kebab's only defined action — DetailView's
+/// Play/Shuffle menu — is already shown as visible buttons on-screen
+/// whenever DetailView is open, so wiring it would only duplicate an
+/// existing control, not add one. Dropped both rather than keep dead
+/// placeholders or build redundant behaviour.
 private struct IPadContentToolbar: View {
     @Binding var query: String
     let isSidebarVisible: Bool
@@ -291,16 +304,6 @@ private struct IPadContentToolbar: View {
 
             IPadSearchField(query: $query, onFocus: onFocusSearch)
                 .frame(maxWidth: .infinity)
-
-            // Filter and sort aren't defined features yet — the board draws
-            // both icons but specifies no behaviour behind them, so these
-            // stay honest placeholders (Board 03 revision items 10/12's
-            // "flag, don't silently resolve" treatment) rather than a
-            // fabricated menu.
-            IPadToolbarIconButton(systemName: "line.3.horizontal.decrease", action: {})
-                .accessibilityLabel("Filter")
-            IPadToolbarIconButton(systemName: HumIcon.overflow, rotation: 90, action: {})
-                .accessibilityLabel("More")
         }
         .padding(.horizontal, Metrics.iPadContentGutter)
         .padding(.top, 14)
@@ -311,7 +314,6 @@ private struct IPadContentToolbar: View {
 
 private struct IPadToolbarIconButton: View {
     let systemName: String
-    var rotation: Double = 0
     let action: () -> Void
 
     var body: some View {
@@ -319,7 +321,6 @@ private struct IPadToolbarIconButton: View {
             Image(systemName: systemName)
                 .humFont(15, weight: .regular)
                 .foregroundStyle(Palette.textPrimary.opacity(0.72))
-                .rotationEffect(.degrees(rotation))
                 .frame(width: 34, height: 34)
                 .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 .contentShape(.rect)
