@@ -15,56 +15,60 @@ struct RootSplitView: View {
     @State private var searchQuery = ""
     @State private var isPresentingNewPlaylist = false
     @State private var library = SidebarLibraryModel()
-    // A real `@State`, not `.constant(.all)`: at 1194×834 landscape (the
-    // board's own measurement) all three fixed-width columns fit and this
-    // starts and stays `.all`. But `.constant` can never be written back to,
-    // so at any width the system can't satisfy — portrait, a smaller iPad,
-    // Split View multitasking — it was silently dropping the sidebar with no
+    // A real `@State`, not `.constant(.doubleColumn)`: at 1194×834 landscape
+    // (the board's own measurement) both columns fit and this starts and
+    // stays expanded. But `.constant` can never be written back to, so at
+    // any width the system can't satisfy — portrait, a smaller iPad, Split
+    // View multitasking — it was silently dropping the sidebar with no
     // toggle to bring it back, because there was nothing for the system to
     // write the collapse into. A mutable binding gets the sidebar's own
     // built-in reveal control back in that case.
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    //
+    // A plain `Bool` sidebar (no `NavigationSplitView` at all) was tried
+    // too, on the reasoning that the player column already works as a
+    // manually-composed `HStack` sibling. Measured and rejected: with the
+    // sidebar as a plain conditional view, the content `NavigationStack`
+    // rendered every leading pixel under the sidebar's own width hidden —
+    // the toolbar's hamburger, the search field's first few letters, every
+    // row's leading text — reproducibly, on a clean install, regardless of
+    // `.clipped()` or whether the navigation bar was hidden. Only
+    // `NavigationSplitView` actually owning the sidebar avoids it, so it
+    // stays — with `.doubleColumn`, not `.all`, since this is a genuine
+    // two-column split (the player column is a separate `HStack` sibling
+    // outside it, not a third split-view column) and `.all` targets a
+    // three-column split's "show everything" state.
+    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
 
     var body: some View {
         @Bindable var bindable = player
 
-        // Genuinely three columns in the design, but built as a *two*-column
-        // `NavigationSplitView` (sidebar + detail) with the player column
-        // folded into the detail side as a plain `HStack` sibling, not
-        // NavigationSplitView's own third `detail:` slot. Measured against
-        // the running app (not just read from the API): with all three
-        // slots real NavigationSplitView columns, `.balanced` (and every
-        // other built-in style) inserted two dead-black ~60-140pt gaps ­—
-        // one between content and player, one after player to the trailing
-        // edge — that no combination of `min`/`ideal`/`max` on any column
-        // could close; the content column's own `ideal` was silently
-        // ignored outright. A plain `HStack` has none of that arbitration to
-        // get wrong. The only behaviour actually needed from
-        // `NavigationSplitView` here is the sidebar's own collapse/reveal at
-        // narrow widths (RootSplitView's own history: `.constant(.all)` used
-        // to drop the sidebar with no way back) — a two-column split still
-        // gives that, with content+player simply riding along as one unit.
-        return NavigationSplitView(columnVisibility: $columnVisibility) {
-            IPadSidebar(
-                selection: $selection,
-                library: library,
-                onNewPlaylist: { isPresentingNewPlaylist = true }
-            )
-            .navigationSplitViewColumnWidth(min: Metrics.iPadSidebarWidth, ideal: Metrics.iPadSidebarWidth, max: Metrics.iPadSidebarWidth)
-        } detail: {
-            HStack(spacing: 0) {
-                // A `.toolbar` principal item never rendered here — a
-                // `NavigationStack` nested inside this `HStack` (rather than
-                // being NavigationSplitView's own direct column content)
-                // didn't host one reliably, with or without a navigation
-                // title. `safeAreaInset` is the pattern `IPadSidebar` below
-                // already uses for its own header/footer, and it doesn't
-                // depend on that toolbar-hosting relationship at all — so
-                // this also becomes the fix for the sidebar-toggle icon
-                // being the system's own (a different glyph, floating above
-                // the search field instead of beside it) and for the
-                // filter/more icons the board draws beside it that a system
-                // toolbar had no slot for anyway.
+        // Genuinely three columns in the design. Built as a real two-column
+        // `NavigationSplitView` (sidebar + content) — nothing else — with the
+        // player column as a plain `HStack` sibling *outside* it, not folded
+        // into the `detail:` slot. That folding was tried first and measured
+        // as broken too: putting an `HStack` inside `detail:` made
+        // `NavigationSplitView` size that whole `HStack` — content *and*
+        // player together — as if it were the entire window, sidebar width
+        // included, and then floated the sidebar on top of it as an overlay
+        // instead of laying the two out side by side, hiding the same
+        // leading content the plain-`Bool` attempt above did.
+        // `NavigationSplitView` only negotiates real side-by-side columns
+        // correctly when `detail:` is the sole column view it owns — so the
+        // player column lives beside the whole split view, not inside it.
+        return HStack(spacing: 0) {
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                IPadSidebar(
+                    selection: $selection,
+                    library: library,
+                    onNewPlaylist: { isPresentingNewPlaylist = true }
+                )
+                .navigationSplitViewColumnWidth(min: Metrics.iPadSidebarWidth, ideal: Metrics.iPadSidebarWidth, max: Metrics.iPadSidebarWidth)
+            } detail: {
+                // A `.toolbar` principal item never rendered here — see
+                // `IPadContentToolbar`, which is this control's real
+                // replacement, built with `safeAreaInset` instead (the same
+                // pattern `IPadSidebar` below already uses for its own
+                // header/footer).
                 NavigationStack {
                     IPadContentColumn(destination: selection ?? .recentlyPlayed, searchQuery: $searchQuery)
                         .safeAreaInset(edge: .top) {
@@ -77,18 +81,27 @@ struct RootSplitView: View {
                         }
                         .toolbar(.hidden, for: .navigationBar)
                 }
-                .frame(maxWidth: .infinity)
-
-                NowPlayingColumnView()
-                    .toolbar(.hidden, for: .navigationBar)
+                // Without an explicit minimum here, `NavigationSplitView`
+                // assumed a much larger one for this column and, once the
+                // player column outside it took its own 340pt, judged the
+                // remaining width too tight to show sidebar and content
+                // side by side — collapsing to the overlay presentation by
+                // default even at this split view's full ~870pt. A minimum
+                // that matches what this column actually needs (Board 03's
+                // narrowest measured composition) lets it stay expanded.
+                .navigationSplitViewColumnWidth(min: 320, ideal: 500)
             }
+            // The system's own sidebar-toggle glyph — a different icon than
+            // the board's plain 3-line hamburger, and it floated above the
+            // search field instead of beside it (see `IPadContentToolbar`,
+            // which is this control's real replacement). Without removing
+            // the system one too, both showed at once.
+            .toolbar(removing: .sidebarToggle)
+            .navigationSplitViewStyle(.balanced)
+
+            NowPlayingColumnView()
+                .toolbar(.hidden, for: .navigationBar)
         }
-        // The system's own sidebar-toggle glyph — a different icon than the
-        // board's plain 3-line hamburger, and it floated above the search
-        // field instead of beside it (see `IPadContentToolbar`, which is
-        // this control's real replacement). Without removing the system one
-        // too, both showed at once.
-        .toolbar(removing: .sidebarToggle)
         .tint(Palette.honeyAmber)
         .task { await library.load(environment: environment) }
         .sheet(isPresented: $isPresentingNewPlaylist) {
@@ -126,7 +139,7 @@ struct RootSplitView: View {
 
     private func toggleSidebar() {
         withAnimation(.easeOut(duration: 0.2)) {
-            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
+            columnVisibility = columnVisibility == .detailOnly ? .doubleColumn : .detailOnly
         }
     }
 }

@@ -42,7 +42,15 @@ struct IPadContentColumn: View {
                 SearchView(query: $searchQuery, embedsNavigationChrome: false)
 
             case .playlist(let collection):
-                NavigationStack { DetailView(collection: collection) }
+                // No `NavigationStack` wrapper here — `DetailView`'s own doc
+                // comment is explicit that it has none of its own and must
+                // extend its caller's, the same ambient stack every other
+                // case in this switch already renders into. Wrapping it in a
+                // second, nested stack (as this used to) gave it its own
+                // isolated navigation/layout context instead, which is what
+                // was cutting its content off under the sidebar — the width
+                // every sibling case gets for free never reached this one.
+                DetailView(collection: collection)
             }
         }
         .background(Palette.deepOnyx)
