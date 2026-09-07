@@ -47,6 +47,11 @@ final class HomeViewModel {
     private let library: MusicLibraryService
     private let subscription: SubscriptionService
     private var subscriptionObservation: Task<Void, Never>?
+    /// Set whenever `load()` resolves a browse outcome, so the observer
+    /// below can tell a genuine change from `SubscriptionService.updates`
+    /// replaying the current value to a new subscriber (which it does
+    /// immediately, per `MusicSubscription.subscriptionUpdates`).
+    private var lastKnownSubscriptionOutcome: SubscriptionReducer.BrowseOutcome?
 
     init(environment: AppEnvironment) {
         self.catalog = environment.catalog
@@ -63,8 +68,16 @@ final class HomeViewModel {
     func startObservingSubscriptionChanges() {
         guard subscriptionObservation == nil else { return }
         subscriptionObservation = Task { [weak self, subscription] in
-            for await _ in subscription.updates {
+            for await state in subscription.updates {
                 guard let self, !Task.isCancelled else { return }
+                let outcome = SubscriptionReducer.resolveBrowse(in: state)
+                // The stream replays the current value to a new subscriber
+                // immediately, so the very first emission here is routinely
+                // just confirming what `load()` already fetched — reloading
+                // for it would double every Home appearance's network calls
+                // for no actual change.
+                guard outcome != self.lastKnownSubscriptionOutcome else { continue }
+                self.lastKnownSubscriptionOutcome = outcome
                 await self.reload()
             }
         }
@@ -107,7 +120,9 @@ final class HomeViewModel {
         // reducer `PlayerViewModel` uses for play intents rather than a raw
         // `case .active` check, so a failed subscription check can't collapse
         // into "needs subscription" here the way it can't on the play path.
-        switch SubscriptionReducer.resolveBrowse(in: await subscription.current) {
+        let outcome = SubscriptionReducer.resolveBrowse(in: await subscription.current)
+        lastKnownSubscriptionOutcome = outcome
+        switch outcome {
         case .browse:
             needsSubscription = false
 

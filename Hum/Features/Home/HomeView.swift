@@ -74,6 +74,18 @@ struct HomeView: View {
             await model?.load()
             model?.startObservingSubscriptionChanges()
         }
+        // Home lives at the root of its tab's persistent `NavigationStack`
+        // (`RootTabView`'s own doc comment), so pushing e.g. `DetailView`
+        // fires `onDisappear` on Home without destroying it — and whether
+        // `.task` reliably restarts when popping back to reveal it again is
+        // genuinely ambiguous in SwiftUI. `onAppear` always fires on that
+        // reveal, so it's the one guaranteed hook to restart observation;
+        // `startObservingSubscriptionChanges()`'s own guard makes calling it
+        // from both here and `.task` safe regardless of which one restarts
+        // it first.
+        .onAppear {
+            model?.startObservingSubscriptionChanges()
+        }
         .onDisappear {
             model?.stopObservingSubscriptionChanges()
         }
