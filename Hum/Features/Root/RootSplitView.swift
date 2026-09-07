@@ -15,6 +15,14 @@ struct RootSplitView: View {
     @State private var searchQuery = ""
     @State private var isPresentingNewPlaylist = false
     @State private var library = SidebarLibraryModel()
+    /// Shared by both `.recentlyPlayed` and `.madeForYou` — those two
+    /// destinations used to each instantiate their own `HomeViewModel`, so
+    /// switching between them in the sidebar destroyed and recreated the
+    /// view struct (and its `@State`), re-fetching from MusicKit every time.
+    /// Hoisted here, at the split view itself, which isn't torn down by a
+    /// sidebar selection change, both destinations now share one already-
+    /// loaded instance.
+    @State private var homeModel: HomeViewModel?
     // A real `@State`, not `.constant(.doubleColumn)`: at 1194×834 landscape
     // (the board's own measurement) both columns fit and this starts and
     // stays expanded. But `.constant` can never be written back to, so at
@@ -70,7 +78,7 @@ struct RootSplitView: View {
                 // pattern `IPadSidebar` below already uses for its own
                 // header/footer).
                 NavigationStack {
-                    IPadContentColumn(destination: selection ?? .recentlyPlayed, searchQuery: $searchQuery)
+                    IPadContentColumn(destination: selection ?? .recentlyPlayed, searchQuery: $searchQuery, homeModel: homeModel)
                         .safeAreaInset(edge: .top) {
                             IPadContentToolbar(
                                 query: $searchQuery,
@@ -104,6 +112,15 @@ struct RootSplitView: View {
         }
         .tint(Palette.honeyAmber)
         .task { await library.load(environment: environment) }
+        .task {
+            if homeModel == nil { homeModel = HomeViewModel(environment: environment) }
+            await homeModel?.load()
+            // Lives for as long as this split view does — the iPad root,
+            // never pushed/popped the way `HomeView` can be — so there's no
+            // teardown to pair this with (`PlayerViewModel.start()` and
+            // `WatchConnectivityRelayService` follow the same reasoning).
+            homeModel?.startObservingSubscriptionChanges()
+        }
         .sheet(isPresented: $isPresentingNewPlaylist) {
             NewPlaylistView { newPlaylist in
                 Task { await library.load(environment: environment, force: true) }

@@ -12,9 +12,12 @@ import SwiftUI
 /// fabricated progress string. Everything below the two-column area reuses
 /// the exact "Made for you" track list `HomeView` already has.
 struct IPadListenNowView: View {
-    @Environment(\.appEnvironment) private var environment
+    /// Owned and loaded by `RootSplitView`, shared with `IPadContentColumn`'s
+    /// `.madeForYou` destination — see `RootSplitView.homeModel`'s own doc
+    /// comment for why this is injected rather than created here.
+    let model: HomeViewModel?
+
     @Environment(PlayerViewModel.self) private var player
-    @State private var model: HomeViewModel?
     @State private var route: HumCollection?
     // The two-column row's actual available width, measured off a
     // `maxWidth: .infinity` container rather than guessed. `recentlyPlayed`
@@ -39,10 +42,6 @@ struct IPadListenNowView: View {
         .scrollIndicators(.hidden)
         .background(Palette.deepOnyx)
         .navigationDestination(item: $route) { DetailView(collection: $0) }
-        .task {
-            if model == nil { model = HomeViewModel(environment: environment) }
-            await model?.load()
-        }
     }
 
     // MARK: - Header

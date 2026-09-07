@@ -8,6 +8,9 @@ import SwiftUI
 struct IPadContentColumn: View {
     let destination: IPadSidebarDestination
     @Binding var searchQuery: String
+    /// Owned by `RootSplitView`, shared by `.recentlyPlayed` and
+    /// `.madeForYou` — see its own doc comment there for why.
+    let homeModel: HomeViewModel?
 
     @Environment(PlayerViewModel.self) private var player
 
@@ -20,7 +23,7 @@ struct IPadContentColumn: View {
                 // not iPhone's single-column shelf-then-list Home. See
                 // `IPadListenNowView`'s doc comment for what backs the list
                 // rows instead of the board's unbacked "12 min left" text.
-                IPadListenNowView()
+                IPadListenNowView(model: homeModel)
 
             case .artists:
                 LibraryView(initialFilter: .artists, embedsNavigationChrome: false)
@@ -36,7 +39,7 @@ struct IPadContentColumn: View {
                 IPadPendingDestinationView(title: pendingTitle)
 
             case .madeForYou:
-                IPadMadeForYouView()
+                IPadMadeForYouView(model: homeModel)
 
             case .search:
                 SearchView(query: $searchQuery, embedsNavigationChrome: false)
@@ -94,9 +97,9 @@ private struct IPadPendingDestinationView: View {
 /// full column here since iPad has room to give it its own destination
 /// rather than folding it into "Listen Now".
 private struct IPadMadeForYouView: View {
-    @Environment(\.appEnvironment) private var environment
+    let model: HomeViewModel?
+
     @Environment(PlayerViewModel.self) private var player
-    @State private var model: HomeViewModel?
 
     var body: some View {
         ScrollView {
@@ -112,9 +115,5 @@ private struct IPadMadeForYouView: View {
             }
         }
         .background(Palette.deepOnyx)
-        .task {
-            if model == nil { model = HomeViewModel(environment: environment) }
-            await model?.load()
-        }
     }
 }
