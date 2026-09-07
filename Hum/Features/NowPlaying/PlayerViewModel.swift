@@ -320,6 +320,14 @@ final class PlayerViewModel {
     private func applyQueue(_ action: QueueAction) {
         let next = QueueReducer.reduce(queue, action)
         guard next != queue else { return }
+        // Adopted immediately rather than waiting for the round trip's
+        // snapshot: `queue` is what the next `applyQueue` reduces from, so
+        // two edits fired in quick succession (e.g. removing two rows before
+        // the first confirms) would otherwise both reduce from the same
+        // pre-edit queue and the second would overwrite the first's change.
+        // If the round trip itself fails, the adapter rolls its own mirror
+        // back and republishes, which corrects this back through `adopt(_:)`.
+        queue = next
         Task { await perform { try await self.playback.applyQueue(next) } }
     }
 
