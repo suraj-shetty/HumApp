@@ -22,6 +22,12 @@ final class ArtworkStore {
 
     private init() {
         cache.countLimit = 120
+        // `countLimit` alone bounds object count, not memory — every image
+        // counts as "1" regardless of pixel size, so a request that resolves
+        // larger than the caller intended (`Artwork.url(width:height:)`
+        // misuse) could cost far more resident memory than 120 small
+        // thumbnails would. This bounds it directly.
+        cache.totalCostLimit = 60 * 1024 * 1024 // ~60MB of decoded pixel data
     }
 
     /// A synchronous hit, so a rebuild can paint the right pixels on its very
@@ -42,7 +48,10 @@ final class ArtworkStore {
         let image = await task.value
         inFlight[url] = nil
 
-        if let image { cache.setObject(image, forKey: url as NSURL) }
+        if let image {
+            let cost = Int(image.size.width * image.size.height * image.scale * image.scale * 4)
+            cache.setObject(image, forKey: url as NSURL, cost: cost)
+        }
         return image
     }
 }
