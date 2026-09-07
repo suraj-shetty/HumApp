@@ -6,6 +6,14 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
 
     private static let pageLimit = 100
 
+    /// `contains(_:)` for a catalog track has no cheap lookup — every call
+    /// issues a library query — so a screen that asks per row (e.g. search
+    /// results) re-issued an identical request for the same track on every
+    /// check. Cached by track id, and updated (not just invalidated) on
+    /// `add(_:)` so a fresh add is reflected immediately rather than
+    /// re-querying.
+    private var containmentCache: [String: Bool] = [:]
+
     func albums() async throws -> [HumCollection] {
         var request = MusicLibraryRequest<Album>()
         request.limit = Self.pageLimit
@@ -38,11 +46,14 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
             throw HumError.requestFailed("That track is no longer available.")
         }
         try await MusicLibrary.shared.add(song)
+        containmentCache[track.id] = true
     }
 
     func contains(_ track: HumTrack) async throws -> Bool {
         // A library track is in the library by definition.
         guard track.source == .catalog else { return true }
+
+        if let cached = containmentCache[track.id] { return cached }
 
         // For a catalog track there is no direct query: the library copy is a
         // different item with a different identifier, and MusicKit exposes no
@@ -51,7 +62,9 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
         // a legible one.
         var request = MusicLibraryRequest<Song>()
         request.filter(matching: \.title, equalTo: track.title)
-        return try await request.response().items.contains { $0.artistName == track.artist }
+        let result = try await request.response().items.contains { $0.artistName == track.artist }
+        containmentCache[track.id] = result
+        return result
     }
 
     func createPlaylist(name: String, description: String) async throws -> HumCollection {
