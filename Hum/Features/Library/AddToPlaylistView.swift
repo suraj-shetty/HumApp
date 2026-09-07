@@ -16,6 +16,7 @@ struct AddToPlaylistView: View {
     @State private var playlists: LoadState<[HumCollection]> = .idle
     @State private var isPresentingNewPlaylist = false
     @State private var isAdding = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -37,7 +38,13 @@ struct AddToPlaylistView: View {
                             .foregroundStyle(Palette.honeyAmber)
                     }
                 }
+                .disabled(isAdding)
                 .listRowBackground(Palette.deepOnyx)
+
+                if let errorMessage {
+                    InlineError(message: errorMessage)
+                        .listRowBackground(Palette.deepOnyx)
+                }
 
                 switch playlists {
                 case .idle, .loading:
@@ -83,6 +90,7 @@ struct AddToPlaylistView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                         .tint(Palette.honeyAmber)
+                        .disabled(isAdding)
                 }
             }
             .task {
@@ -105,9 +113,15 @@ struct AddToPlaylistView: View {
 
     private func add(to playlist: HumCollection) {
         isAdding = true
+        errorMessage = nil
         Task {
-            try? await environment.library.add(track, to: playlist)
-            dismiss()
+            do {
+                try await environment.library.add(track, to: playlist)
+                dismiss()
+            } catch {
+                isAdding = false
+                errorMessage = "Couldn't add to \(playlist.title)."
+            }
         }
     }
 }
