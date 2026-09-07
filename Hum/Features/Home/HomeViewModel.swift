@@ -81,27 +81,37 @@ final class HomeViewModel {
 
         // Asked before the requests, not after they fail: a confirmed gap is
         // an answer, so there is no reason to make two doomed round trips and
-        // then guess at why they came back empty.
-        guard case .active = await subscription.current else {
+        // then guess at why they came back empty. Routed through the same
+        // reducer `PlayerViewModel` uses for play intents rather than a raw
+        // `case .active` check, so a failed subscription check can't collapse
+        // into "needs subscription" here the way it can't on the play path.
+        switch SubscriptionReducer.resolveBrowse(in: await subscription.current) {
+        case .browse:
+            needsSubscription = false
+
+            async let recent = catalog.recentlyPlayed()
+            async let recommended = catalog.recommendations()
+
+            do {
+                recentlyPlayed = .loaded(try await recent)
+            } catch {
+                recentlyPlayed = .failed("Couldn't load recently played.")
+            }
+            do {
+                recommendations = .loaded(try await recommended)
+            } catch {
+                recommendations = .failed("Couldn't load recommendations.")
+            }
+
+        case .needsSubscription:
             needsSubscription = true
             recentlyPlayed = .loaded([])
             recommendations = .loaded([])
-            return
-        }
-        needsSubscription = false
 
-        async let recent = catalog.recentlyPlayed()
-        async let recommended = catalog.recommendations()
-
-        do {
-            recentlyPlayed = .loaded(try await recent)
-        } catch {
-            recentlyPlayed = .failed("Couldn't load recently played.")
-        }
-        do {
-            recommendations = .loaded(try await recommended)
-        } catch {
-            recommendations = .failed("Couldn't load recommendations.")
+        case .checkFailed:
+            needsSubscription = false
+            recentlyPlayed = .failed("Couldn't check your Apple Music subscription.")
+            recommendations = .failed("Couldn't check your Apple Music subscription.")
         }
     }
 

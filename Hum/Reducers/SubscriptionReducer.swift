@@ -63,4 +63,35 @@ struct SubscriptionReducer: Sendable {
             return .explainNoSubscription
         }
     }
+
+    /// What a personalized-catalog *browse* screen (Home's shelves) should
+    /// show for a given subscription state — a different question from
+    /// `resolve(_:in:)`'s play-intent gate, but answered from the same
+    /// `SubscriptionState`, so it belongs here rather than reimplemented
+    /// ad hoc per screen.
+    enum BrowseOutcome: Sendable, Equatable {
+        /// Fetch and show the personalized shelves.
+        case browse
+        /// A confirmed non-subscriber. Not an error — explain plainly.
+        case needsSubscription
+        /// The check itself failed (or hasn't resolved). Not evidence the
+        /// listener lacks a subscription — reporting it as
+        /// `.needsSubscription` would tell a paying subscriber to sign up.
+        /// `SubscriptionState.unavailable`'s own `reason` is an internal
+        /// debug string (see its call sites), not user-facing text, so it
+        /// isn't threaded through here either — same as `SubscriptionGapView`
+        /// and `SettingsView`, which both show their own fixed copy for it.
+        case checkFailed
+    }
+
+    static func resolveBrowse(in state: SubscriptionState) -> BrowseOutcome {
+        switch state {
+        case .active:
+            return .browse
+        case .gap:
+            return .needsSubscription
+        case .unknown, .unavailable:
+            return .checkFailed
+        }
+    }
 }
