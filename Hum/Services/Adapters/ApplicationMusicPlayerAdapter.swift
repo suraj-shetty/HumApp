@@ -148,8 +148,14 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     func resume() async throws {
         guard queue.currentTrack != nil else { return }
         failure = nil
-        try await Transport.play()
-        publish()
+        do {
+            try await Transport.play()
+            publish()
+        } catch {
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
+        }
     }
 
     func pause() async {
@@ -163,26 +169,44 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         // thrown MusicKit error surfaced to the listener as "playback failed".
         guard QueueReducer.reduce(queue, .next).currentIndex != nil else {
             player.stop()
+            // Clears the player's own `currentEntry` too — otherwise
+            // `syncCursor()` (run from the `publish()` below) finds that
+            // still-set entry, resolves its index, and resurrects the very
+            // cursor this branch just cleared.
+            setQueue(ApplicationMusicPlayer.Queue())
             queue.currentIndex = nil
             publish()
             return
         }
-        try await Transport.skipToNext()
-        publish()
+        do {
+            try await Transport.skipToNext()
+            publish()
+        } catch {
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
+        }
     }
 
     func skipToPrevious() async throws {
         let retreated = QueueReducer.reduce(queue, .previous)
-        // Past the first few seconds, "previous" restarts the current track
-        // rather than stepping back — matching the prototype. The reducer
-        // returning the same index means there is nothing to step back to.
-        if player.playbackTime > Self.restartThreshold
-            || retreated.currentIndex == queue.currentIndex {
-            player.playbackTime = 0
-        } else {
-            try await Transport.skipToPrevious()
+        do {
+            // Past the first few seconds, "previous" restarts the current
+            // track rather than stepping back — matching the prototype. The
+            // reducer returning the same index means there is nothing to
+            // step back to.
+            if player.playbackTime > Self.restartThreshold
+                || retreated.currentIndex == queue.currentIndex {
+                player.playbackTime = 0
+            } else {
+                try await Transport.skipToPrevious()
+            }
+            publish()
+        } catch {
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
         }
-        publish()
     }
 
     func seek(to time: TimeInterval) async {
