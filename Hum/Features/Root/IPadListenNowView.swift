@@ -48,29 +48,7 @@ struct IPadListenNowView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .center) {
-            Text(model?.greeting ?? "")
-                .humFont(.screenTitle)
-                .foregroundStyle(Palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Image(systemName: HumIcon.person)
-                    .humFont(14, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber)
-                    .frame(width: 38, height: 38)
-                    .background(Palette.surfaceRaised, in: Circle())
-                    .overlay(Circle().strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1))
-                    .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                    .contentShape(.rect)
-            }
-            .accessibilityLabel("Settings")
-        }
-        .padding(.horizontal, Metrics.iPadContentGutter)
-        .padding(.top, 14)
-        .padding(.bottom, 22)
+        ScreenHeader(title: model?.greeting ?? "", horizontalPadding: Metrics.iPadContentGutter)
     }
 
     // MARK: - Recently played (two-column)

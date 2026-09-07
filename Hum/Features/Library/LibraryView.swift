@@ -123,26 +123,7 @@ struct LibraryView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            Text("Library")
-                .humFont(.screenTitle)
-                .foregroundStyle(Palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Image(systemName: HumIcon.person)
-                    .humFont(20, weight: .light)
-                    .foregroundStyle(Palette.textSecondary)
-                    .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                    .background(Palette.surfaceRaised, in: Circle())
-            }
-            .accessibilityLabel("Settings")
-        }
-        .padding(.horizontal, Metrics.gutter)
-        .padding(.top, 14)
-        .padding(.bottom, 22)
+        ScreenHeader(title: "Library")
     }
 
     private var chips: some View {

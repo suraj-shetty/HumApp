@@ -168,35 +168,7 @@ struct HomeView: View {
         // beside the profile control — no wordmark and no overline. The
         // wordmark belongs to Connect, splash and onboarding, where the design
         // does use it.
-        HStack(alignment: .center) {
-            Text(model?.greeting ?? "")
-                .humFont(.screenTitle)
-                .foregroundStyle(Palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            NavigationLink {
-                SettingsView()
-            } label: {
-                // Design: 38×38, `#1E1E20`, a 1px amber-35% border, a 14px
-                // amber glyph — was 44×44, no border, a 20px grey glyph
-                // (m-12). The 44pt tap target floor stays: it's the outer
-                // frame, not the drawn circle.
-                Image(systemName: HumIcon.person)
-                    .humFont(14, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber)
-                    .frame(width: 38, height: 38)
-                    .background(Palette.surfaceRaised, in: Circle())
-                    .overlay(
-                        Circle().strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
-                    )
-                    .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                    .contentShape(.rect)
-            }
-            .accessibilityLabel("Settings")
-        }
-        .padding(.horizontal, Metrics.gutter)
-        .padding(.top, 14)
-        .padding(.bottom, 22)
+        ScreenHeader(title: model?.greeting ?? "")
     }
 
     /// Both shelves come from Apple Music's personalized catalog, so with no
