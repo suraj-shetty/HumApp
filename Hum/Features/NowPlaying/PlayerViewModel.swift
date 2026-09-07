@@ -382,7 +382,7 @@ final class PlayerViewModel {
             guard consecutiveFailures >= Self.connectionLostThreshold else {
                 showToast("Playback failed.", kind: .error) { [weak self] in
                     guard let self else { return }
-                    Task { await self.perform(work) }
+                    Task { await self.perform(work, onSuccess: onSuccess) }
                 }
                 return
             }
@@ -394,7 +394,7 @@ final class PlayerViewModel {
             consecutiveFailures = 0
             retryConnectionLost = { [weak self] in
                 guard let self else { return }
-                Task { await self.perform(work) }
+                Task { await self.perform(work, onSuccess: onSuccess) }
             }
             isShowingConnectionLost = true
         }
