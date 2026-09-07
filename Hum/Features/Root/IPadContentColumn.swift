@@ -101,36 +101,14 @@ private struct IPadMadeForYouView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                SectionHeader(title: "Made for you")
-                    .padding(.horizontal, Metrics.gutter)
-                    .padding(.top, 20)
-                    .padding(.bottom, 12)
-
-                switch model?.recommendations ?? .idle {
-                case .idle, .loading:
-                    RowSkeleton(count: 6).padding(.horizontal, Metrics.gutter)
-
-                case .loaded(let tracks) where tracks.isEmpty:
-                    EmptyStateView(
-                        icon: HumIcon.musicNote,
-                        headline: "No recommendations yet",
-                        message: "Listen to a few things and Apple Music will start suggesting more."
-                    )
-
-                case .loaded(let tracks):
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                            TrackRow(track: track, isCurrent: player.currentTrack?.id == track.id) {
-                                player.play(tracks, startingAt: index, source: "Made for you")
-                            }
-                            if index < tracks.count - 1 { RowDivider() }
-                        }
-                    }
-                    .padding(.horizontal, Metrics.gutter)
-
-                case .failed(let message):
-                    InlineError(message: message)
-                }
+                MadeForYouSection(
+                    recommendations: model?.recommendations ?? .idle,
+                    currentTrackID: player.currentTrack?.id,
+                    horizontalPadding: Metrics.gutter,
+                    topPadding: 20,
+                    skeletonCount: 6,
+                    onPlay: { tracks, index in player.play(tracks, startingAt: index, source: "Made for you") }
+                )
             }
         }
         .background(Palette.deepOnyx)

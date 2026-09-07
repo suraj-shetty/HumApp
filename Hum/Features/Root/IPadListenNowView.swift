@@ -122,41 +122,13 @@ struct IPadListenNowView: View {
 
     // MARK: - Made for you
 
-    @ViewBuilder
     private var madeForYou: some View {
-        SectionHeader(title: "Made for you")
-            .padding(.horizontal, Metrics.iPadContentGutter)
-            .padding(.bottom, 8)
-
-        switch model?.recommendations ?? .idle {
-        case .idle, .loading:
-            RowSkeleton(count: 4)
-                .padding(.horizontal, Metrics.iPadContentGutter)
-
-        case .loaded(let tracks) where tracks.isEmpty:
-            EmptyStateView(
-                icon: HumIcon.musicNote,
-                headline: "No recommendations yet",
-                message: "Listen to a few things and Apple Music will start suggesting more."
-            )
-
-        case .loaded(let tracks):
-            LazyVStack(spacing: 0) {
-                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                    TrackRow(
-                        track: track,
-                        isCurrent: player.currentTrack?.id == track.id
-                    ) {
-                        player.play(tracks, startingAt: index, source: "Made for you")
-                    }
-                    if index < tracks.count - 1 { RowDivider() }
-                }
-            }
-            .padding(.horizontal, Metrics.iPadContentGutter)
-
-        case .failed(let message):
-            InlineError(message: message).padding(.horizontal, Metrics.iPadContentGutter)
-        }
+        MadeForYouSection(
+            recommendations: model?.recommendations ?? .idle,
+            currentTrackID: player.currentTrack?.id,
+            horizontalPadding: Metrics.iPadContentGutter,
+            onPlay: { tracks, index in player.play(tracks, startingAt: index, source: "Made for you") }
+        )
     }
 }
 

@@ -240,43 +240,67 @@ struct HomeView: View {
 
     // MARK: - Made for you
 
-    @ViewBuilder
     private var madeForYou: some View {
-        SectionHeader(title: "Made for you")
-            .padding(.horizontal, Metrics.gutter)
-            .padding(.bottom, 8)
+        MadeForYouSection(
+            recommendations: model?.recommendations ?? .idle,
+            currentTrackID: player.currentTrack?.id,
+            horizontalPadding: Metrics.gutter,
+            onPlay: { tracks, index in player.play(tracks, startingAt: index, source: "Made for you") }
+        )
+    }
+}
 
-        switch model?.recommendations ?? .idle {
-        case .idle, .loading:
-            RowSkeleton(count: 4)
-                .padding(.horizontal, Metrics.gutter)
+/// The personalized-recommendations shelf Home, iPad's Listen Now, and iPad's
+/// full-column "Made for you" destination all show — the same
+/// `HomeViewModel.recommendations` content, laid out identically apart from
+/// each context's own gutter width, top inset, and skeleton row count. Three
+/// independent copies of this had already drifted (`RowSkeleton(count: 4)` on
+/// iPhone/iPad's shelf vs `count: 6` on iPad's own destination) before this
+/// was factored out.
+struct MadeForYouSection: View {
+    let recommendations: LoadState<[HumTrack]>
+    let currentTrackID: String?
+    let horizontalPadding: CGFloat
+    var topPadding: CGFloat = 0
+    var skeletonCount: Int = 4
+    let onPlay: (_ tracks: [HumTrack], _ startingAt: Int) -> Void
 
-        case .loaded(let tracks) where tracks.isEmpty:
-            EmptyStateView(
-                icon: HumIcon.musicNote,
-                headline: "No recommendations yet",
-                message: "Listen to a few things and Apple Music will start suggesting more."
-            )
+    var body: some View {
+        Group {
+            SectionHeader(title: "Made for you")
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, topPadding)
+                .padding(.bottom, 8)
 
-        case .loaded(let tracks):
-            LazyVStack(spacing: 0) {
-                // Identified by position, not by track id: a real playlist can hold
-                // the same song twice, and duplicate SwiftUI identities make
-                // rows drop out and taps land on the wrong one.
-                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                    TrackRow(
-                        track: track,
-                        isCurrent: player.currentTrack?.id == track.id
-                    ) {
-                        player.play(tracks, startingAt: index, source: "Made for you")
+            switch recommendations {
+            case .idle, .loading:
+                RowSkeleton(count: skeletonCount)
+                    .padding(.horizontal, horizontalPadding)
+
+            case .loaded(let tracks) where tracks.isEmpty:
+                EmptyStateView(
+                    icon: HumIcon.musicNote,
+                    headline: "No recommendations yet",
+                    message: "Listen to a few things and Apple Music will start suggesting more."
+                )
+
+            case .loaded(let tracks):
+                LazyVStack(spacing: 0) {
+                    // Identified by position, not by track id: a real playlist can
+                    // hold the same song twice, and duplicate SwiftUI identities
+                    // make rows drop out and taps land on the wrong one.
+                    ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
+                        TrackRow(track: track, isCurrent: currentTrackID == track.id) {
+                            onPlay(tracks, index)
+                        }
+                        if index < tracks.count - 1 { RowDivider() }
                     }
-                    if index < tracks.count - 1 { RowDivider() }
                 }
-            }
-            .padding(.horizontal, Metrics.gutter)
+                .padding(.horizontal, horizontalPadding)
 
-        case .failed(let message):
-            InlineError(message: message)
+            case .failed(let message):
+                InlineError(message: message).padding(.horizontal, horizontalPadding)
+            }
         }
     }
 }
