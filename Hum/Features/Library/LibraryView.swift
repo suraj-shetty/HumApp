@@ -92,16 +92,7 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        Group {
-            if embedsNavigationChrome {
-                NavigationStack {
-                    content
-                        .toolbar(.hidden, for: .navigationBar)
-                }
-            } else {
-                content
-            }
-        }
+        content.navigationRoot(providesOwnChrome: embedsNavigationChrome)
     }
 
     private var content: some View {

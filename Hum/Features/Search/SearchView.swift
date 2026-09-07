@@ -138,26 +138,21 @@ struct SearchView: View {
     }
 
     var body: some View {
-        Group {
-            if embedsNavigationChrome {
-                NavigationStack { results }
-            } else {
-                results
-            }
-        }
-        .onChange(of: query) { _, term in
-            model?.term = term
-            model?.search()
-        }
-        .task {
-            if model == nil { model = SearchViewModel(environment: environment) }
-            // The tab can be entered with a query already typed — the field is
-            // in the chrome and outlives this view's lifetime.
-            if !query.isEmpty, model?.term != query {
-                model?.term = query
+        results
+            .navigationRoot(providesOwnChrome: embedsNavigationChrome, hidesNavigationBar: false)
+            .onChange(of: query) { _, term in
+                model?.term = term
                 model?.search()
             }
-        }
+            .task {
+                if model == nil { model = SearchViewModel(environment: environment) }
+                // The tab can be entered with a query already typed — the field is
+                // in the chrome and outlives this view's lifetime.
+                if !query.isEmpty, model?.term != query {
+                    model?.term = query
+                    model?.search()
+                }
+            }
     }
 
     private var results: some View {

@@ -1,5 +1,29 @@
 import SwiftUI
 
+/// `HomeView`, `LibraryView`, and `SearchView` are each reused two ways:
+/// standalone as an iPhone tab root (needs its own `NavigationStack`), and
+/// embedded in `IPadContentColumn`'s `NavigationSplitView` column (already
+/// has one — nesting a second there swallowed that column's own toolbar,
+/// including the sidebar-reveal control). All three had copy-pasted the same
+/// `if providesOwnChrome { NavigationStack { ... } } else { ... }` branch to
+/// decide it. `hidesNavigationBar` covers the one real difference: Home and
+/// Library hide their bar (every iPhone tab root does, so switching tabs
+/// doesn't animate one in and out); Search keeps its.
+extension View {
+    @ViewBuilder
+    func navigationRoot(providesOwnChrome: Bool, hidesNavigationBar: Bool = true) -> some View {
+        if providesOwnChrome {
+            if hidesNavigationBar {
+                NavigationStack { self.toolbar(.hidden, for: .navigationBar) }
+            } else {
+                NavigationStack { self }
+            }
+        } else {
+            self
+        }
+    }
+}
+
 /// Home. **Opaque content throughout** — no glass anywhere on this screen.
 struct HomeView: View {
     @Environment(\.appEnvironment) private var environment
@@ -18,16 +42,7 @@ struct HomeView: View {
     var embedsNavigationChrome: Bool = true
 
     var body: some View {
-        Group {
-            if embedsNavigationChrome {
-                NavigationStack {
-                    content
-                        .toolbar(.hidden, for: .navigationBar)
-                }
-            } else {
-                content
-            }
-        }
+        content.navigationRoot(providesOwnChrome: embedsNavigationChrome)
     }
 
     private var content: some View {
