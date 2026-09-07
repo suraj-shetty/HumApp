@@ -51,6 +51,10 @@ final class PlayerViewModel {
     /// Tracks the listener has added to their library this session, so the
     /// Now Playing action can render its filled state without a round trip.
     private(set) var addedToLibrary: Set<String> = []
+    /// Tracks an add that's in flight but hasn't confirmed yet — separate
+    /// from `addedToLibrary` so a double-tap before the first request
+    /// completes doesn't fire a second one for the same track.
+    private var addingToLibrary: Set<String> = []
 
     // MARK: - Derived
 
@@ -341,8 +345,10 @@ final class PlayerViewModel {
     /// love/favorite API, so this adds to the library — a real capability
     /// (DECISIONS M-04).
     func addToLibrary(_ track: HumTrack) {
-        guard !addedToLibrary.contains(track.id) else { return }
+        guard !addedToLibrary.contains(track.id), !addingToLibrary.contains(track.id) else { return }
+        addingToLibrary.insert(track.id)
         Task {
+            defer { addingToLibrary.remove(track.id) }
             do {
                 try await libraryService.add(track)
                 addedToLibrary.insert(track.id)
