@@ -12,6 +12,13 @@ struct EmptyStateView: View {
     let message: String
     var actionTitle: String?
     var action: (() -> Void)?
+    /// Overrides the ring/icon color — `Palette.terracotta` for an error
+    /// state (e.g. Detail's failed-to-load), amber (the default) for an
+    /// empty-but-not-broken one.
+    var tint: Color = Palette.honeyAmber
+    /// Overrides the ring diameter — Home's own empty state (screen 10)
+    /// measures 112, every other measured screen 96.
+    var ringDiameter: CGFloat = 96
 
     var body: some View {
         VStack(spacing: 14) {
@@ -23,11 +30,11 @@ struct EmptyStateView: View {
             // was dimmed to 70% where every measured screen draws it solid.
             ZStack {
                 Circle()
-                    .strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
-                    .frame(width: 96, height: 96)
+                    .strokeBorder(tint.opacity(0.35), lineWidth: 1)
+                    .frame(width: ringDiameter, height: ringDiameter)
                 Image(systemName: icon)
                     .humFont(34, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber)
+                    .foregroundStyle(tint)
             }
             // Decorative: the headline and message say everything it does.
             .accessibilityHidden(true)
