@@ -22,7 +22,8 @@ struct SubscriptionGateTests {
             subscription: subscriptionService,
             catalog: FakeCatalogService(),
             library: FakeLibraryService(),
-            playback: playback
+            playback: playback,
+            subscriptionStore: SubscriptionStateStore(service: subscriptionService)
         )
         return (PlayerViewModel(environment: environment), subscriptionService, playback)
     }

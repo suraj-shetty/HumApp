@@ -14,12 +14,14 @@ struct AuthViewModelTests {
         requestResult: AuthState = .authorized
     ) -> (AuthViewModel, FakeAuthorizationService) {
         let service = FakeAuthorizationService(status: status, requestResult: requestResult)
+        let subscriptionService = FakeSubscriptionService()
         let environment = AppEnvironment(
             authorization: service,
-            subscription: FakeSubscriptionService(),
+            subscription: subscriptionService,
             catalog: FakeCatalogService(),
             library: FakeLibraryService(),
-            playback: FakePlaybackService()
+            playback: FakePlaybackService(),
+            subscriptionStore: SubscriptionStateStore(service: subscriptionService)
         )
         return (AuthViewModel(environment: environment), service)
     }

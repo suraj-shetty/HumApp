@@ -92,10 +92,10 @@ final class PlayerViewModel {
     // MARK: - Dependencies
 
     private let playback: PlaybackService
-    private let subscriptionService: SubscriptionService
+    private let subscriptionStore: SubscriptionStateStore
     private let libraryService: MusicLibraryService
     private var observationTask: Task<Void, Never>?
-    private var subscriptionTask: Task<Void, Never>?
+    private var subscriptionChangeToken: UUID?
     private var toastTask: Task<Void, Never>?
 
     /// The play intent the subscription gate turned back, kept so it can be
@@ -105,7 +105,7 @@ final class PlayerViewModel {
 
     init(environment: AppEnvironment) {
         self.playback = environment.playback
-        self.subscriptionService = environment.subscription
+        self.subscriptionStore = environment.subscriptionStore
         self.libraryService = environment.library
     }
 
@@ -120,14 +120,13 @@ final class PlayerViewModel {
     /// which can run more than once across a view's lifetime.
     func start() {
         guard observationTask == nil else { return }
-        subscription = .unknown
+        subscriptionStore.start()
 
         // `playback` is captured directly rather than through `self`: a
         // `guard let self` outside the loop would hold a strong reference for
         // the stream's entire lifetime, which is forever, and the view model
         // would never deallocate.
         observationTask = Task { [weak self, playback] in
-            await self?.refreshSubscription()
             for await snapshot in playback.snapshots {
                 guard let self, !Task.isCancelled else { return }
                 self.adopt(snapshot)
@@ -137,12 +136,11 @@ final class PlayerViewModel {
         // A subscription can begin *while Hum is open* — through the offer
         // sheet, or in the Music app. Without this the listener would have to
         // relaunch before catalog playback started working, which reads as the
-        // app ignoring a purchase they just made.
-        subscriptionTask = Task { [weak self, subscriptionService] in
-            for await state in subscriptionService.updates {
-                guard let self, !Task.isCancelled else { return }
-                self.apply(state)
-            }
+        // app ignoring a purchase they just made. Routed through the shared
+        // `SubscriptionStateStore` rather than this view model's own live
+        // MusicKit subscription — see the store's own doc comment.
+        subscriptionChangeToken = subscriptionStore.onChange { [weak self] state in
+            self?.apply(state)
         }
     }
 
@@ -160,14 +158,12 @@ final class PlayerViewModel {
     func stop() {
         observationTask?.cancel()
         observationTask = nil
-        subscriptionTask?.cancel()
-        subscriptionTask = nil
+        if let subscriptionChangeToken {
+            subscriptionStore.removeOnChange(subscriptionChangeToken)
+            self.subscriptionChangeToken = nil
+        }
         toastTask?.cancel()
         toastTask = nil
-    }
-
-    private func refreshSubscription() async {
-        apply(await subscriptionService.current)
     }
 
     /// Adopts a new subscription state and resumes a turned-back play intent
@@ -184,7 +180,7 @@ final class PlayerViewModel {
     /// Re-runs the check after a failed one. Backs `SubscriptionGapView`'s
     /// "Try Again".
     func retrySubscriptionCheck() {
-        Task { await refreshSubscription() }
+        Task { await subscriptionStore.refresh() }
     }
 
     /// Apple's offer sheet failed to load. Reported plainly rather than left
@@ -224,9 +220,12 @@ final class PlayerViewModel {
 
         case .awaitSubscriptionCheck:
             // Resolve the status, then retry once. Never guess — "not checked
-            // yet" must not render as "you have no subscription".
+            // yet" must not render as "you have no subscription". Refreshed
+            // through the shared store rather than a direct service read, so
+            // every other reader of `subscriptionStore` sees the same result.
             Task {
-                subscription = await subscriptionService.current
+                await subscriptionStore.refresh()
+                subscription = subscriptionStore.current
                 if case .unknown = subscription {
                     showToast("Couldn't check your Apple Music subscription.", kind: .error)
                 } else {
