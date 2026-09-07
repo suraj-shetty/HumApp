@@ -171,6 +171,7 @@ struct DetailView: View {
                 actionTitle: "Reload",
                 action: { Task { await model?.retry() } },
                 tint: Palette.terracotta,
+                iconTint: Palette.terracottaLift,
                 ringDiameter: 112
             )
             .padding(.horizontal, 46)

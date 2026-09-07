@@ -12,10 +12,17 @@ struct EmptyStateView: View {
     let message: String
     var actionTitle: String?
     var action: (() -> Void)?
-    /// Overrides the ring/icon color — `Palette.terracotta` for an error
-    /// state (e.g. Detail's failed-to-load), amber (the default) for an
+    /// Overrides the ring color — `Palette.terracotta` for an error state
+    /// (e.g. Detail's failed-to-load), amber (the default) for an
     /// empty-but-not-broken one.
     var tint: Color = Palette.honeyAmber
+    /// Overrides the icon glyph's color. Defaults to `tint`, but every error
+    /// state in the app (Home, Library, Search, AddToPlaylist, PlayerBar)
+    /// draws its ring in the dimmer base color and its glyph in the
+    /// brighter "lift" variant (e.g. `terracottaLift` alongside `tint:
+    /// .terracotta`) — pass it explicitly for an error `tint` rather than
+    /// letting the glyph go as dim as the ring.
+    var iconTint: Color?
     /// Overrides the ring diameter — Home's own empty state (screen 10)
     /// measures 112, every other measured screen 96.
     var ringDiameter: CGFloat = 96
@@ -34,7 +41,7 @@ struct EmptyStateView: View {
                     .frame(width: ringDiameter, height: ringDiameter)
                 Image(systemName: icon)
                     .humFont(34, weight: .light)
-                    .foregroundStyle(tint)
+                    .foregroundStyle(iconTint ?? tint)
             }
             // Decorative: the headline and message say everything it does.
             .accessibilityHidden(true)
