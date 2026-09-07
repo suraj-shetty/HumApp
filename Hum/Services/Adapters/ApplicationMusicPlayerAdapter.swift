@@ -109,14 +109,24 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
     // MARK: - Transport
 
+    /// Bumped on every `play()` call and captured as `generation` at entry.
+    /// Guards the multiple `await` points below: if a second `play()` starts
+    /// before the first resumes from one, the first's remaining work becomes
+    /// a no-op instead of racing the second to decide the final `queue`.
+    private var playGeneration = 0
+
     func play(_ tracks: [HumTrack], startingAt index: Int) async throws {
+        playGeneration += 1
+        let generation = playGeneration
+
         failure = nil
         isPreparing = true
         publish()
-        defer { isPreparing = false }
+        defer { if generation == playGeneration { isPreparing = false } }
 
         do {
             let cued = try await resolve(tracks)
+            guard generation == playGeneration else { return }
             guard !cued.isEmpty else {
                 throw HumError.playbackFailed("None of those tracks are available.")
             }
@@ -136,9 +146,12 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             applyModes()
 
             try await Transport.prepare()
+            guard generation == playGeneration else { return }
             try await Transport.play()
+            guard generation == playGeneration else { return }
             publish()
         } catch {
+            guard generation == playGeneration else { return }
             failure = .playbackFailed(error.localizedDescription)
             publish()
             throw error
