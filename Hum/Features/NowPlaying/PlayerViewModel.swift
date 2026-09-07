@@ -367,6 +367,11 @@ final class PlayerViewModel {
                 }
                 return
             }
+            // The cover is already up over an earlier failure — leave its
+            // retry target alone. Overwriting it here would mean tapping
+            // "Try Again" retries whatever unrelated command failed twice
+            // most recently, not the one the listener is looking at.
+            guard !isShowingConnectionLost else { return }
             consecutiveFailures = 0
             retryConnectionLost = { [weak self] in
                 guard let self else { return }
