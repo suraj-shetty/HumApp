@@ -208,6 +208,9 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     // MARK: - Queue
 
     func applyQueue(_ newQueue: QueueState) async throws {
+        // Kept so a failed mirror/replay below can be rolled back rather than
+        // leaving `queue` reporting an order the real player never adopted.
+        let previous = queue
         let previousTrackID = queue.currentTrack?.id
         queue = newQueue
         applyModes()
@@ -222,17 +225,28 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             return
         }
 
-        if current.id == previousTrackID {
-            // Membership or order changed *around* the playing track — a
-            // reorder, a removal, a clear. Mutating the entries in place is
-            // what keeps the audio from restarting.
-            try await mirrorEntries(newQueue)
-        } else {
-            // The cursor moved to a different track: a jump, or the playing
-            // entry was the one removed. That is a new play intent.
-            try await play(newQueue.entries, startingAt: newQueue.currentIndex ?? 0)
+        do {
+            if current.id == previousTrackID {
+                // Membership or order changed *around* the playing track — a
+                // reorder, a removal, a clear. Mutating the entries in place is
+                // what keeps the audio from restarting.
+                try await mirrorEntries(newQueue)
+            } else {
+                // The cursor moved to a different track: a jump, or the playing
+                // entry was the one removed. That is a new play intent.
+                try await play(newQueue.entries, startingAt: newQueue.currentIndex ?? 0)
+            }
+            publish()
+        } catch {
+            // The real player never adopted `newQueue` — revert the mirror so
+            // the Queue screen doesn't show an order that isn't actually
+            // playing.
+            queue = previous
+            applyModes()
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
         }
-        publish()
     }
 
     private func mirrorEntries(_ state: QueueState) async throws {
