@@ -46,11 +46,33 @@ final class HomeViewModel {
     private let catalog: MusicCatalogService
     private let library: MusicLibraryService
     private let subscription: SubscriptionService
+    private var subscriptionObservation: Task<Void, Never>?
 
     init(environment: AppEnvironment) {
         self.catalog = environment.catalog
         self.library = environment.library
         self.subscription = environment.subscription
+    }
+
+    /// Keeps `needsSubscription` in sync with subscription changes that
+    /// happen while Home is visible (e.g. subscribing through Now Playing's
+    /// offer sheet). Without this, `needsSubscription` is a one-time snapshot
+    /// taken in `load()` — `PlayerViewModel.subscription` updates immediately
+    /// from the same underlying service, so the two could disagree until the
+    /// listener manually pulled to refresh.
+    func startObservingSubscriptionChanges() {
+        guard subscriptionObservation == nil else { return }
+        subscriptionObservation = Task { [weak self, subscription] in
+            for await _ in subscription.updates {
+                guard let self, !Task.isCancelled else { return }
+                await self.reload()
+            }
+        }
+    }
+
+    func stopObservingSubscriptionChanges() {
+        subscriptionObservation?.cancel()
+        subscriptionObservation = nil
     }
 
     /// Loads both shelves concurrently — they are independent requests, and

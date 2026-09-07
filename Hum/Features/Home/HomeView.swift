@@ -72,6 +72,10 @@ struct HomeView: View {
             if model == nil { model = HomeViewModel(environment: environment) }
             model?.isOffline = network.isOffline
             await model?.load()
+            model?.startObservingSubscriptionChanges()
+        }
+        .onDisappear {
+            model?.stopObservingSubscriptionChanges()
         }
         // Reachability can change after the first load — this is the
         // only place that re-triggers it, since `load()` itself only
