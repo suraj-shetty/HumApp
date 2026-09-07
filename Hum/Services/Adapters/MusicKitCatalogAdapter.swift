@@ -153,12 +153,23 @@ actor MusicKitCatalogAdapter: MusicCatalogService {
             guard let artist = try await request.response().items.first else { return [] }
             let albums = try await artist.with([.albums]).albums ?? []
 
-            var tracks: [HumTrack] = []
-            for album in albums {
-                let albumTracks = try await album.with([.tracks]).tracks ?? []
-                tracks.append(contentsOf: albumTracks.map { MusicKitMapping.track($0, source: .library) })
+            // Fetched concurrently rather than one at a time: an artist with
+            // many library albums used to wait for N sequential round trips
+            // before this screen's track list could render at all.
+            let tracksByAlbum = try await withThrowingTaskGroup(of: (Int, [HumTrack]).self) { group in
+                for (index, album) in albums.enumerated() {
+                    group.addTask {
+                        let albumTracks = try await album.with([.tracks]).tracks ?? []
+                        return (index, albumTracks.map { MusicKitMapping.track($0, source: .library) })
+                    }
+                }
+                var results: [Int: [HumTrack]] = [:]
+                for try await (index, tracks) in group {
+                    results[index] = tracks
+                }
+                return results
             }
-            return tracks
+            return albums.indices.flatMap { tracksByAlbum[$0] ?? [] }
         }
     }
 }
