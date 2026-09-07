@@ -203,8 +203,12 @@ final class PlayerViewModel {
         case .play:
             sourceLabel = source
             sourceTracks = tracks
-            recordPlaybackStart()
-            Task { await perform { try await self.playback.play(tracks, startingAt: index) } }
+            Task {
+                await perform(
+                    { try await self.playback.play(tracks, startingAt: index) },
+                    onSuccess: { [weak self] in self?.recordPlaybackStart() }
+                )
+            }
 
         case .presentSubscriptionOffer:
             deferredIntent = (tracks, index, source)
@@ -346,10 +350,11 @@ final class PlayerViewModel {
 
     // MARK: - Helpers
 
-    private func perform(_ work: @escaping () async throws -> Void) async {
+    private func perform(_ work: @escaping () async throws -> Void, onSuccess: (() -> Void)? = nil) async {
         do {
             try await work()
             consecutiveFailures = 0
+            onSuccess?()
         } catch {
             consecutiveFailures += 1
             // MusicKit gives this app no signal that distinguishes "lost the
