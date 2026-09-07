@@ -358,6 +358,13 @@ private struct IPadSearchField: View {
                 } label: {
                     Image(systemName: HumIcon.clearField)
                         .foregroundStyle(Palette.textMuted)
+                        // Sized to the field's own 38pt height rather than
+                        // the full 44pt `Metrics.tapTarget` — this field
+                        // (unlike `HumTabBar`'s) has no room to grow without
+                        // overflowing its pill background, but the bare
+                        // glyph's hit area was smaller still.
+                        .frame(width: 32, height: 32)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
