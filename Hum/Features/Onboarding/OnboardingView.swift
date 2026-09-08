@@ -11,6 +11,14 @@ struct OnboardingView: View {
     var onFinish: () -> Void
 
     @State private var page = 0
+    /// Guards `advance()` against a fast double-tap: the CTA has no
+    /// disabled state of its own and the page transition is purely visual
+    /// (`.animation`, not a gate on interaction), so two taps landing before
+    /// it settles used to both call `advance()` — the first moving to page
+    /// 1, the second (now satisfying the last-page check) finishing
+    /// onboarding immediately, skipping page 1's content entirely and
+    /// permanently (it's shown at most once per install).
+    @State private var isAdvancing = false
 
     private let pages: [OnboardingPage] = [
         OnboardingPage(
@@ -90,8 +98,16 @@ struct OnboardingView: View {
     }
 
     private func advance() {
+        guard !isAdvancing else { return }
+        isAdvancing = true
         if page < pages.count - 1 {
             page += 1
+            Task {
+                // Slightly longer than the page transition (0.24s) below,
+                // so a legitimate next tap isn't blocked once it settles.
+                try? await Task.sleep(for: .milliseconds(300))
+                isAdvancing = false
+            }
         } else {
             onFinish()
         }
