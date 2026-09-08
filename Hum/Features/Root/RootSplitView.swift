@@ -165,10 +165,8 @@ struct RootSplitView: View {
 
 enum IPadSidebarDestination: Hashable {
     case recentlyPlayed
-    case recentlyAdded
     case artists
     case albums
-    case songs
     case madeForYou
     case search
     case playlist(HumCollection)
@@ -198,10 +196,8 @@ private struct IPadSidebar: View {
                 // already give every other destination.
                 row("Search", icon: HumIcon.search, .search)
                 row("Recently played", icon: "clock", .recentlyPlayed)
-                row("Recently added", icon: "plus", .recentlyAdded)
                 row("Artists", icon: "person", .artists)
                 row("Albums", icon: "square.stack", .albums)
-                row("Songs", icon: HumIcon.musicNote, .songs)
                 row("Made for you", icon: "star", .madeForYou)
 
                 sectionLabel("Playlists")
