@@ -187,7 +187,8 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         // The reducer decides whether a next entry exists — the same tested
         // function the Queue screen uses — so end-of-queue is a stop, not a
         // thrown MusicKit error surfaced to the listener as "playback failed".
-        guard QueueReducer.reduce(queue, .next).currentIndex != nil else {
+        let advanced = QueueReducer.reduce(queue, .next)
+        guard let nextIndex = advanced.currentIndex else {
             player.stop()
             // Clears the player's own `currentEntry` too — otherwise
             // `syncCursor()` (run from the `publish()` below) finds that
@@ -204,7 +205,17 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             return
         }
         do {
-            try await Transport.skipToNext()
+            // Repeat-one holds position (`QueueReducer.advance`'s own
+            // comment) and the adapter is what's meant to restart the
+            // track for that case — `skipToPrevious` below already does
+            // this; this branch was missing here, so tapping forward-skip
+            // under repeat-one advanced past the repeating track instead
+            // of restarting it.
+            if nextIndex == queue.currentIndex {
+                player.playbackTime = 0
+            } else {
+                try await Transport.skipToNext()
+            }
             publish()
         } catch {
             failure = .playbackFailed(error.localizedDescription)
