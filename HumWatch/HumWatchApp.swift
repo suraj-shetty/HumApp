@@ -13,18 +13,17 @@ struct HumWatchApp: App {
     }
 }
 
-/// Board 03, Section 03. Now Playing is the default screen; Library is one
-/// page swipe away — the same "one decision per screen" the board asks for,
-/// rather than a tab bar watchOS has no room to draw. Up Next is reached
-/// from Now Playing's own toolbar, matching "the capsule at the bottom
-/// returns to playback" from Library's own side of that relationship.
+/// Board 03, Section 03. Now Playing is the only screen — Library was a
+/// second page here, but the relay this app is built on (see
+/// `WatchConnectivityRelayService`'s own doc comment) only ever carries
+/// playback state and Up Next, not a browsable library, so its four rows had
+/// nothing to route to. Removed rather than shipped non-interactive, per
+/// Board 03 revision item 12's own "flag, don't guess" rule applied to
+/// itself: a placeholder with no path forward is worse than one screen done
+/// well. Up Next is reached from this screen's own toolbar.
 private struct WatchRootView: View {
     var body: some View {
-        TabView {
-            NowPlayingWatchView()
-            LibraryWatchView()
-        }
-        .tabViewStyle(.verticalPage)
-        .background(WatchPalette.ground)
+        NowPlayingWatchView()
+            .background(WatchPalette.ground)
     }
 }

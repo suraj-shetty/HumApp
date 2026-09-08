@@ -38,6 +38,7 @@ struct NowPlayingWatchView: View {
                     Image(systemName: HumIcon.queue)
                 }
                 .disabled(player.payload.upNext.isEmpty)
+                .accessibilityLabel("Up Next")
             }
         }
         .sheet(isPresented: $isShowingUpNext) {
@@ -90,13 +91,18 @@ struct NowPlayingWatchView: View {
             Button(action: player.skipToPrevious) {
                 Image(systemName: HumIcon.previous)
             }
+            .accessibilityLabel("Previous")
+
             Button(action: player.togglePlayPause) {
                 Image(systemName: player.payload.isPlaying ? HumIcon.pause : HumIcon.play)
                     .font(.system(size: 22))
             }
+            .accessibilityLabel(player.payload.isPlaying ? "Pause" : "Play")
+
             Button(action: player.skipToNext) {
                 Image(systemName: HumIcon.next)
             }
+            .accessibilityLabel("Next")
         }
         .foregroundStyle(.white)
         .padding(.top, 10)

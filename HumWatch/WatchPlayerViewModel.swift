@@ -67,6 +67,15 @@ extension WatchPlayerViewModel: WCSessionDelegate {
         guard let data = applicationContext["snapshot"] as? Data,
               let decoded = try? JSONDecoder().decode(WatchPlaybackPayload.self, from: data)
         else { return }
-        Task { @MainActor in payload = decoded }
+        Task { @MainActor in
+            payload = decoded
+            // A fresh snapshot proves the phone is actually reachable right
+            // now — the only other writer of `isOutOfRange` is a `sendMessage`
+            // error handler with no matching success handler, so a one-off
+            // transient failure (a Bluetooth hiccup) could otherwise latch
+            // the banner on forever even while reachability itself never
+            // toggled and every context update kept arriving normally.
+            isOutOfRange = false
+        }
     }
 }

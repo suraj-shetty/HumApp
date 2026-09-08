@@ -67,6 +67,7 @@
 		8FA462CEA62108049BF1E27F /* MusicKitMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C907FCAAC79B68F2A33B1E4 /* MusicKitMapping.swift */; };
 		94C28518BFF99BD91D45FA25 /* AuthReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A41BF096D3046001453C9CB /* AuthReducer.swift */; };
 		96F6F04CB3D84E96DC43E3AB /* MusicKitCatalogAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 349BDABB80265684106334FB /* MusicKitCatalogAdapter.swift */; };
+		9962BDF4D17DB4F8FFB85777 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 11AA95E80243E514A2881066 /* PrivacyInfo.xcprivacy */; };
 		9F63409F5E9667BD175A4447 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CAE596549CB2C0DE206C77 /* HomeView.swift */; };
 		A09FE80BF0DBC3F87C6BDB8D /* SubscriptionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C81D823E4C18BD7C8AB6713 /* SubscriptionState.swift */; };
 		A782A6A0C5CB4B91EB92ABEB /* UpNextWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19C669C64D19C3B3788BA16 /* UpNextWatchView.swift */; };
@@ -101,7 +102,6 @@
 		E0C45C9B841C4E6DA77FD8E8 /* HumWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFB69894AB023018280A03F6 /* HumWatchApp.swift */; };
 		E50B284331E1266BF2BE4256 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = A90ECF4BF3CD0F4DA159A112 /* Palette.swift */; };
 		E692196225B6A4A9FC718391 /* SubscriptionOfferAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11540B776084F538020586CE /* SubscriptionOfferAdapter.swift */; };
-		EA01018E19FF1D31DE2C0444 /* LibraryWatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F18AE617CB934A76D68087E /* LibraryWatchView.swift */; };
 		EBA9A233CECF72B2F9973E7C /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 080B76DCF9E15AA85FCA7485 /* TimeFormatting.swift */; };
 		ED8122B999AD5C7F51B89162 /* ContentSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DBEF1023DC2D547EF2E74EB /* ContentSource.swift */; };
 		EEF17378B688EACEEC1025D0 /* ConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A3E733350088271A151CAD /* ConnectView.swift */; };
@@ -155,6 +155,7 @@
 		0C81D823E4C18BD7C8AB6713 /* SubscriptionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionState.swift; sourceTree = "<group>"; };
 		1141120B45A703C1C961DDCE /* PlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackService.swift; sourceTree = "<group>"; };
 		11540B776084F538020586CE /* SubscriptionOfferAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionOfferAdapter.swift; sourceTree = "<group>"; };
+		11AA95E80243E514A2881066 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		12989FA662F729A59C3F48DB /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		1561889AD3FA3C48D8D4708E /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
 		18241C708EAE8CBAC1402897 /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
@@ -175,7 +176,6 @@
 		380983D9EA70B75ECFA87F39 /* HumTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumTrack.swift; sourceTree = "<group>"; };
 		49C3EBE417A36FD4B37EECF4 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		4C0C2937F1539BAEA81790C8 /* HumWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HumWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4F18AE617CB934A76D68087E /* LibraryWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryWatchView.swift; sourceTree = "<group>"; };
 		5280E9DC6F9D777DA3786AD2 /* NowPlayingWatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingWatchView.swift; sourceTree = "<group>"; };
 		5297D21CBD08E76BE20E7825 /* SubscriptionReducerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionReducerTests.swift; sourceTree = "<group>"; };
 		531D331798C6591350665AAF /* HumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HumApp.swift; sourceTree = "<group>"; };
@@ -375,6 +375,7 @@
 				3786ECA0B2BDA38DAD2E6446 /* Hum.entitlements */,
 				531D331798C6591350665AAF /* HumApp.swift */,
 				ACC650C525DF0D364CFF61F2 /* Info.plist */,
+				11AA95E80243E514A2881066 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Hum;
 			sourceTree = "<group>";
@@ -500,7 +501,6 @@
 			children = (
 				AFB69894AB023018280A03F6 /* HumWatchApp.swift */,
 				7D9480F63DD783C6A327FE6E /* Info.plist */,
-				4F18AE617CB934A76D68087E /* LibraryWatchView.swift */,
 				5280E9DC6F9D777DA3786AD2 /* NowPlayingWatchView.swift */,
 				C19C669C64D19C3B3788BA16 /* UpNextWatchView.swift */,
 				B1C31CD2681536DE38D94025 /* WatchPalette.swift */,
@@ -644,6 +644,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D41023C952DB4168D9512D8A /* Assets.xcassets in Resources */,
+				9962BDF4D17DB4F8FFB85777 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -765,7 +766,6 @@
 				6802B6764ED1A9E1BD2E0F16 /* HumSearchResults.swift in Sources */,
 				2AB113207EC5B448ACFAE4B1 /* HumTrack.swift in Sources */,
 				E0C45C9B841C4E6DA77FD8E8 /* HumWatchApp.swift in Sources */,
-				EA01018E19FF1D31DE2C0444 /* LibraryWatchView.swift in Sources */,
 				42DEE265E37EA728916039E9 /* NowPlayingWatchView.swift in Sources */,
 				E50B284331E1266BF2BE4256 /* Palette.swift in Sources */,
 				C9B9E2B8D911BF49B6A13DE5 /* PlaybackService.swift in Sources */,
