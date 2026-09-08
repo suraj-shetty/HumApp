@@ -140,15 +140,7 @@ struct ConnectView: View {
     /// amber means "informational" everywhere else in this file; this state
     /// means "blocked."
     private var iconHalo: some View {
-        ZStack {
-            Circle()
-                .strokeBorder(Palette.terracotta.opacity(0.38), lineWidth: 1)
-            Image(systemName: "lock")
-                .humFont(44, weight: .light)
-                .foregroundStyle(Palette.terracotta)
-        }
-        .frame(width: 112, height: 112)
-        .accessibilityHidden(true)
+        IconHalo(icon: "lock", tint: Palette.terracotta, ringOpacity: 0.38)
     }
 
     // MARK: - Pieces

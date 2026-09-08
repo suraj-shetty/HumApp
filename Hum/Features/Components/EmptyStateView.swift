@@ -1,5 +1,34 @@
 import SwiftUI
 
+/// The ring+icon badge repeated across `EmptyStateView`, `SubscriptionGapView`,
+/// and `ConnectView`'s own `iconHalo` — a stroked circle at `tint`'s opacity
+/// behind a centered SF Symbol. Parameterized rather than merged into one
+/// call site's fixed shape, since diameter/icon size/ring opacity genuinely
+/// differ per screen; `ConnectionLostView`'s double-ring `HumMark` badge is
+/// a different enough composition (a drawn logo, not a system icon; two
+/// rings, not one) that it stays its own thing rather than forcing a fit here.
+struct IconHalo: View {
+    let icon: String
+    var tint: Color = Palette.honeyAmber
+    /// Overrides the icon glyph's color; defaults to `tint`.
+    var iconTint: Color?
+    var diameter: CGFloat = 112
+    var ringOpacity: Double = 0.35
+    var iconSize: CGFloat = 44
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(tint.opacity(ringOpacity), lineWidth: 1)
+                .frame(width: diameter, height: diameter)
+            Image(systemName: icon)
+                .humFont(iconSize, weight: .light)
+                .foregroundStyle(iconTint ?? tint)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 /// The empty/error state, generalised from the one the prototype draws on the
 /// Queue screen. **Opaque content.**
 ///
@@ -35,16 +64,7 @@ struct EmptyStateView: View {
             // enough not to fork the component over, far enough to name
             // (finding Q-13). It was missing altogether, and the icon itself
             // was dimmed to 70% where every measured screen draws it solid.
-            ZStack {
-                Circle()
-                    .strokeBorder(tint.opacity(0.35), lineWidth: 1)
-                    .frame(width: ringDiameter, height: ringDiameter)
-                Image(systemName: icon)
-                    .humFont(34, weight: .light)
-                    .foregroundStyle(iconTint ?? tint)
-            }
-            // Decorative: the headline and message say everything it does.
-            .accessibilityHidden(true)
+            IconHalo(icon: icon, tint: tint, iconTint: iconTint, diameter: ringDiameter, iconSize: 34)
 
             // 21px, not 19 — measured identically across every empty/error
             // screen this component stands in for (12, 15, 18, 27), so this
