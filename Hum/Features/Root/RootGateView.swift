@@ -28,8 +28,12 @@ struct RootGateView: View {
             if let auth {
                 if let screen = auth.screen {
                     if isIPadLayout {
-                        IPadConnectView(onConnect: { Task { await auth.connect() } })
-                            .transition(.opacity)
+                        IPadConnectView(
+                            screen: screen,
+                            onPrimaryAction: { Task { await auth.connect() } },
+                            onRefresh: { Task { await auth.refresh() } }
+                        )
+                        .transition(.opacity)
                     } else {
                         ConnectView(
                             screen: screen,
