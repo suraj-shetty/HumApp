@@ -55,6 +55,10 @@ final class PlayerViewModel {
     /// from `addedToLibrary` so a double-tap before the first request
     /// completes doesn't fire a second one for the same track.
     private var addingToLibrary: Set<String> = []
+    /// A catalog track's real containment check in flight, so `isInLibrary`
+    /// firing on every context-menu open doesn't fire the query again for
+    /// each redundant ask before the first one resolves.
+    private var libraryQueryInFlight: Set<String> = []
 
     // MARK: - Derived
 
@@ -294,8 +298,50 @@ final class PlayerViewModel {
     //
     // Each one reduces purely, then mirrors the result onto the player.
 
-    func jump(to index: Int) { applyQueue(.jump(to: index)) }
-    func remove(at index: Int) { applyQueue(.remove(at: index)) }
+    /// A jump lands on a track already sitting in the queue, but it's exactly
+    /// as subject to a subscription gap as a fresh play intent — `applyQueue`
+    /// hands a cursor change straight to the adapter's own `play()`, which has
+    /// no subscription awareness at all, so without this check the gate
+    /// `play()` exists to enforce was reachable by tapping an Up Next row.
+    func jump(to index: Int) {
+        guard let target = queue.entries[safe: index], canPlay(target) else { return }
+        applyQueue(.jump(to: index))
+    }
+
+    /// Removing the *currently playing* row also moves the cursor to
+    /// whatever comes next — the same gap `jump(to:)` closes, reached from
+    /// Queue's swipe-to-remove instead of a tap.
+    func remove(at index: Int) {
+        if index == queue.currentIndex,
+           let target = QueueReducer.reduce(queue, .remove(at: index)).currentTrack,
+           !canPlay(target) {
+            return
+        }
+        applyQueue(.remove(at: index))
+    }
+
+    /// Shared by `jump(to:)` and `remove(at:)`: unlike a fresh `play()`
+    /// intent, there's nothing to lose by simply declining — the existing
+    /// queue is untouched either way — so this doesn't defer/resume the
+    /// intent the way `play()` does, only presents the same explanation.
+    private func canPlay(_ track: HumTrack) -> Bool {
+        switch SubscriptionReducer.resolve(track.source, in: subscription) {
+        case .play:
+            return true
+        case .presentSubscriptionOffer:
+            isPresentingSubscriptionOffer = true
+            return false
+        case .explainNoSubscription:
+            isPresentingSubscriptionGap = true
+            return false
+        case .awaitSubscriptionCheck:
+            Task {
+                await subscriptionStore.refresh()
+                subscription = subscriptionStore.current
+            }
+            return false
+        }
+    }
     func clearUpNext() { applyQueue(.clearUpNext) }
     func toggleShuffle() { applyQueue(.toggleShuffle) }
     func cycleRepeat() { applyQueue(.cycleRepeat) }
@@ -346,8 +392,26 @@ final class PlayerViewModel {
 
     // MARK: - Library
 
+    /// `addedToLibrary` only ever recorded an add made *this session* — a
+    /// track already in the library from any earlier session always read as
+    /// "Add to Library" even though `libraryService.contains(_:)` could have
+    /// said otherwise. A library-sourced track is in the library by
+    /// definition (same shortcut `MusicKitLibraryAdapter.contains` takes); a
+    /// catalog track's real membership is checked lazily, once, the first
+    /// time it's actually asked about, since pre-checking every visible row
+    /// up front would be a query per row for content nobody's asked about yet.
     func isInLibrary(_ track: HumTrack) -> Bool {
-        addedToLibrary.contains(track.id)
+        if addedToLibrary.contains(track.id) { return true }
+        if track.source == .library { return true }
+        guard !libraryQueryInFlight.contains(track.id) else { return false }
+        libraryQueryInFlight.insert(track.id)
+        Task {
+            defer { libraryQueryInFlight.remove(track.id) }
+            if let inLibrary = try? await libraryService.contains(track), inLibrary {
+                addedToLibrary.insert(track.id)
+            }
+        }
+        return false
     }
 
     /// Backs the action the prototype draws as a heart. MusicKit has no
