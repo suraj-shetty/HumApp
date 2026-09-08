@@ -62,6 +62,12 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
         // a legible one.
         var request = MusicLibraryRequest<Song>()
         request.filter(matching: \.title, equalTo: track.title)
+        // Every sibling query in this file sets this; this one didn't, so it
+        // fell back to MusicKit's much smaller default page size — a
+        // listener with many library songs sharing this title (a common
+        // cover/remix/live-version title) could have the actual
+        // artist-matching copy fall outside that first page.
+        request.limit = Self.pageLimit
         let result = try await request.response().items.contains { $0.artistName == track.artist }
         containmentCache[track.id] = result
         return result
