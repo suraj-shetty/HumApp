@@ -183,6 +183,16 @@ final class PlayerViewModel {
         Task { await subscriptionStore.refresh() }
     }
 
+    /// A retry is only honest when the check *failed*. A confirmed "no
+    /// subscription" is an answer, and offering to re-ask it would be
+    /// theatre. Was duplicated verbatim in both `RootSplitView` and
+    /// `RootTabView`; hoisted here since it's a judgment about
+    /// `subscription`, not a layout decision either root view should own.
+    var subscriptionRetryAction: (() -> Void)? {
+        guard subscription.isUnavailable else { return nil }
+        return { [weak self] in self?.retrySubscriptionCheck() }
+    }
+
     /// Apple's offer sheet failed to load. Reported plainly rather than left
     /// as a control that visibly does nothing.
     func subscriptionOfferFailed(_ reason: String) {

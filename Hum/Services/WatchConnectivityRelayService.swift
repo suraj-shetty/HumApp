@@ -17,6 +17,9 @@ import WatchConnectivity
 final class WatchConnectivityRelayService: NSObject {
     private let player: PlayerViewModel
     private var session: WCSession?
+    /// Reused rather than constructed per `publish()` call — this can fire
+    /// several times a second during active transport changes.
+    private static let encoder = JSONEncoder()
 
     init(player: PlayerViewModel) {
         self.player = player
@@ -57,7 +60,7 @@ final class WatchConnectivityRelayService: NSObject {
     func publish() {
         guard let session, session.activationState == .activated else { return }
         let payload = WatchPlaybackPayload(from: player)
-        guard let data = try? JSONEncoder().encode(payload) else { return }
+        guard let data = try? Self.encoder.encode(payload) else { return }
         try? session.updateApplicationContext(["snapshot": data])
     }
 
