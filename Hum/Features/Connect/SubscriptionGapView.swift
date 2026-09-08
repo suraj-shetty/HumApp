@@ -24,15 +24,7 @@ struct SubscriptionGapView: View {
             Spacer(minLength: 0)
 
             VStack(spacing: 22) {
-                ZStack {
-                    Circle()
-                        .strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
-                        .frame(width: 112, height: 112)
-                    Image(systemName: icon)
-                        .humFont(46, weight: .light)
-                        .foregroundStyle(Palette.honeyAmber.opacity(0.8))
-                }
-                .accessibilityHidden(true)
+                IconHalo(icon: icon, iconTint: Palette.honeyAmber.opacity(0.8), iconSize: 46)
 
                 VStack(spacing: 14) {
                     Text(title)

@@ -17,6 +17,9 @@ import WatchConnectivity
 final class WatchConnectivityRelayService: NSObject {
     private let player: PlayerViewModel
     private var session: WCSession?
+    /// Reused rather than constructed per `publish()` call — this can fire
+    /// several times a second during active transport changes.
+    private static let encoder = JSONEncoder()
 
     init(player: PlayerViewModel) {
         self.player = player
@@ -57,7 +60,7 @@ final class WatchConnectivityRelayService: NSObject {
     func publish() {
         guard let session, session.activationState == .activated else { return }
         let payload = WatchPlaybackPayload(from: player)
-        guard let data = try? JSONEncoder().encode(payload) else { return }
+        guard let data = try? Self.encoder.encode(payload) else { return }
         try? session.updateApplicationContext(["snapshot": data])
     }
 
@@ -66,7 +69,15 @@ final class WatchConnectivityRelayService: NSObject {
         case .togglePlayPause: player.togglePlayPause()
         case .skipToNext: player.skipToNext()
         case .skipToPrevious: player.skipToPrevious()
-        case .jump(let index): player.jump(to: index)
+        case .jump(let upNextIndex):
+            // The watch only ever sees `upNext` (a slice, not
+            // `QueueState.entries`), so it sends an index relative to that
+            // slice — the same shape `QueueView.upNextRows` starts from on
+            // the phone. This is the one place with the current-track
+            // context (`player.queue.currentIndex`) needed to turn that
+            // into the absolute index `PlayerViewModel.jump(to:)` expects.
+            let base = (player.queue.currentIndex ?? -1) + 1
+            player.jump(to: base + upNextIndex)
         }
     }
 }

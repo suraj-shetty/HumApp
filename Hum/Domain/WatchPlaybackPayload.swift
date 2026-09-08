@@ -30,9 +30,12 @@ enum WatchTransportCommand: Sendable, Codable {
     case togglePlayPause
     case skipToNext
     case skipToPrevious
-    /// Up Next's tap-to-jump. The index is relative to the same
-    /// `QueueState.entries` the phone holds — the watch only ever displays
-    /// `upNext`, so it re-derives the absolute index the same way
-    /// `QueueView`'s own `upNextRows` does before sending it.
+    /// Up Next's tap-to-jump. The index is relative to `upNext` (the slice
+    /// the watch actually displays), not absolute into
+    /// `QueueState.entries` — the watch has no `currentIndex` to derive an
+    /// absolute index from (`WatchPlaybackPayload` doesn't carry one).
+    /// `WatchConnectivityRelayService.handle(_:)` does that translation on
+    /// the phone, where `currentIndex` is available, the same way
+    /// `QueueView`'s own `upNextRows` computes its `base`.
     case jump(Int)
 }

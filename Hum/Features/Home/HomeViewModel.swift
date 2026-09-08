@@ -170,6 +170,7 @@ final class HomeViewModel {
 
     func reload() async {
         recentlyPlayed = .idle
+        recommendations = .idle
         downloads = .idle
         await load()
     }

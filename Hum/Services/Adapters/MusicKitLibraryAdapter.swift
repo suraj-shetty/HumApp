@@ -12,7 +12,14 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
     /// check. Cached by track id, and updated (not just invalidated) on
     /// `add(_:)` so a fresh add is reflected immediately rather than
     /// re-querying.
+    ///
+    /// Bounded rather than left to grow for the process lifetime: unlike
+    /// `ArtworkStore`'s `NSCache` (which evicts under memory pressure), a
+    /// plain dictionary has no such backstop, and a long session with heavy
+    /// search/browse use could otherwise leave one entry per distinct
+    /// catalog track ever checked.
     private var containmentCache: [String: Bool] = [:]
+    private static let containmentCacheLimit = 500
 
     func albums() async throws -> [HumCollection] {
         var request = MusicLibraryRequest<Album>()
@@ -46,7 +53,7 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
             throw HumError.requestFailed("That track is no longer available.")
         }
         try await MusicLibrary.shared.add(song)
-        containmentCache[track.id] = true
+        setContainmentCache(true, for: track.id)
     }
 
     func contains(_ track: HumTrack) async throws -> Bool {
@@ -62,9 +69,27 @@ actor MusicKitLibraryAdapter: MusicLibraryService {
         // a legible one.
         var request = MusicLibraryRequest<Song>()
         request.filter(matching: \.title, equalTo: track.title)
+        // Every sibling query in this file sets this; this one didn't, so it
+        // fell back to MusicKit's much smaller default page size — a
+        // listener with many library songs sharing this title (a common
+        // cover/remix/live-version title) could have the actual
+        // artist-matching copy fall outside that first page.
+        request.limit = Self.pageLimit
         let result = try await request.response().items.contains { $0.artistName == track.artist }
-        containmentCache[track.id] = result
+        setContainmentCache(result, for: track.id)
         return result
+    }
+
+    /// Simplest possible bound: once the cache would grow past the limit,
+    /// drop it all rather than tracking per-entry recency for a proper LRU —
+    /// this is a perf optimization, not correctness-bearing state, so a
+    /// periodic full reset (back to "first access after this is a real
+    /// query") is an acceptable cost for a cache that otherwise never shrinks.
+    private func setContainmentCache(_ value: Bool, for id: String) {
+        if containmentCache.count >= Self.containmentCacheLimit {
+            containmentCache.removeAll(keepingCapacity: true)
+        }
+        containmentCache[id] = value
     }
 
     func createPlaylist(name: String, description: String) async throws -> HumCollection {

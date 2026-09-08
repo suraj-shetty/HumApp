@@ -142,7 +142,7 @@ struct RootSplitView: View {
             onFailure: { reason in player.subscriptionOfferFailed(reason) }
         )
         .sheet(isPresented: $bindable.isPresentingSubscriptionGap) {
-            SubscriptionGapView(state: player.subscription, onRetry: retryAction)
+            SubscriptionGapView(state: player.subscription, onRetry: player.subscriptionRetryAction)
         }
         // Board 03's keyboard row: ⌘F focuses search, space toggles
         // play/pause, ⌥→ skips next. ⌘⌥U is left unbound — the player column
@@ -153,12 +153,6 @@ struct RootSplitView: View {
         .installHiddenShortcut(.rightArrow, modifiers: .option) { player.skipToNext() }
     }
 
-    /// A retry is only honest when the check *failed*. A confirmed "no
-    /// subscription" is an answer, and offering to re-ask it would be theatre.
-    private var retryAction: (() -> Void)? {
-        guard player.subscription.isUnavailable else { return nil }
-        return { player.retrySubscriptionCheck() }
-    }
 
     private func toggleSidebar() {
         withAnimation(.easeOut(duration: 0.2)) {

@@ -85,7 +85,7 @@ struct RootTabView: View {
         // The gap an offer cannot close: account can't subscribe, or the check
         // failed. Explains instead of dangling a sheet that would fail.
         .sheet(isPresented: $bindable.isPresentingSubscriptionGap) {
-            SubscriptionGapView(state: player.subscription, onRetry: retryAction)
+            SubscriptionGapView(state: player.subscription, onRetry: player.subscriptionRetryAction)
         }
         .overlay(alignment: .bottom) {
             if let toast = player.toast {
@@ -132,10 +132,4 @@ struct RootTabView: View {
         .animation(.easeOut(duration: 0.22), value: player.currentTrack?.id)
     }
 
-    /// A retry is only honest when the check *failed*. A confirmed "no
-    /// subscription" is an answer, and offering to re-ask it would be theatre.
-    private var retryAction: (() -> Void)? {
-        guard player.subscription.isUnavailable else { return nil }
-        return { player.retrySubscriptionCheck() }
-    }
 }

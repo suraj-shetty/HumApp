@@ -34,7 +34,21 @@ final class WatchPlayerViewModel: NSObject {
 
     private func send(_ command: WatchTransportCommand) {
         guard let session, let data = try? JSONEncoder().encode(command) else { return }
-        session.sendMessage(["command": data], replyHandler: nil, errorHandler: nil)
+        // Checked up front rather than only relying on the error handler
+        // below: a known-unreachable session shows the existing out-of-range
+        // banner immediately instead of making a doomed call first. The
+        // error handler covers the gap between the last reachability
+        // callback and an actual delivery failure (e.g. a Bluetooth hiccup
+        // `isReachable` hasn't caught up to yet) — folded into the same
+        // `isOutOfRange` flag rather than a new per-command error, matching
+        // this screen's own "never a dialog" design.
+        guard session.isReachable else {
+            isOutOfRange = true
+            return
+        }
+        session.sendMessage(["command": data], replyHandler: nil) { [weak self] _ in
+            Task { @MainActor in self?.isOutOfRange = true }
+        }
     }
 }
 

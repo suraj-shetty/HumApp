@@ -7,12 +7,20 @@ final class SearchViewModel {
     var term: String = ""
     private(set) var results: LoadState<HumSearchResults> = .idle
     private(set) var recentSearches = RecentSearches.load()
+    /// `MusicCatalogSearchRequest` searches Apple's catalog only — the same
+    /// personalized-catalog category Home's shelves are gated on — so this
+    /// needs the same subscription check Home already has; without it, a
+    /// non-subscriber's search failure rendered as a generic "check your
+    /// connection", blaming the network for a subscription gap.
+    private(set) var needsSubscription = false
 
     private let catalog: MusicCatalogService
+    private let subscriptionStore: SubscriptionStateStore
     private var searchTask: Task<Void, Never>?
 
     init(environment: AppEnvironment) {
         self.catalog = environment.catalog
+        self.subscriptionStore = environment.subscriptionStore
     }
 
     /// Debounced. Every keystroke firing a catalog request would burn the
@@ -24,6 +32,7 @@ final class SearchViewModel {
 
         guard !query.isEmpty else {
             results = .idle
+            needsSubscription = false
             return
         }
 
@@ -31,6 +40,20 @@ final class SearchViewModel {
             try? await Task.sleep(for: .milliseconds(300))
             guard let self, !Task.isCancelled else { return }
             results = .loading
+
+            switch SubscriptionReducer.resolveBrowse(in: subscriptionStore.current) {
+            case .needsSubscription:
+                needsSubscription = true
+                results = .loaded(.empty)
+                return
+            case .checkFailed:
+                needsSubscription = false
+                results = .failed("Couldn't check your Apple Music subscription.")
+                return
+            case .browse:
+                needsSubscription = false
+            }
+
             do {
                 let found: HumSearchResults = try await catalog.search(query)
                 // Cancellation is checked again after the await: the term may
@@ -157,6 +180,17 @@ struct SearchView: View {
 
     private var results: some View {
             Group {
+                if model?.needsSubscription == true {
+                    // Same reasoning as `HomeView.catalogUnavailable`: Search
+                    // draws entirely from the Apple Music catalog, so a
+                    // confirmed non-subscriber gets a plain explanation, not
+                    // "No results" (which reads as the search itself failing).
+                    EmptyStateView(
+                        icon: HumIcon.musicNote,
+                        headline: "Apple Music Needed",
+                        message: "Search draws from the Apple Music catalog, which this account isn't subscribed to. Your library still plays — it's in the Library tab."
+                    )
+                } else {
                 switch model?.results ?? .idle {
                 case .idle:
                     ScrollView {
@@ -275,6 +309,7 @@ struct SearchView: View {
                     )
                     .padding(.horizontal, 46)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                }
                 }
             }
             .navigationDestination(item: $route) { DetailView(collection: $0) }
