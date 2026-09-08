@@ -51,6 +51,10 @@ final class PlayerViewModel {
     /// Tracks the listener has added to their library this session, so the
     /// Now Playing action can render its filled state without a round trip.
     private(set) var addedToLibrary: Set<String> = []
+    /// Tracks an add that's in flight but hasn't confirmed yet — separate
+    /// from `addedToLibrary` so a double-tap before the first request
+    /// completes doesn't fire a second one for the same track.
+    private var addingToLibrary: Set<String> = []
 
     // MARK: - Derived
 
@@ -88,10 +92,10 @@ final class PlayerViewModel {
     // MARK: - Dependencies
 
     private let playback: PlaybackService
-    private let subscriptionService: SubscriptionService
+    private let subscriptionStore: SubscriptionStateStore
     private let libraryService: MusicLibraryService
     private var observationTask: Task<Void, Never>?
-    private var subscriptionTask: Task<Void, Never>?
+    private var subscriptionChangeToken: UUID?
     private var toastTask: Task<Void, Never>?
 
     /// The play intent the subscription gate turned back, kept so it can be
@@ -101,7 +105,7 @@ final class PlayerViewModel {
 
     init(environment: AppEnvironment) {
         self.playback = environment.playback
-        self.subscriptionService = environment.subscription
+        self.subscriptionStore = environment.subscriptionStore
         self.libraryService = environment.library
     }
 
@@ -116,14 +120,13 @@ final class PlayerViewModel {
     /// which can run more than once across a view's lifetime.
     func start() {
         guard observationTask == nil else { return }
-        subscription = .unknown
+        subscriptionStore.start()
 
         // `playback` is captured directly rather than through `self`: a
         // `guard let self` outside the loop would hold a strong reference for
         // the stream's entire lifetime, which is forever, and the view model
         // would never deallocate.
         observationTask = Task { [weak self, playback] in
-            await self?.refreshSubscription()
             for await snapshot in playback.snapshots {
                 guard let self, !Task.isCancelled else { return }
                 self.adopt(snapshot)
@@ -133,12 +136,11 @@ final class PlayerViewModel {
         // A subscription can begin *while Hum is open* — through the offer
         // sheet, or in the Music app. Without this the listener would have to
         // relaunch before catalog playback started working, which reads as the
-        // app ignoring a purchase they just made.
-        subscriptionTask = Task { [weak self, subscriptionService] in
-            for await state in subscriptionService.updates {
-                guard let self, !Task.isCancelled else { return }
-                self.apply(state)
-            }
+        // app ignoring a purchase they just made. Routed through the shared
+        // `SubscriptionStateStore` rather than this view model's own live
+        // MusicKit subscription — see the store's own doc comment.
+        subscriptionChangeToken = subscriptionStore.onChange { [weak self] state in
+            self?.apply(state)
         }
     }
 
@@ -156,14 +158,12 @@ final class PlayerViewModel {
     func stop() {
         observationTask?.cancel()
         observationTask = nil
-        subscriptionTask?.cancel()
-        subscriptionTask = nil
+        if let subscriptionChangeToken {
+            subscriptionStore.removeOnChange(subscriptionChangeToken)
+            self.subscriptionChangeToken = nil
+        }
         toastTask?.cancel()
         toastTask = nil
-    }
-
-    private func refreshSubscription() async {
-        apply(await subscriptionService.current)
     }
 
     /// Adopts a new subscription state and resumes a turned-back play intent
@@ -180,7 +180,7 @@ final class PlayerViewModel {
     /// Re-runs the check after a failed one. Backs `SubscriptionGapView`'s
     /// "Try Again".
     func retrySubscriptionCheck() {
-        Task { await refreshSubscription() }
+        Task { await subscriptionStore.refresh() }
     }
 
     /// Apple's offer sheet failed to load. Reported plainly rather than left
@@ -203,8 +203,12 @@ final class PlayerViewModel {
         case .play:
             sourceLabel = source
             sourceTracks = tracks
-            recordPlaybackStart()
-            Task { await perform { try await self.playback.play(tracks, startingAt: index) } }
+            Task {
+                await perform(
+                    { try await self.playback.play(tracks, startingAt: index) },
+                    onSuccess: { [weak self] in self?.recordPlaybackStart() }
+                )
+            }
 
         case .presentSubscriptionOffer:
             deferredIntent = (tracks, index, source)
@@ -216,9 +220,12 @@ final class PlayerViewModel {
 
         case .awaitSubscriptionCheck:
             // Resolve the status, then retry once. Never guess — "not checked
-            // yet" must not render as "you have no subscription".
+            // yet" must not render as "you have no subscription". Refreshed
+            // through the shared store rather than a direct service read, so
+            // every other reader of `subscriptionStore` sees the same result.
             Task {
-                subscription = await subscriptionService.current
+                await subscriptionStore.refresh()
+                subscription = subscriptionStore.current
                 if case .unknown = subscription {
                     showToast("Couldn't check your Apple Music subscription.", kind: .error)
                 } else {
@@ -316,6 +323,14 @@ final class PlayerViewModel {
     private func applyQueue(_ action: QueueAction) {
         let next = QueueReducer.reduce(queue, action)
         guard next != queue else { return }
+        // Adopted immediately rather than waiting for the round trip's
+        // snapshot: `queue` is what the next `applyQueue` reduces from, so
+        // two edits fired in quick succession (e.g. removing two rows before
+        // the first confirms) would otherwise both reduce from the same
+        // pre-edit queue and the second would overwrite the first's change.
+        // If the round trip itself fails, the adapter rolls its own mirror
+        // back and republishes, which corrects this back through `adopt(_:)`.
+        queue = next
         Task { await perform { try await self.playback.applyQueue(next) } }
     }
 
@@ -329,8 +344,10 @@ final class PlayerViewModel {
     /// love/favorite API, so this adds to the library — a real capability
     /// (DECISIONS M-04).
     func addToLibrary(_ track: HumTrack) {
-        guard !addedToLibrary.contains(track.id) else { return }
+        guard !addedToLibrary.contains(track.id), !addingToLibrary.contains(track.id) else { return }
+        addingToLibrary.insert(track.id)
         Task {
+            defer { addingToLibrary.remove(track.id) }
             do {
                 try await libraryService.add(track)
                 addedToLibrary.insert(track.id)
@@ -346,10 +363,11 @@ final class PlayerViewModel {
 
     // MARK: - Helpers
 
-    private func perform(_ work: @escaping () async throws -> Void) async {
+    private func perform(_ work: @escaping () async throws -> Void, onSuccess: (() -> Void)? = nil) async {
         do {
             try await work()
             consecutiveFailures = 0
+            onSuccess?()
         } catch {
             consecutiveFailures += 1
             // MusicKit gives this app no signal that distinguishes "lost the
@@ -363,14 +381,19 @@ final class PlayerViewModel {
             guard consecutiveFailures >= Self.connectionLostThreshold else {
                 showToast("Playback failed.", kind: .error) { [weak self] in
                     guard let self else { return }
-                    Task { await self.perform(work) }
+                    Task { await self.perform(work, onSuccess: onSuccess) }
                 }
                 return
             }
+            // The cover is already up over an earlier failure — leave its
+            // retry target alone. Overwriting it here would mean tapping
+            // "Try Again" retries whatever unrelated command failed twice
+            // most recently, not the one the listener is looking at.
+            guard !isShowingConnectionLost else { return }
             consecutiveFailures = 0
             retryConnectionLost = { [weak self] in
                 guard let self else { return }
-                Task { await self.perform(work) }
+                Task { await self.perform(work, onSuccess: onSuccess) }
             }
             isShowingConnectionLost = true
         }

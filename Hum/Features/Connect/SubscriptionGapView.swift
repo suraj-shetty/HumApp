@@ -82,24 +82,30 @@ struct SubscriptionGapView: View {
 
     // MARK: - Copy
 
-    private var icon: String {
-        if case .unavailable = state { return HumIcon.warning }
-        return HumIcon.musicNote
-    }
-
-    private var title: String {
-        if case .unavailable = state { return "Couldn't Check" }
-        return "Apple Music Needed"
-    }
-
-    private var message: String {
+    /// One switch over `state` rather than three, so a future third
+    /// `SubscriptionState` case can't fall through as a silent default in
+    /// icon/title but a real branch in message — the three used to be
+    /// decided independently.
+    private var copy: (icon: String, title: String, message: String) {
         switch state {
         case .unavailable:
-            "Hum couldn't confirm your Apple Music subscription, so catalog tracks may not play. Your own library is unaffected."
-        default:
-            "Playing from the Apple Music catalog needs an active subscription on this account. Everything already in your library still plays."
+            (
+                HumIcon.warning,
+                "Couldn't Check",
+                "Hum couldn't confirm your Apple Music subscription, so catalog tracks may not play. Your own library is unaffected."
+            )
+        case .active, .gap, .unknown:
+            (
+                HumIcon.musicNote,
+                "Apple Music Needed",
+                "Playing from the Apple Music catalog needs an active subscription on this account. Everything already in your library still plays."
+            )
         }
     }
+
+    private var icon: String { copy.icon }
+    private var title: String { copy.title }
+    private var message: String { copy.message }
 }
 
 #Preview("No subscription") {

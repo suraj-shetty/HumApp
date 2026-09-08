@@ -8,16 +8,31 @@ final class SettingsViewModel {
     private(set) var subscription: SubscriptionState = .unknown
 
     private let authService: MusicAuthorizationService
-    private let subscriptionService: SubscriptionService
+    private let subscriptionStore: SubscriptionStateStore
+    private var subscriptionChangeToken: UUID?
 
     init(environment: AppEnvironment) {
         self.authService = environment.authorization
-        self.subscriptionService = environment.subscription
+        self.subscriptionStore = environment.subscriptionStore
     }
 
+    /// Subscription comes from the shared store — live from here on, not
+    /// just a one-time snapshot, so subscribing while Settings is open (e.g.
+    /// via Now Playing's offer sheet) is reflected without leaving and
+    /// coming back.
     func load() async {
         authorization = await authService.current
-        subscription = await subscriptionService.current
+        subscriptionStore.start()
+        subscriptionChangeToken = subscriptionStore.onChange { [weak self] state in
+            self?.subscription = state
+        }
+    }
+
+    func stop() {
+        if let subscriptionChangeToken {
+            subscriptionStore.removeOnChange(subscriptionChangeToken)
+            self.subscriptionChangeToken = nil
+        }
     }
 
     var authorizationDescription: String {
@@ -128,6 +143,9 @@ struct SettingsView: View {
         .task {
             if model == nil { model = SettingsViewModel(environment: environment) }
             await model?.load()
+        }
+        .onDisappear {
+            model?.stop()
         }
     }
 

@@ -12,9 +12,12 @@ import SwiftUI
 /// fabricated progress string. Everything below the two-column area reuses
 /// the exact "Made for you" track list `HomeView` already has.
 struct IPadListenNowView: View {
-    @Environment(\.appEnvironment) private var environment
+    /// Owned and loaded by `RootSplitView`, shared with `IPadContentColumn`'s
+    /// `.madeForYou` destination — see `RootSplitView.homeModel`'s own doc
+    /// comment for why this is injected rather than created here.
+    let model: HomeViewModel?
+
     @Environment(PlayerViewModel.self) private var player
-    @State private var model: HomeViewModel?
     @State private var route: HumCollection?
     // The two-column row's actual available width, measured off a
     // `maxWidth: .infinity` container rather than guessed. `recentlyPlayed`
@@ -39,38 +42,12 @@ struct IPadListenNowView: View {
         .scrollIndicators(.hidden)
         .background(Palette.deepOnyx)
         .navigationDestination(item: $route) { DetailView(collection: $0) }
-        .task {
-            if model == nil { model = HomeViewModel(environment: environment) }
-            await model?.load()
-        }
     }
 
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .center) {
-            Text(model?.greeting ?? "")
-                .humFont(.screenTitle)
-                .foregroundStyle(Palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Image(systemName: HumIcon.person)
-                    .humFont(14, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber)
-                    .frame(width: 38, height: 38)
-                    .background(Palette.surfaceRaised, in: Circle())
-                    .overlay(Circle().strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1))
-                    .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                    .contentShape(.rect)
-            }
-            .accessibilityLabel("Settings")
-        }
-        .padding(.horizontal, Metrics.iPadContentGutter)
-        .padding(.top, 14)
-        .padding(.bottom, 22)
+        ScreenHeader(title: model?.greeting ?? "", horizontalPadding: Metrics.iPadContentGutter)
     }
 
     // MARK: - Recently played (two-column)
@@ -144,41 +121,13 @@ struct IPadListenNowView: View {
 
     // MARK: - Made for you
 
-    @ViewBuilder
     private var madeForYou: some View {
-        SectionHeader(title: "Made for you")
-            .padding(.horizontal, Metrics.iPadContentGutter)
-            .padding(.bottom, 8)
-
-        switch model?.recommendations ?? .idle {
-        case .idle, .loading:
-            RowSkeleton(count: 4)
-                .padding(.horizontal, Metrics.iPadContentGutter)
-
-        case .loaded(let tracks) where tracks.isEmpty:
-            EmptyStateView(
-                icon: HumIcon.musicNote,
-                headline: "No recommendations yet",
-                message: "Listen to a few things and Apple Music will start suggesting more."
-            )
-
-        case .loaded(let tracks):
-            LazyVStack(spacing: 0) {
-                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                    TrackRow(
-                        track: track,
-                        isCurrent: player.currentTrack?.id == track.id
-                    ) {
-                        player.play(tracks, startingAt: index, source: "Made for you")
-                    }
-                    if index < tracks.count - 1 { RowDivider() }
-                }
-            }
-            .padding(.horizontal, Metrics.iPadContentGutter)
-
-        case .failed(let message):
-            InlineError(message: message).padding(.horizontal, Metrics.iPadContentGutter)
-        }
+        MadeForYouSection(
+            recommendations: model?.recommendations ?? .idle,
+            currentTrackID: player.currentTrack?.id,
+            horizontalPadding: Metrics.iPadContentGutter,
+            onPlay: { tracks, index in player.play(tracks, startingAt: index, source: "Made for you") }
+        )
     }
 }
 

@@ -1,5 +1,29 @@
 import SwiftUI
 
+/// `HomeView`, `LibraryView`, and `SearchView` are each reused two ways:
+/// standalone as an iPhone tab root (needs its own `NavigationStack`), and
+/// embedded in `IPadContentColumn`'s `NavigationSplitView` column (already
+/// has one — nesting a second there swallowed that column's own toolbar,
+/// including the sidebar-reveal control). All three had copy-pasted the same
+/// `if providesOwnChrome { NavigationStack { ... } } else { ... }` branch to
+/// decide it. `hidesNavigationBar` covers the one real difference: Home and
+/// Library hide their bar (every iPhone tab root does, so switching tabs
+/// doesn't animate one in and out); Search keeps its.
+extension View {
+    @ViewBuilder
+    func navigationRoot(providesOwnChrome: Bool, hidesNavigationBar: Bool = true) -> some View {
+        if providesOwnChrome {
+            if hidesNavigationBar {
+                NavigationStack { self.toolbar(.hidden, for: .navigationBar) }
+            } else {
+                NavigationStack { self }
+            }
+        } else {
+            self
+        }
+    }
+}
+
 /// Home. **Opaque content throughout** — no glass anywhere on this screen.
 struct HomeView: View {
     @Environment(\.appEnvironment) private var environment
@@ -18,16 +42,7 @@ struct HomeView: View {
     var embedsNavigationChrome: Bool = true
 
     var body: some View {
-        Group {
-            if embedsNavigationChrome {
-                NavigationStack {
-                    content
-                        .toolbar(.hidden, for: .navigationBar)
-                }
-            } else {
-                content
-            }
-        }
+        content.navigationRoot(providesOwnChrome: embedsNavigationChrome)
     }
 
     private var content: some View {
@@ -57,6 +72,22 @@ struct HomeView: View {
             if model == nil { model = HomeViewModel(environment: environment) }
             model?.isOffline = network.isOffline
             await model?.load()
+            model?.startObservingSubscriptionChanges()
+        }
+        // Home lives at the root of its tab's persistent `NavigationStack`
+        // (`RootTabView`'s own doc comment), so pushing e.g. `DetailView`
+        // fires `onDisappear` on Home without destroying it — and whether
+        // `.task` reliably restarts when popping back to reveal it again is
+        // genuinely ambiguous in SwiftUI. `onAppear` always fires on that
+        // reveal, so it's the one guaranteed hook to restart observation;
+        // `startObservingSubscriptionChanges()`'s own guard makes calling it
+        // from both here and `.task` safe regardless of which one restarts
+        // it first.
+        .onAppear {
+            model?.startObservingSubscriptionChanges()
+        }
+        .onDisappear {
+            model?.stopObservingSubscriptionChanges()
         }
         // Reachability can change after the first load — this is the
         // only place that re-triggers it, since `load()` itself only
@@ -168,35 +199,7 @@ struct HomeView: View {
         // beside the profile control — no wordmark and no overline. The
         // wordmark belongs to Connect, splash and onboarding, where the design
         // does use it.
-        HStack(alignment: .center) {
-            Text(model?.greeting ?? "")
-                .humFont(.screenTitle)
-                .foregroundStyle(Palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            NavigationLink {
-                SettingsView()
-            } label: {
-                // Design: 38×38, `#1E1E20`, a 1px amber-35% border, a 14px
-                // amber glyph — was 44×44, no border, a 20px grey glyph
-                // (m-12). The 44pt tap target floor stays: it's the outer
-                // frame, not the drawn circle.
-                Image(systemName: HumIcon.person)
-                    .humFont(14, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber)
-                    .frame(width: 38, height: 38)
-                    .background(Palette.surfaceRaised, in: Circle())
-                    .overlay(
-                        Circle().strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
-                    )
-                    .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
-                    .contentShape(.rect)
-            }
-            .accessibilityLabel("Settings")
-        }
-        .padding(.horizontal, Metrics.gutter)
-        .padding(.top, 14)
-        .padding(.bottom, 22)
+        ScreenHeader(title: model?.greeting ?? "")
     }
 
     /// Both shelves come from Apple Music's personalized catalog, so with no
@@ -268,43 +271,67 @@ struct HomeView: View {
 
     // MARK: - Made for you
 
-    @ViewBuilder
     private var madeForYou: some View {
-        SectionHeader(title: "Made for you")
-            .padding(.horizontal, Metrics.gutter)
-            .padding(.bottom, 8)
+        MadeForYouSection(
+            recommendations: model?.recommendations ?? .idle,
+            currentTrackID: player.currentTrack?.id,
+            horizontalPadding: Metrics.gutter,
+            onPlay: { tracks, index in player.play(tracks, startingAt: index, source: "Made for you") }
+        )
+    }
+}
 
-        switch model?.recommendations ?? .idle {
-        case .idle, .loading:
-            RowSkeleton(count: 4)
-                .padding(.horizontal, Metrics.gutter)
+/// The personalized-recommendations shelf Home, iPad's Listen Now, and iPad's
+/// full-column "Made for you" destination all show — the same
+/// `HomeViewModel.recommendations` content, laid out identically apart from
+/// each context's own gutter width, top inset, and skeleton row count. Three
+/// independent copies of this had already drifted (`RowSkeleton(count: 4)` on
+/// iPhone/iPad's shelf vs `count: 6` on iPad's own destination) before this
+/// was factored out.
+struct MadeForYouSection: View {
+    let recommendations: LoadState<[HumTrack]>
+    let currentTrackID: String?
+    let horizontalPadding: CGFloat
+    var topPadding: CGFloat = 0
+    var skeletonCount: Int = 4
+    let onPlay: (_ tracks: [HumTrack], _ startingAt: Int) -> Void
 
-        case .loaded(let tracks) where tracks.isEmpty:
-            EmptyStateView(
-                icon: HumIcon.musicNote,
-                headline: "No recommendations yet",
-                message: "Listen to a few things and Apple Music will start suggesting more."
-            )
+    var body: some View {
+        Group {
+            SectionHeader(title: "Made for you")
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, topPadding)
+                .padding(.bottom, 8)
 
-        case .loaded(let tracks):
-            LazyVStack(spacing: 0) {
-                // Identified by position, not by track id: a real playlist can hold
-                // the same song twice, and duplicate SwiftUI identities make
-                // rows drop out and taps land on the wrong one.
-                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                    TrackRow(
-                        track: track,
-                        isCurrent: player.currentTrack?.id == track.id
-                    ) {
-                        player.play(tracks, startingAt: index, source: "Made for you")
+            switch recommendations {
+            case .idle, .loading:
+                RowSkeleton(count: skeletonCount)
+                    .padding(.horizontal, horizontalPadding)
+
+            case .loaded(let tracks) where tracks.isEmpty:
+                EmptyStateView(
+                    icon: HumIcon.musicNote,
+                    headline: "No recommendations yet",
+                    message: "Listen to a few things and Apple Music will start suggesting more."
+                )
+
+            case .loaded(let tracks):
+                LazyVStack(spacing: 0) {
+                    // Identified by position, not by track id: a real playlist can
+                    // hold the same song twice, and duplicate SwiftUI identities
+                    // make rows drop out and taps land on the wrong one.
+                    ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
+                        TrackRow(track: track, isCurrent: currentTrackID == track.id) {
+                            onPlay(tracks, index)
+                        }
+                        if index < tracks.count - 1 { RowDivider() }
                     }
-                    if index < tracks.count - 1 { RowDivider() }
                 }
-            }
-            .padding(.horizontal, Metrics.gutter)
+                .padding(.horizontal, horizontalPadding)
 
-        case .failed(let message):
-            InlineError(message: message)
+            case .failed(let message):
+                InlineError(message: message).padding(.horizontal, horizontalPadding)
+            }
         }
     }
 }

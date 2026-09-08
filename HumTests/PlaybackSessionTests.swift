@@ -18,12 +18,14 @@ struct PlaybackSessionTests {
 
     private func model() -> (PlayerViewModel, FakePlaybackService) {
         let playback = FakePlaybackService()
+        let subscriptionService = FakeSubscriptionService(state: .active)
         let environment = AppEnvironment(
             authorization: FakeAuthorizationService(status: .authorized),
-            subscription: FakeSubscriptionService(state: .active),
+            subscription: subscriptionService,
             catalog: FakeCatalogService(),
             library: FakeLibraryService(),
-            playback: playback
+            playback: playback,
+            subscriptionStore: SubscriptionStateStore(service: subscriptionService)
         )
         return (PlayerViewModel(environment: environment), playback)
     }

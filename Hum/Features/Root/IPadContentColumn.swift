@@ -8,6 +8,9 @@ import SwiftUI
 struct IPadContentColumn: View {
     let destination: IPadSidebarDestination
     @Binding var searchQuery: String
+    /// Owned by `RootSplitView`, shared by `.recentlyPlayed` and
+    /// `.madeForYou` — see its own doc comment there for why.
+    let homeModel: HomeViewModel?
 
     @Environment(PlayerViewModel.self) private var player
 
@@ -20,7 +23,7 @@ struct IPadContentColumn: View {
                 // not iPhone's single-column shelf-then-list Home. See
                 // `IPadListenNowView`'s doc comment for what backs the list
                 // rows instead of the board's unbacked "12 min left" text.
-                IPadListenNowView()
+                IPadListenNowView(model: homeModel)
 
             case .artists:
                 LibraryView(initialFilter: .artists, embedsNavigationChrome: false)
@@ -36,7 +39,7 @@ struct IPadContentColumn: View {
                 IPadPendingDestinationView(title: pendingTitle)
 
             case .madeForYou:
-                IPadMadeForYouView()
+                IPadMadeForYouView(model: homeModel)
 
             case .search:
                 SearchView(query: $searchQuery, embedsNavigationChrome: false)
@@ -94,49 +97,23 @@ private struct IPadPendingDestinationView: View {
 /// full column here since iPad has room to give it its own destination
 /// rather than folding it into "Listen Now".
 private struct IPadMadeForYouView: View {
-    @Environment(\.appEnvironment) private var environment
+    let model: HomeViewModel?
+
     @Environment(PlayerViewModel.self) private var player
-    @State private var model: HomeViewModel?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                SectionHeader(title: "Made for you")
-                    .padding(.horizontal, Metrics.gutter)
-                    .padding(.top, 20)
-                    .padding(.bottom, 12)
-
-                switch model?.recommendations ?? .idle {
-                case .idle, .loading:
-                    RowSkeleton(count: 6).padding(.horizontal, Metrics.gutter)
-
-                case .loaded(let tracks) where tracks.isEmpty:
-                    EmptyStateView(
-                        icon: HumIcon.musicNote,
-                        headline: "No recommendations yet",
-                        message: "Listen to a few things and Apple Music will start suggesting more."
-                    )
-
-                case .loaded(let tracks):
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                            TrackRow(track: track, isCurrent: player.currentTrack?.id == track.id) {
-                                player.play(tracks, startingAt: index, source: "Made for you")
-                            }
-                            if index < tracks.count - 1 { RowDivider() }
-                        }
-                    }
-                    .padding(.horizontal, Metrics.gutter)
-
-                case .failed(let message):
-                    InlineError(message: message)
-                }
+                MadeForYouSection(
+                    recommendations: model?.recommendations ?? .idle,
+                    currentTrackID: player.currentTrack?.id,
+                    horizontalPadding: Metrics.gutter,
+                    topPadding: 20,
+                    skeletonCount: 6,
+                    onPlay: { tracks, index in player.play(tracks, startingAt: index, source: "Made for you") }
+                )
             }
         }
         .background(Palette.deepOnyx)
-        .task {
-            if model == nil { model = HomeViewModel(environment: environment) }
-            await model?.load()
-        }
     }
 }

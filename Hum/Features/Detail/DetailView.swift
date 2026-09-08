@@ -160,10 +160,23 @@ struct DetailView: View {
             }
 
         case .failed(let message):
-            // Design screen 37.
-            DetailLoadErrorView(message: message) {
-                Task { await model?.retry() }
-            }
+            // Design screen 37 — the same shape `EmptyStateView` stands in
+            // for elsewhere, tinted for an error and at Home's 112pt ring
+            // rather than redrawn as its own view (it used to be
+            // `DetailLoadErrorView`, byte-for-byte the same composition).
+            EmptyStateView(
+                icon: "rectangle.slash",
+                headline: "This didn't load",
+                message: message,
+                actionTitle: "Reload",
+                action: { Task { await model?.retry() } },
+                tint: Palette.terracotta,
+                iconTint: Palette.terracottaLift,
+                ringDiameter: 112
+            )
+            .padding(.horizontal, 46)
+            .padding(.top, 60)
+            .padding(.bottom, Metrics.chromeClearance)
         }
     }
 
@@ -290,45 +303,3 @@ private struct EmptyPlaylistView: View {
     }
 }
 
-/// Design screen 37 — Detail's own failed-to-load state, replacing the
-/// generic inline `InlineError` row other screens still use. A load failure
-/// is the centrepiece of this screen when it happens — there is nothing
-/// else to show — so it gets the design's full treatment: an icon halo,
-/// headline, body copy, and a real retry.
-private struct DetailLoadErrorView: View {
-    let message: String
-    let onRetry: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            ZStack {
-                Circle()
-                    .strokeBorder(Palette.terracotta.opacity(0.38), lineWidth: 1)
-                    .frame(width: 112, height: 112)
-                Image(systemName: "rectangle.slash")
-                    .humFont(36, weight: .light)
-                    .foregroundStyle(Palette.terracottaLift)
-            }
-            .accessibilityHidden(true)
-
-            Text("This didn't load")
-                .humFont(23, weight: .light)
-                .foregroundStyle(Palette.textPrimary)
-
-            Text(message)
-                .humFont(15, weight: .light)
-                .lineSpacing(4)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Palette.textSecondary)
-
-            AmberOutlineButton(title: "Reload", action: onRetry)
-                .padding(.top, 4)
-        }
-        .padding(.horizontal, 46)
-        .padding(.top, 60)
-        // Same reasoning as `EmptyPlaylistView`'s own bottom padding above.
-        .padding(.bottom, Metrics.chromeClearance)
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-    }
-}

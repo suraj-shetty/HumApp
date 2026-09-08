@@ -101,7 +101,10 @@ struct HumApp: App {
                 .environment(player)
                 .preferredColorScheme(.dark)
                 .tint(Palette.honeyAmber)
-                .task { player.start() }
+                .task {
+                    environment.subscriptionStore.start()
+                    player.start()
+                }
         }
     }
 }

@@ -12,6 +12,20 @@ struct EmptyStateView: View {
     let message: String
     var actionTitle: String?
     var action: (() -> Void)?
+    /// Overrides the ring color — `Palette.terracotta` for an error state
+    /// (e.g. Detail's failed-to-load), amber (the default) for an
+    /// empty-but-not-broken one.
+    var tint: Color = Palette.honeyAmber
+    /// Overrides the icon glyph's color. Defaults to `tint`, but every error
+    /// state in the app (Home, Library, Search, AddToPlaylist, PlayerBar)
+    /// draws its ring in the dimmer base color and its glyph in the
+    /// brighter "lift" variant (e.g. `terracottaLift` alongside `tint:
+    /// .terracotta`) — pass it explicitly for an error `tint` rather than
+    /// letting the glyph go as dim as the ring.
+    var iconTint: Color?
+    /// Overrides the ring diameter — Home's own empty state (screen 10)
+    /// measures 112, every other measured screen 96.
+    var ringDiameter: CGFloat = 96
 
     var body: some View {
         VStack(spacing: 14) {
@@ -23,11 +37,11 @@ struct EmptyStateView: View {
             // was dimmed to 70% where every measured screen draws it solid.
             ZStack {
                 Circle()
-                    .strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
-                    .frame(width: 96, height: 96)
+                    .strokeBorder(tint.opacity(0.35), lineWidth: 1)
+                    .frame(width: ringDiameter, height: ringDiameter)
                 Image(systemName: icon)
                     .humFont(34, weight: .light)
-                    .foregroundStyle(Palette.honeyAmber)
+                    .foregroundStyle(iconTint ?? tint)
             }
             // Decorative: the headline and message say everything it does.
             .accessibilityHidden(true)
@@ -78,5 +92,46 @@ struct SectionHeader: View {
             }
         }
         .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// The greeting/title-plus-settings-avatar header Home, iPad's Listen Now, and
+/// Library all draw. Factored out after Home's own corrected avatar treatment
+/// (38×38, `#1E1E20`, a 1px amber-35% border, a 14px amber glyph — replacing an
+/// earlier 44×44, no-border, 20px grey glyph) drifted out of sync with
+/// Library's header, which never received the same fix because there was no
+/// shared implementation for the fix to land in.
+struct ScreenHeader: View {
+    let title: String
+    var horizontalPadding: CGFloat = Metrics.gutter
+
+    var body: some View {
+        HStack(alignment: .center) {
+            Text(title)
+                .humFont(.screenTitle)
+                .foregroundStyle(Palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            Spacer()
+            NavigationLink {
+                SettingsView()
+            } label: {
+                // The 44pt tap target floor is the outer frame, not the
+                // drawn circle.
+                Image(systemName: HumIcon.person)
+                    .humFont(14, weight: .light)
+                    .foregroundStyle(Palette.honeyAmber)
+                    .frame(width: 38, height: 38)
+                    .background(Palette.surfaceRaised, in: Circle())
+                    .overlay(
+                        Circle().strokeBorder(Palette.honeyAmber.opacity(0.35), lineWidth: 1)
+                    )
+                    .frame(width: Metrics.tapTarget, height: Metrics.tapTarget)
+                    .contentShape(.rect)
+            }
+            .accessibilityLabel("Settings")
+        }
+        .padding(.horizontal, horizontalPadding)
+        .padding(.top, 14)
+        .padding(.bottom, 22)
     }
 }

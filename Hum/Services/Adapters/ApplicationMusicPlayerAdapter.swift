@@ -109,14 +109,24 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
     // MARK: - Transport
 
+    /// Bumped on every `play()` call and captured as `generation` at entry.
+    /// Guards the multiple `await` points below: if a second `play()` starts
+    /// before the first resumes from one, the first's remaining work becomes
+    /// a no-op instead of racing the second to decide the final `queue`.
+    private var playGeneration = 0
+
     func play(_ tracks: [HumTrack], startingAt index: Int) async throws {
+        playGeneration += 1
+        let generation = playGeneration
+
         failure = nil
         isPreparing = true
         publish()
-        defer { isPreparing = false }
+        defer { if generation == playGeneration { isPreparing = false } }
 
         do {
             let cued = try await resolve(tracks)
+            guard generation == playGeneration else { return }
             guard !cued.isEmpty else {
                 throw HumError.playbackFailed("None of those tracks are available.")
             }
@@ -136,11 +146,21 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             applyModes()
 
             try await Transport.prepare()
+            guard generation == playGeneration else { return }
             try await Transport.play()
+            guard generation == playGeneration else { return }
             publish()
         } catch {
-            failure = .playbackFailed(error.localizedDescription)
-            publish()
+            // Always rethrown — whoever is awaiting *this* call asked for
+            // *this* track and deserves to know it failed, superseded or
+            // not. Only the shared adapter state (`failure`, the published
+            // snapshot) is gated behind the generation check, since a
+            // superseded call's failure has nothing to say about what the
+            // current, still-in-flight call will end up reporting.
+            if generation == playGeneration {
+                failure = .playbackFailed(error.localizedDescription)
+                publish()
+            }
             throw error
         }
     }
@@ -148,8 +168,14 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     func resume() async throws {
         guard queue.currentTrack != nil else { return }
         failure = nil
-        try await Transport.play()
-        publish()
+        do {
+            try await Transport.play()
+            publish()
+        } catch {
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
+        }
     }
 
     func pause() async {
@@ -163,26 +189,49 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         // thrown MusicKit error surfaced to the listener as "playback failed".
         guard QueueReducer.reduce(queue, .next).currentIndex != nil else {
             player.stop()
+            // Clears the player's own `currentEntry` too — otherwise
+            // `syncCursor()` (run from the `publish()` below) finds that
+            // still-set entry, resolves its index, and resurrects the very
+            // cursor this branch just cleared. Guarded by `isMirroring` like
+            // every other queue rewrite in this file — skipping it here
+            // reintroduces the reentrant-`publish()` hang `isMirroring`
+            // exists to prevent (see its own doc comment).
+            isMirroring = true
+            setQueue(ApplicationMusicPlayer.Queue())
+            isMirroring = false
             queue.currentIndex = nil
             publish()
             return
         }
-        try await Transport.skipToNext()
-        publish()
+        do {
+            try await Transport.skipToNext()
+            publish()
+        } catch {
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
+        }
     }
 
     func skipToPrevious() async throws {
         let retreated = QueueReducer.reduce(queue, .previous)
-        // Past the first few seconds, "previous" restarts the current track
-        // rather than stepping back — matching the prototype. The reducer
-        // returning the same index means there is nothing to step back to.
-        if player.playbackTime > Self.restartThreshold
-            || retreated.currentIndex == queue.currentIndex {
-            player.playbackTime = 0
-        } else {
-            try await Transport.skipToPrevious()
+        do {
+            // Past the first few seconds, "previous" restarts the current
+            // track rather than stepping back — matching the prototype. The
+            // reducer returning the same index means there is nothing to
+            // step back to.
+            if player.playbackTime > Self.restartThreshold
+                || retreated.currentIndex == queue.currentIndex {
+                player.playbackTime = 0
+            } else {
+                try await Transport.skipToPrevious()
+            }
+            publish()
+        } catch {
+            failure = .playbackFailed(error.localizedDescription)
+            publish()
+            throw error
         }
-        publish()
     }
 
     func seek(to time: TimeInterval) async {
@@ -209,14 +258,17 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
     func applyQueue(_ newQueue: QueueState) async throws {
         let previousTrackID = queue.currentTrack?.id
-        queue = newQueue
-        applyModes()
 
         guard let current = newQueue.currentTrack else {
             // The queue ran out, or every entry was removed. Stop rather than
-            // leave the player holding a cursor into nothing.
+            // leave the player holding a cursor into nothing. Nothing here
+            // can throw, so committing `queue` immediately is safe.
+            queue = newQueue
+            applyModes(for: newQueue)
             player.stop()
+            isMirroring = true
             setQueue(ApplicationMusicPlayer.Queue())
+            isMirroring = false
             songs.removeAll()
             publish()
             return
@@ -224,15 +276,40 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
         if current.id == previousTrackID {
             // Membership or order changed *around* the playing track — a
-            // reorder, a removal, a clear. Mutating the entries in place is
-            // what keeps the audio from restarting.
-            try await mirrorEntries(newQueue)
+            // reorder, a removal, a clear. `mirrorEntries` only touches the
+            // real player's entries, not `queue` itself, so this branch owns
+            // committing (and, on failure, reverting) the mirror around it.
+            let previous = queue
+            queue = newQueue
+            applyModes(for: newQueue)
+            do {
+                try await mirrorEntries(newQueue)
+                publish()
+            } catch {
+                // The real player never adopted `newQueue` — revert the
+                // mirror so the Queue screen doesn't show an order that
+                // isn't actually playing.
+                queue = previous
+                applyModes(for: previous)
+                failure = .playbackFailed(error.localizedDescription)
+                publish()
+                throw error
+            }
         } else {
             // The cursor moved to a different track: a jump, or the playing
-            // entry was the one removed. That is a new play intent.
+            // entry was the one removed. That is a new play intent, and
+            // `play(_:startingAt:)` already commits (or, on failure, leaves
+            // consistent) both `queue` and the real player itself — setting
+            // or reverting `queue` here on top of it would fight that: a
+            // `play()` failure that occurs *after* it has already cued the
+            // new tracks onto the real player leaves `queue` matching that
+            // real state, and reverting it here would desync them the other
+            // way. `play()` also reports its own failure and publishes, so
+            // this only needs to route to it and propagate.
+            applyModes(for: newQueue)
             try await play(newQueue.entries, startingAt: newQueue.currentIndex ?? 0)
+            publish()
         }
-        publish()
     }
 
     private func mirrorEntries(_ state: QueueState) async throws {
@@ -272,9 +349,16 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
     /// Shuffle and repeat are the *player's* modes, not a reordering Hum
     /// performs — `QueueReducer` deliberately moves only the flags.
-    private func applyModes() {
-        player.state.shuffleMode = queue.shuffleEnabled ? .songs : .off
-        player.state.repeatMode = switch queue.repeatMode {
+    private func applyModes() { applyModes(for: queue) }
+
+    /// Takes the state explicitly rather than always reading `self.queue`,
+    /// so a caller can apply a new queue's modes before deciding whether to
+    /// commit that queue as `self.queue` yet (`applyQueue`'s play-intent
+    /// branch needs exactly that: modes are independent of whether the cue
+    /// itself succeeds).
+    private func applyModes(for state: QueueState) {
+        player.state.shuffleMode = state.shuffleEnabled ? .songs : .off
+        player.state.repeatMode = switch state.repeatMode {
         case .off: MusicPlayer.RepeatMode.none
         case .all: .all
         case .one: .one
