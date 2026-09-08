@@ -115,11 +115,17 @@ struct RootSplitView: View {
         .task {
             if homeModel == nil { homeModel = HomeViewModel(environment: environment) }
             await homeModel?.load()
-            // Lives for as long as this split view does — the iPad root,
-            // never pushed/popped the way `HomeView` can be — so there's no
-            // teardown to pair this with (`PlayerViewModel.start()` and
-            // `WatchConnectivityRelayService` follow the same reasoning).
             homeModel?.startObservingSubscriptionChanges()
+        }
+        // This root is *not* actually torn-down-proof the way the comment
+        // this replaced assumed: `RootGateView.isIPadLayout` is driven by
+        // `horizontalSizeClass`, which Stage Manager/Split View can flip to
+        // `.compact` without a device change, swapping this whole view out
+        // for `RootTabView` and destroying `homeModel` with it — but its
+        // `onChange` registration lives in the app-lifetime
+        // `SubscriptionStateStore` and outlives it unless removed here.
+        .onDisappear {
+            homeModel?.stopObservingSubscriptionChanges()
         }
         .sheet(isPresented: $isPresentingNewPlaylist) {
             NewPlaylistView { newPlaylist in

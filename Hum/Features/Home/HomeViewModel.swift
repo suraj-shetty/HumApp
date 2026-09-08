@@ -105,6 +105,13 @@ final class HomeViewModel {
         // already applies to a missing subscription below.
         guard !isOffline else {
             needsSubscription = false
+            // Still recorded even though this path never checks it: leaving
+            // it `nil` here made the very next `onChange` replay from
+            // `startObservingSubscriptionChanges()` (called right after
+            // `load()` returns) look like a genuine change instead of a
+            // replay of the same value — firing an extra, redundant
+            // reload() on essentially every cold-offline launch.
+            lastKnownSubscriptionOutcome = SubscriptionReducer.resolveBrowse(in: subscriptionStore.current)
             recentlyPlayed = .loaded([])
             recommendations = .failed("Recommendations need a connection.")
             downloads = .loading
