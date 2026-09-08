@@ -373,10 +373,24 @@ private struct ConnectSpinner: View {
                     .stroke(Palette.honeyAmber, style: .init(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(angle))
             }
-            .task {
-                guard isAnimating else { return }
-                withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
-                    angle = 360
+            // `id: isAnimating` rather than a bare `.task`: a plain `.task`
+            // only runs once for the view's lifetime, so it never noticed a
+            // live Reduce Motion toggle flip `isAnimating` after the first
+            // render — the ring kept spinning through a mid-screen toggle
+            // to on, and never started for a toggle to off. Re-running on
+            // every change lets the `else` branch actively override the
+            // ongoing `repeatForever` with a fresh, instant animation on
+            // the same property — reassigning `angle` alone wouldn't stop
+            // it, since nothing there interrupts the existing animation.
+            .task(id: isAnimating) {
+                if isAnimating {
+                    withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                        angle = 360
+                    }
+                } else {
+                    withAnimation(.linear(duration: 0)) {
+                        angle = 0
+                    }
                 }
             }
     }
