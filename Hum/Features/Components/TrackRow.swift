@@ -17,7 +17,16 @@ struct TrackRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(PlayerViewModel.self) private var player
     @Environment(\.isFocused) private var isFocused
-    @State private var isPresentingAddToPlaylist = false
+    /// Holds the specific track being added, captured at the moment the menu
+    /// item is tapped — not a `Bool` read against the row's own `track`
+    /// property. Queue/Now Playing render these rows with `ForEach(id:
+    /// \.offset)` (positional identity, needed to survive duplicate songs
+    /// and drag reordering), so a reorder or removal while this sheet is
+    /// open can reuse this exact view instance for a different track before
+    /// the sheet's content closure re-evaluates; reading `track` live there
+    /// would silently offer to add whatever song now occupies this row
+    /// instead of the one actually tapped.
+    @State private var addingToPlaylistTrack: HumTrack?
     @State private var isHovered = false
 
     let track: HumTrack
@@ -97,7 +106,7 @@ struct TrackRow: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(action == nil ? [] : .isButton)
         .contextMenu { contextMenuContent }
-        .sheet(isPresented: $isPresentingAddToPlaylist) {
+        .sheet(item: $addingToPlaylistTrack) { track in
             AddToPlaylistView(track: track)
         }
     }
@@ -130,7 +139,7 @@ struct TrackRow: View {
         }
         .disabled(inLibrary)
         Button("Add to Playlist…", systemImage: "text.badge.plus") {
-            isPresentingAddToPlaylist = true
+            addingToPlaylistTrack = track
         }
         if let onGoToAlbum {
             Button("Go to Album", systemImage: "square.stack") {
