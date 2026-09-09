@@ -128,55 +128,65 @@ struct DetailView: View {
 
     @ViewBuilder
     private var trackList: some View {
-        switch model?.tracks ?? .idle {
-        case .idle, .loading:
-            RowSkeleton(count: 5)
-
-        case .loaded(let tracks) where tracks.isEmpty:
-            // Design screen 36. No "Add songs" action: that needs a
-            // playlist-mutation capability `MusicLibraryService` doesn't
-            // expose (the same gap recorded against M-6 and the track
-            // context menu's missing "Add to Playlist…").
-            EmptyPlaylistView(collection: collection)
-
-        case .loaded(let tracks):
-            LazyVStack(spacing: 0) {
-                // Identified by position, not by track id: a real playlist can hold
-                // the same song twice, and duplicate SwiftUI identities make
-                // rows drop out and taps land on the wrong one.
-                ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
-                    TrackRow(
-                        track: track,
-                        leading: model?.usesTrackNumbers == true
-                            ? .index(index + 1)
-                            : .artwork,
-                        isCurrent: player.currentTrack?.id == track.id,
-                        action: { play(tracks, at: index) },
-                        onGoToArtist: { goToArtist(for: $0) },
-                        onGoToAlbum: collection.kind == .album ? nil : { goToAlbum(for: $0) }
-                    )
-                    if index < tracks.count - 1 { RowDivider() }
-                }
-            }
-
-        case .failed(let message):
-            // Design screen 37 — the same shape `EmptyStateView` stands in
-            // for elsewhere, tinted for an error and at Home's 112pt ring
-            // rather than redrawn as its own view (it used to be
-            // `DetailLoadErrorView`, byte-for-byte the same composition).
+        if model?.needsSubscription == true {
+            // Same reasoning as `HomeView`/`SearchView`: a confirmed
+            // non-subscriber gets a plain explanation, not a load error.
             EmptyStateView(
-                icon: "rectangle.slash",
-                headline: "This didn't load",
-                message: message,
-                actionTitle: "Reload",
-                action: { Task { await model?.retry() } },
-                tint: Palette.terracotta,
-                iconTint: Palette.terracottaLift,
-                ringDiameter: 112
+                icon: HumIcon.musicNote,
+                headline: "Apple Music Needed",
+                message: "This is from the Apple Music catalog, which this account isn't subscribed to."
             )
-            .padding(.horizontal, 46)
-            .padding(.top, 60)
-            .padding(.bottom, Metrics.chromeClearance)
+        } else {
+            switch model?.tracks ?? .idle {
+            case .idle, .loading:
+                RowSkeleton(count: 5)
+
+            case .loaded(let tracks) where tracks.isEmpty:
+                // Design screen 36. No "Add songs" action: that needs a
+                // playlist-mutation capability `MusicLibraryService` doesn't
+                // expose (the same gap recorded against M-6 and the track
+                // context menu's missing "Add to Playlist…").
+                EmptyPlaylistView(collection: collection)
+
+            case .loaded(let tracks):
+                LazyVStack(spacing: 0) {
+                    // Identified by position, not by track id: a real playlist can hold
+                    // the same song twice, and duplicate SwiftUI identities make
+                    // rows drop out and taps land on the wrong one.
+                    ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
+                        TrackRow(
+                            track: track,
+                            leading: model?.usesTrackNumbers == true
+                                ? .index(index + 1)
+                                : .artwork,
+                            isCurrent: player.currentTrack?.id == track.id,
+                            action: { play(tracks, at: index) },
+                            onGoToArtist: { goToArtist(for: $0) },
+                            onGoToAlbum: collection.kind == .album ? nil : { goToAlbum(for: $0) }
+                        )
+                        if index < tracks.count - 1 { RowDivider() }
+                    }
+                }
+
+            case .failed(let message):
+                // Design screen 37 — the same shape `EmptyStateView` stands in
+                // for elsewhere, tinted for an error and at Home's 112pt ring
+                // rather than redrawn as its own view (it used to be
+                // `DetailLoadErrorView`, byte-for-byte the same composition).
+                EmptyStateView(
+                    icon: "rectangle.slash",
+                    headline: "This didn't load",
+                    message: message,
+                    actionTitle: "Reload",
+                    action: { Task { await model?.retry() } },
+                    tint: Palette.terracotta,
+                    iconTint: Palette.terracottaLift,
+                    ringDiameter: 112
+                )
+                .padding(.horizontal, 46)
+                .padding(.top, 60)
+                .padding(.bottom, Metrics.chromeClearance)
+            }
         }
     }
 

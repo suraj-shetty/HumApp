@@ -17,10 +17,38 @@ final class SearchViewModel {
     private let catalog: MusicCatalogService
     private let subscriptionStore: SubscriptionStateStore
     private var searchTask: Task<Void, Never>?
+    private var subscriptionChangeToken: UUID?
 
     init(environment: AppEnvironment) {
         self.catalog = environment.catalog
         self.subscriptionStore = environment.subscriptionStore
+    }
+
+    /// Keeps `needsSubscription` in sync with a subscription that changes
+    /// while Search is on screen (e.g. subscribing through Now Playing's
+    /// offer sheet) — without this, a listener stuck on "Apple Music Needed"
+    /// had no way back short of retyping their query, since `RootTabView`
+    /// preserves each tab's state and a bare re-select doesn't re-run
+    /// `.task`. Idempotent, matching `HomeViewModel`'s own guard, so calling
+    /// it from `.task` more than once across the view's lifetime is safe.
+    func startObservingSubscriptionChanges() {
+        guard subscriptionChangeToken == nil else { return }
+        subscriptionStore.start()
+        // A fast cold launch can still have `.unknown` cached when Search is
+        // opened immediately — refreshed once here rather than trusting
+        // whatever `.current` already holds, the same reasoning
+        // `HomeViewModel.load()` refreshes before its own first check.
+        Task { await subscriptionStore.refresh() }
+        subscriptionChangeToken = subscriptionStore.onChange { [weak self] _ in
+            self?.search()
+        }
+    }
+
+    func stopObservingSubscriptionChanges() {
+        if let subscriptionChangeToken {
+            subscriptionStore.removeOnChange(subscriptionChangeToken)
+            self.subscriptionChangeToken = nil
+        }
     }
 
     /// Debounced. Every keystroke firing a catalog request would burn the
@@ -169,12 +197,16 @@ struct SearchView: View {
             }
             .task {
                 if model == nil { model = SearchViewModel(environment: environment) }
+                model?.startObservingSubscriptionChanges()
                 // The tab can be entered with a query already typed — the field is
                 // in the chrome and outlives this view's lifetime.
                 if !query.isEmpty, model?.term != query {
                     model?.term = query
                     model?.search()
                 }
+            }
+            .onDisappear {
+                model?.stopObservingSubscriptionChanges()
             }
     }
 

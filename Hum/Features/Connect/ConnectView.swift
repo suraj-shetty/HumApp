@@ -235,8 +235,10 @@ struct ConnectView: View {
 // MARK: - Copy
 
 /// Wording for each state, kept out of the view so the four variants sit side
-/// by side and can be read as a set.
-private struct ConnectCopy {
+/// by side and can be read as a set. Internal rather than private: `IPadConnectView`
+/// reuses it too, rather than hand-copying the same four strings into a
+/// second layout and risking exactly the drift a shared source avoids.
+struct ConnectCopy {
     let title: String
     let body: String
     let buttonTitle: String

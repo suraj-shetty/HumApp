@@ -30,14 +30,6 @@ struct IPadContentColumn: View {
             case .albums:
                 LibraryView(initialFilter: .albums, embedsNavigationChrome: false)
 
-            case .recentlyAdded, .songs:
-                // Board 03 revision item 12: neither destination has a
-                // confirmed backing query in `MusicLibraryService` yet — no
-                // "recently added" endpoint, and no flat song list distinct
-                // from a playlist/album's own track list. Flagged pending a
-                // capability check rather than wired to a guess.
-                IPadPendingDestinationView(title: pendingTitle)
-
             case .madeForYou:
                 IPadMadeForYouView(model: homeModel)
 
@@ -53,7 +45,15 @@ struct IPadContentColumn: View {
                 // isolated navigation/layout context instead, which is what
                 // was cutting its content off under the sidebar — the width
                 // every sibling case gets for free never reached this one.
+                // `.id` forces a fresh identity per playlist: without it,
+                // switching from one `.playlist` case to another kept the
+                // same `DetailView` instance (same switch case, same
+                // structural position) and its `@State` model — the header
+                // updated to the new playlist but the track list kept
+                // showing the previous one's, since `DetailViewModel.load()`
+                // only ever runs once per instance.
                 DetailView(collection: collection)
+                    .id(collection.id)
             }
         }
         .background(Palette.deepOnyx)
@@ -68,27 +68,6 @@ struct IPadContentColumn: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: player.toast)
-    }
-
-    private var pendingTitle: String {
-        if case .recentlyAdded = destination { return "Recently added" }
-        return "Songs"
-    }
-}
-
-/// Board 03 revision items 10/12's "flag, don't silently resolve" treatment,
-/// generalised: a destination whose data source isn't confirmed yet renders
-/// as an honest placeholder instead of guessing at a query or crashing.
-private struct IPadPendingDestinationView: View {
-    let title: String
-
-    var body: some View {
-        EmptyStateView(
-            icon: HumIcon.musicNote,
-            headline: title,
-            message: "This view has no confirmed Apple Music query yet — pending a MusicLibraryService capability check, not shipped."
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

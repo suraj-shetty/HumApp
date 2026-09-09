@@ -133,8 +133,21 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
             // The requested track may itself have failed to resolve; falling
             // back to the head of the queue beats refusing to play anything.
+            //
+            // A repeated track resolves identically wherever it appears (same
+            // song, same fetch), so matching `cued` by id alone always landed
+            // on the *first* copy — silently starting playback on the wrong
+            // occurrence in a queue with a duplicate. `cued` drops only the
+            // entries that failed to resolve, in the same relative order, so
+            // subtracting how many were dropped before `index` maps the
+            // requested position straight through instead.
             let requestedID = tracks[safe: index]?.id
-            let start = cued.firstIndex { $0.track.id == requestedID } ?? 0
+            let dropped = tracks.prefix(index).filter { songs[$0.id] == nil }.count
+            let start = requestedID != nil
+                && cued.indices.contains(index - dropped)
+                && cued[index - dropped].track.id == requestedID
+                ? index - dropped
+                : (cued.firstIndex { $0.track.id == requestedID } ?? 0)
 
             isMirroring = true
             setQueue(ApplicationMusicPlayer.Queue(
@@ -184,6 +197,13 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     }
 
     func skipToNext() async throws {
+        // Captured up front, like `play()`'s own `generation`: a skip has no
+        // completion the listener can retract, but if a `play()` call lands
+        // while this one's `await` is still out, the skip has nothing correct
+        // left to report — this at least stops it from publishing a failure
+        // or a stale success over whatever `play()` already committed.
+        let generation = playGeneration
+
         // The reducer decides whether a next entry exists — the same tested
         // function the Queue screen uses — so end-of-queue is a stop, not a
         // thrown MusicKit error surfaced to the listener as "playback failed".
@@ -216,8 +236,10 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             } else {
                 try await Transport.skipToNext()
             }
+            guard generation == playGeneration else { return }
             publish()
         } catch {
+            guard generation == playGeneration else { throw error }
             failure = .playbackFailed(error.localizedDescription)
             publish()
             throw error
@@ -225,6 +247,7 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
     }
 
     func skipToPrevious() async throws {
+        let generation = playGeneration
         let retreated = QueueReducer.reduce(queue, .previous)
         do {
             // Past the first few seconds, "previous" restarts the current
@@ -237,8 +260,10 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
             } else {
                 try await Transport.skipToPrevious()
             }
+            guard generation == playGeneration else { return }
             publish()
         } catch {
+            guard generation == playGeneration else { throw error }
             failure = .playbackFailed(error.localizedDescription)
             publish()
             throw error
@@ -342,10 +367,31 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
         // MusicKit log "Inserting entries at the beginning of the queue
         // because previous entry is unexpectedly transient" — a real desync
         // risk, recorded in PROGRESS.md. Slow and honest beats fast and hung.
+        // A repeated track is indistinguishable from its own id alone — the
+        // live entry must be substituted at the one position actually
+        // sounding, not at every position sharing its track id, or the same
+        // `Entry` object would be inserted twice (the exact "entries it
+        // already holds, in new positions" case the comment above documents
+        // as a deadlock trigger). `Entry.id` (not `item.id`) is unique per
+        // object, so finding the live entry's own occurrence — the nth
+        // position among entries sharing its track id — and matching that
+        // same occurrence in `cued` identifies the right position regardless
+        // of duplicates.
+        let playingOccurrence = playing.flatMap { playing -> Int? in
+            guard let trackID = playing.item?.id.rawValue,
+                  let position = player.queue.entries.firstIndex(where: { $0.id == playing.id })
+            else { return nil }
+            return player.queue.entries[...position]
+                .filter { $0.item?.id.rawValue == trackID }
+                .count - 1
+        }
+        var seen: [String: Int] = [:]
         let entries = cued.map { cued -> ApplicationMusicPlayer.Queue.Entry in
-            // The live entry for the sounding track must survive: a
-            // replacement would restart playback.
-            if let playing, playing.item?.id.rawValue == cued.track.id { return playing }
+            let occurrence = seen[cued.track.id, default: 0]
+            seen[cued.track.id] = occurrence + 1
+            if let playing, cued.track.id == playing.item?.id.rawValue, occurrence == playingOccurrence {
+                return playing
+            }
             return ApplicationMusicPlayer.Queue.Entry(cued.song)
         }
 
@@ -507,15 +553,22 @@ final class ApplicationMusicPlayerAdapter: PlaybackService {
 
     /// A queue can hold the same track more than once — a playlist with a
     /// repeated single is ordinary — so a plain `firstIndex` would snap the
-    /// cursor back to the first copy every time playback advanced into a later
-    /// one, and the UI would sit still. Searching from the cursor forward
-    /// resolves an advance to the copy actually sounding; the wrap-around
-    /// search after it covers a jump backwards.
+    /// cursor back to the first copy every time playback moved into a later
+    /// one, and the UI would sit still. Every caller of this (the player
+    /// advancing on its own, or a skip) moves the real cursor to an *adjacent*
+    /// entry, in either direction — checking those neighbours first resolves
+    /// a repeated track to the copy actually sounding regardless of which way
+    /// the move went; a forward-only search got backward skips wrong. Only a
+    /// genuinely ambiguous case (no adjacent match, e.g. after a queue edit)
+    /// falls back to the first occurrence.
     private func indexOfTrack(_ trackID: String) -> Int? {
         let entries = queue.entries
-        if let cursor = queue.currentIndex, entries.indices.contains(cursor),
-           let ahead = entries[cursor...].firstIndex(where: { $0.id == trackID }) {
-            return ahead
+        if let cursor = queue.currentIndex, entries.indices.contains(cursor) {
+            if entries[cursor].id == trackID { return cursor }
+            let next = cursor + 1
+            if entries.indices.contains(next), entries[next].id == trackID { return next }
+            let previous = cursor - 1
+            if entries.indices.contains(previous), entries[previous].id == trackID { return previous }
         }
         return entries.firstIndex(where: { $0.id == trackID })
     }
